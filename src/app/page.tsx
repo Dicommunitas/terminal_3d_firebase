@@ -9,7 +9,6 @@ import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { CommandHistoryPanel } from '@/components/command-history-panel';
-// import { SiteHeader } from '@/components/site-header'; // SiteHeader removed
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -137,7 +136,6 @@ export default function Terminal3DPage() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full flex-col bg-background w-full">
-        {/* <SiteHeader /> Removed */}
         <div className="flex flex-1 w-full overflow-hidden w-full">
           <Sidebar collapsible="icon" className="border-r">
              <div className="flex h-full flex-col">
@@ -150,10 +148,9 @@ export default function Terminal3DPage() {
                         <PanelLeft className="h-5 w-5" />
                     </SidebarTrigger>
                 </SidebarHeader>
-                {/* Separator removed as SidebarHeader now has border-b */}
                 <SidebarContent className="p-0">
                   <ScrollArea className="h-full">
-                    <div className="p-4 space-y-4 pb-6"> {/* Added pb-6 for bottom padding */}
+                    <div className="p-4 space-y-6 pb-6">
                        <div className="pt-2 pb-3">
                          <h3 className="text-base font-semibold flex items-center text-foreground">
                             <Settings2 className="mr-2 h-5 w-5 text-primary"/> Panel Controls
@@ -198,6 +195,7 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+    
     
 
     
