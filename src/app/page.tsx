@@ -33,9 +33,9 @@ const initialEquipment: Equipment[] = [
   { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
 
   // Pipes (position.y is centerline)
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } }, // Horizontal along X, adjust z to be center
-  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } }, // Horizontal along Z, adjust x to be center
-  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' }, // Vertical (base at y=0, so center is height/2)
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } }, // Horizontal along X
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } }, // Horizontal along Z
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' }, // Vertical
 
   // Valves (position.y is geometric center)
   { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
@@ -136,9 +136,9 @@ export default function Terminal3DPage() {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen flex-col bg-background">
+      <div className="flex h-screen w-full flex-col bg-background">
         <SiteHeader />
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 w-full overflow-hidden">
           <Sidebar collapsible="icon" className="border-r">
              <div className="flex h-full flex-col">
                 <SidebarHeader className="p-4 flex justify-between items-center">
@@ -163,7 +163,7 @@ export default function Terminal3DPage() {
              </div>
           </Sidebar>
           
-          <SidebarInset className="flex-1 relative bg-muted/20 min-w-0"> {/* Added min-w-0 here */}
+          <SidebarInset className="flex-1 relative w-full bg-muted/20 min-w-0">
             <div className="absolute top-2 left-2 z-10 md:hidden">
                  <SidebarTrigger asChild>
                     <Button variant="ghost" size="icon">
@@ -189,5 +189,4 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
-
     
