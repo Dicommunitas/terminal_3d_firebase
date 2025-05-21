@@ -182,8 +182,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     currentMount.appendChild(rendererRef.current.domElement);
     // console.log('[ThreeScene] Renderer DOM element appended.');
     
-    // console.log(`[ThreeScene] Attempting initial resize. Mount dimensions BEFORE first handleResize: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
-    handleResize(); // Call resize once after appending renderer and before setting its size explicitly.
 
     labelRendererRef.current = new CSS2DRenderer();
     labelRendererRef.current.domElement.style.position = 'absolute';
@@ -196,16 +194,19 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     composerRef.current.addPass(renderPass);
 
     outlinePassRef.current = new OutlinePass(new THREE.Vector2(initialWidth, initialHeight), sceneRef.current, cameraRef.current);
-    outlinePassRef.current.edgeStrength = 0; // Default to no outline
+    outlinePassRef.current.edgeStrength = 0; 
     outlinePassRef.current.edgeGlow = 0;
     outlinePassRef.current.edgeThickness = 0;
     outlinePassRef.current.visibleEdgeColor.set(0x000000); 
     composerRef.current.addPass(outlinePassRef.current);
 
+    // console.log(`[ThreeScene] Attempting initial resize. Mount dimensions BEFORE first handleResize: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
+    handleResize(); 
+
     // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5); // Increased from 1.0
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
     sceneRef.current.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5); // Increased from 1.8
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0); 
     directionalLight.position.set(10, 15, 10);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 2048;
@@ -227,7 +228,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     groundMeshRef.current.receiveShadow = true;
     // console.log('[ThreeScene] Ground plane added');
 
-    // Ensure another resize attempt after a short delay, in case layout was slow
     const delayedResizeTimeoutId = setTimeout(() => {
       // console.log(`[ThreeScene] Attempting DELAYED resize. Mount dimensions BEFORE delayed handleResize: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
       handleResize();
@@ -448,26 +448,25 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         }
       });
       outlinePassRef.current.visibleEdgeColor.set(0x0000FF); // Strong blue for selected
-      outlinePassRef.current.edgeStrength = 5; // Stronger outline
+      outlinePassRef.current.edgeStrength = 5; 
       outlinePassRef.current.edgeThickness = 2.5;
-      outlinePassRef.current.edgeGlow = 0.7; // More glow
+      outlinePassRef.current.edgeGlow = 0.7; 
     } else if (hoveredEquipmentId) {
       const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.id === hoveredEquipmentId);
       if (hoveredMesh) {
         objectsToOutline.push(hoveredMesh);
       }
       outlinePassRef.current.visibleEdgeColor.set(0x87CEFA); // Light blue for hover
-      outlinePassRef.current.edgeStrength = 4; // Slightly less strong
+      outlinePassRef.current.edgeStrength = 4; 
       outlinePassRef.current.edgeThickness = 2;
-      outlinePassRef.current.edgeGlow = 0.5; // Slightly less glow
+      outlinePassRef.current.edgeGlow = 0.5; 
     } else {
-      outlinePassRef.current.selectedObjects = []; // Clear selection
-      outlinePassRef.current.edgeStrength = 0; // No outline
+      outlinePassRef.current.edgeStrength = 0; 
       outlinePassRef.current.edgeGlow = 0;
       outlinePassRef.current.edgeThickness = 0;
     }
     outlinePassRef.current.selectedObjects = objectsToOutline;
-  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); 
+  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); // Re-run if equipment list changes
 
   useEffect(() => {
     if (!sceneRef.current || !labelRendererRef.current) return;
@@ -497,19 +496,19 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" style="opacity: 0.9; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.5));">
                     <path d="M12 2C8.13 2 5 5.13 5 9c0 4.17 4.42 9.92 6.24 12.11.4.48 1.13.48 1.53 0C14.58 18.92 19 13.17 19 9c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 0 1 0-5 2.5 2.5 0 0 1 0 5z"/>
                   </svg>`;
-                pinDiv.style.pointerEvents = 'none'; // Make pin non-interactive
-                pinDiv.style.width = '24px'; // Set explicit size for the div
+                pinDiv.style.pointerEvents = 'none'; 
+                pinDiv.style.width = '24px'; 
                 pinDiv.style.height = '24px';
                 
                 const pinLabel = new CSS2DObject(pinDiv);
-                // Calculate offset to place the pin on top of the object
+                
                 let yOffset = 0;
                 if (equipmentForItem.type === 'Tank' || equipmentForItem.type === 'Pipe') {
-                    yOffset = (equipmentForItem.height || 0) / 2 + 0.8; // 0.5 for center, +0.3 for pin base, +0.5 for above
+                    yOffset = (equipmentForItem.height || 0) / 2 + 0.8; 
                 } else if (equipmentForItem.size?.height) {
                     yOffset = equipmentForItem.size.height / 2 + 0.8;
                 } else {
-                    yOffset = 1.3; // Default offset for items like valves
+                    yOffset = 1.3; 
                 }
                 pinLabel.position.set(equipmentForItem.position.x, equipmentForItem.position.y + yOffset, equipmentForItem.position.z);
                 
@@ -548,3 +547,4 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
+
