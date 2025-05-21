@@ -167,7 +167,9 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     // console.log(`[ThreeScene] Mount dimensions AT START of useEffect: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
     
     sceneRef.current = new THREE.Scene();
-    sceneRef.current.background = new THREE.Color(0x2B3035); 
+    const skyColor = 0x87CEEB; // Sky Blue
+    sceneRef.current.background = new THREE.Color(skyColor); 
+    sceneRef.current.fog = new THREE.Fog(skyColor, 50, 200); // color, near, far
     // console.log('[ThreeScene] Scene created');
     
     const initialWidth = Math.max(1, currentMount.clientWidth);
@@ -179,6 +181,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     rendererRef.current = new THREE.WebGLRenderer({ antialias: true });
     rendererRef.current.shadowMap.enabled = true;
+    // console.log('[ThreeScene] Renderer created.');
+    
     currentMount.appendChild(rendererRef.current.domElement);
     // console.log('[ThreeScene] Renderer DOM element appended.');
     
@@ -186,7 +190,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     labelRendererRef.current = new CSS2DRenderer();
     labelRendererRef.current.domElement.style.position = 'absolute';
     labelRendererRef.current.domElement.style.top = '0px';
-    labelRendererRef.current.domElement.style.pointerEvents = 'none'; // Make labels non-interactive
+    labelRendererRef.current.domElement.style.pointerEvents = 'none'; 
     currentMount.appendChild(labelRendererRef.current.domElement);
 
     composerRef.current = new EffectComposer(rendererRef.current);
@@ -194,16 +198,15 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     composerRef.current.addPass(renderPass);
 
     outlinePassRef.current = new OutlinePass(new THREE.Vector2(initialWidth, initialHeight), sceneRef.current, cameraRef.current);
-    outlinePassRef.current.edgeStrength = 0; 
-    outlinePassRef.current.edgeGlow = 0;
-    outlinePassRef.current.edgeThickness = 0;
-    outlinePassRef.current.visibleEdgeColor.set(0x000000); 
+    outlinePassRef.current.edgeStrength = 3;
+    outlinePassRef.current.edgeGlow = 0.5;
+    outlinePassRef.current.edgeThickness = 1;
+    outlinePassRef.current.visibleEdgeColor.set(0x0000ff); // Default to blue
     composerRef.current.addPass(outlinePassRef.current);
 
     // console.log(`[ThreeScene] Attempting initial resize. Mount dimensions BEFORE first handleResize: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
     handleResize(); 
 
-    // Lights
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
     sceneRef.current.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0); 
@@ -317,7 +320,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
          currentMount.removeChild(rendererRef.current.domElement);
       }
       rendererRef.current?.dispose();
-      composerRef.current?.dispose();
+      if (composerRef.current) {
+        composerRef.current.dispose();
+      }
+
 
       if (labelRendererRef.current?.domElement?.parentNode === currentMount) {
         currentMount.removeChild(labelRendererRef.current.domElement);
@@ -374,18 +380,17 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     if (intersects.length > 0) {
       let selectedObject = intersects[0].object;
-      // Traverse up to find the parent mesh with userData.id if clicking a child part of a group
       while (selectedObject.parent && !selectedObject.userData.id) {
-        if (selectedObject.parent instanceof THREE.Scene) break; // Stop if we reach the scene itself
+        if (selectedObject.parent instanceof THREE.Scene) break; 
         selectedObject = selectedObject.parent;
       }
       if (selectedObject.userData.id) {
         onSelectEquipmentRef.current(selectedObject.userData.id, isMultiSelectModifierPressed);
       } else {
-        onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); // Clicked on something, but not an identifiable equipment
+        onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); 
       }
     } else {
-      onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); // Clicked on empty space
+      onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); 
     }
   };
 
@@ -466,7 +471,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       outlinePassRef.current.edgeThickness = 0;
     }
     outlinePassRef.current.selectedObjects = objectsToOutline;
-  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); // Re-run if equipment list changes
+  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]);
 
   useEffect(() => {
     if (!sceneRef.current || !labelRendererRef.current) return;
@@ -530,15 +535,15 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
       const positionChanged = !camera.position.equals(targetPosition);
       const lookAtChanged = !controls.target.equals(targetLookAt);
-      // console.log(`[ThreeScene] Applying programmatic camera change. Pos changed: ${positionChanged} LookAt changed: ${lookAtChanged}`);
-
+      
       if (positionChanged || lookAtChanged) {
+        // console.log(`[ThreeScene] Applying programmatic camera change. Pos changed: ${positionChanged} LookAt changed: ${lookAtChanged}`);
         const oldControlsEnabled = controls.enabled;
-        controls.enabled = false; // Disable controls during programmatic move
+        controls.enabled = false; 
         if (positionChanged) camera.position.copy(targetPosition);
         if (lookAtChanged) controls.target.copy(targetLookAt);
         controls.update();
-        controls.enabled = oldControlsEnabled; // Re-enable controls
+        controls.enabled = oldControlsEnabled; 
       }
     }
   }, [programmaticCameraState]);
