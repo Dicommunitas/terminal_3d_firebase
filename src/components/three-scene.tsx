@@ -13,8 +13,8 @@ interface ThreeSceneProps {
   onSelectEquipment: (equipmentId: string | null) => void;
   cameraState?: CameraState; 
   onCameraChange?: (cameraState: CameraState) => void; 
-  initialCameraPosition: { x: number; y: number; z: number }; // Made mandatory
-  initialCameraLookAt: { x: number; y: number; z: number }; // Made mandatory
+  initialCameraPosition: { x: number; y: number; z: number };
+  initialCameraLookAt: { x: number; y: number; z: number };
 }
 
 const ThreeScene: React.FC<ThreeSceneProps> = ({
@@ -36,6 +36,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
 
+  // Refs for callbacks to avoid re-running main useEffect
   const onSelectEquipmentRef = useRef(onSelectEquipment);
   const onCameraChangeRef = useRef(onCameraChange);
 
@@ -74,7 +75,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         mesh = new THREE.Mesh(geometry, material);
         break;
       default: 
-        geometry = new THREE.SphereGeometry(1, 16, 16); // Default fallback
+        geometry = new THREE.SphereGeometry(1, 16, 16); 
         mesh = new THREE.Mesh(geometry, material);
     }
     
@@ -92,11 +93,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
   // Main scene setup - runs ONCE on mount
   useEffect(() => {
-    if (!mountRef.current) return; 
-    // Prevent re-initialization if already set up
-    if (rendererRef.current) return;
-
-
+    if (!mountRef.current || rendererRef.current) {
+        // If mount point doesn't exist or renderer is already initialized, bail out
+        return;
+    }
     const currentMount = mountRef.current;
 
     sceneRef.current = new THREE.Scene();
@@ -134,18 +134,22 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x37474F, side: THREE.DoubleSide, metalness: 0.1, roughness: 0.8 });
     const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMesh.rotation.x = -Math.PI / 2;
-    groundMesh.position.y = 0;
+    groundMesh.position.y = 0; // Ground plane at y=0
     groundMesh.receiveShadow = true;
     sceneRef.current.add(groundMesh);
     
     const handleResize = () => {
       if (mountRef.current && cameraRef.current && rendererRef.current) {
-        cameraRef.current.aspect = mountRef.current.clientWidth / mountRef.current.clientHeight;
+        const width = Math.max(1, mountRef.current.clientWidth); // Safeguard
+        const height = Math.max(1, mountRef.current.clientHeight); // Safeguard
+
+        cameraRef.current.aspect = width / height;
         cameraRef.current.updateProjectionMatrix();
-        rendererRef.current.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
+        rendererRef.current.setSize(width, height);
       }
     };
     window.addEventListener('resize', handleResize);
+    handleResize(); // Call once initially to set size
 
     let animationFrameId: number;
     const animate = () => {
@@ -235,9 +239,14 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       equipmentMeshesRef.current = [];
 
       if (sceneRef.current) {
-        sceneRef.current.remove(ambientLight, directionalLight, groundMesh); 
-        groundMesh.geometry.dispose();
-        if (groundMesh.material instanceof THREE.Material) groundMesh.material.dispose();
+        if (ambientLight) sceneRef.current.remove(ambientLight);
+        if (directionalLight) sceneRef.current.remove(directionalLight);
+        if (groundMesh) {
+            sceneRef.current.remove(groundMesh);
+            groundMesh.geometry.dispose();
+            if (groundMesh.material instanceof THREE.Material) groundMesh.material.dispose();
+            else if (Array.isArray(groundMesh.material)) groundMesh.material.forEach(m => m.dispose());
+        }
       }
       
       rendererRef.current?.dispose();
@@ -247,10 +256,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       rendererRef.current = null;
       controlsRef.current = null;
     };
-  // IMPORTANT: Empty dependency array ensures this effect runs only ONCE on mount and cleanup on unmount.
-  // initialCameraPosition and initialCameraLookAt are used for the *first* setup.
-  // Subsequent changes to cameraState prop are handled by another useEffect.
-  }, []); 
+  }, []); // Empty dependency array: runs once on mount, cleans up on unmount
 
   // Update equipment meshes when equipment or layers change
   useEffect(() => {
@@ -323,19 +329,21 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const camera = cameraRef.current;
       const controls = controlsRef.current;
       
-      // Check if the new state is significantly different to avoid unnecessary updates
-      const positionChanged = !camera.position.equals(programmaticCameraState.position);
-      const lookAtChanged = programmaticCameraState.lookAt && !controls.target.equals(programmaticCameraState.lookAt);
+      const targetPosition = new THREE.Vector3(programmaticCameraState.position.x, programmaticCameraState.position.y, programmaticCameraState.position.z);
+      const targetLookAt = programmaticCameraState.lookAt ? new THREE.Vector3(programmaticCameraState.lookAt.x, programmaticCameraState.lookAt.y, programmaticCameraState.lookAt.z) : controls.target.clone();
+
+      const positionChanged = !camera.position.equals(targetPosition);
+      const lookAtChanged = !controls.target.equals(targetLookAt);
 
       if (positionChanged || lookAtChanged) {
         const oldControlsEnabled = controls.enabled;
         controls.enabled = false; 
 
         if (positionChanged) {
-            camera.position.copy(programmaticCameraState.position);
+            camera.position.copy(targetPosition);
         }
-        if (lookAtChanged && programmaticCameraState.lookAt) {
-            controls.target.copy(programmaticCameraState.lookAt);
+        if (lookAtChanged) {
+            controls.target.copy(targetLookAt);
         }
         
         controls.update(); 
@@ -349,5 +357,3 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
-
-    
