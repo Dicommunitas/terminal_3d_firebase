@@ -6,7 +6,6 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import type { Equipment, Layer, CameraState, Annotation } from '@/lib/types';
-import { StickyNote } from 'lucide-react'; // Using StickyNote for pin icon
 
 interface ThreeSceneProps {
   equipment: Equipment[];
@@ -21,7 +20,7 @@ interface ThreeSceneProps {
 }
 
 const ThreeScene: React.FC<ThreeSceneProps> = ({
-  equipment: filteredEquipmentData, // Renamed to avoid confusion with internal equipment list
+  equipment: filteredEquipmentData,
   layers,
   annotations,
   selectedEquipmentIds,
@@ -35,10 +34,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const labelRendererRef = useRef<CSS2DRenderer | null>(null); // For annotation pins
+  const labelRendererRef = useRef<CSS2DRenderer | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
   const equipmentMeshesRef = useRef<THREE.Object3D[]>([]);
-  const annotationPinObjectsRef = useRef<CSS2DObject[]>([]); // For pins
+  const annotationPinObjectsRef = useRef<CSS2DObject[]>([]);
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
   const groundMeshRef = useRef<THREE.Mesh | null>(null);
@@ -88,7 +87,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         mesh = new THREE.Mesh(geometry, material);
         break;
       default:
-        geometry = new THREE.SphereGeometry(1, 16, 16); 
+        geometry = new THREE.SphereGeometry(1, 16, 16);
         mesh = new THREE.Mesh(geometry, material);
     }
 
@@ -108,7 +107,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (mountRef.current && cameraRef.current && rendererRef.current && labelRendererRef.current) {
       const width = Math.max(1, mountRef.current.clientWidth);
       const height = Math.max(1, mountRef.current.clientHeight);
-      
+
       if (cameraRef.current.aspect !== width / height && height > 0 && width > 0) {
         cameraRef.current.aspect = width / height;
         cameraRef.current.updateProjectionMatrix();
@@ -148,13 +147,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (hoveredEquipmentIdRef.current !== foundHoverId) {
       setHoveredEquipmentId(foundHoverId);
     }
-  }, []); 
+  }, []);
 
 
   useEffect(() => {
-    if (!mountRef.current || rendererRef.current) {
-      return;
-    }
+    if (!mountRef.current) return;
     const currentMount = mountRef.current;
 
     sceneRef.current = new THREE.Scene();
@@ -170,10 +167,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     labelRendererRef.current = new CSS2DRenderer();
     labelRendererRef.current.domElement.style.position = 'absolute';
     labelRendererRef.current.domElement.style.top = '0px';
-    labelRendererRef.current.domElement.style.pointerEvents = 'none'; 
+    labelRendererRef.current.domElement.style.pointerEvents = 'none';
     currentMount.appendChild(labelRendererRef.current.domElement);
     
-    handleResize();
+    handleResize(); // Call resize after appending renderer
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     sceneRef.current.add(ambientLight);
@@ -197,7 +194,9 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     groundMeshRef.current.receiveShadow = true;
     
     const resizeObserver = new ResizeObserver(handleResize);
-    resizeObserver.observe(currentMount);
+    if (currentMount) {
+        resizeObserver.observe(currentMount);
+    }
     
     const initialResizeTimeoutId = setTimeout(() => {
         handleResize();
@@ -206,7 +205,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     window.addEventListener('resize', handleResize);
     currentMount.addEventListener('click', handleClick);
-    currentMount.addEventListener('mousemove', handleMouseMove); 
+    currentMount.addEventListener('mousemove', handleMouseMove);
 
     let animationFrameId: number;
     const animate = () => {
@@ -236,11 +235,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
       clearTimeout(initialResizeTimeoutId);
-      resizeObserver.disconnect();
+      if (currentMount) {
+        resizeObserver.unobserve(currentMount);
+      }
       window.removeEventListener('resize', handleResize);
       if (currentMount) {
         currentMount.removeEventListener('click', handleClick);
-        currentMount.removeEventListener('mousemove', handleMouseMove); 
+        currentMount.removeEventListener('mousemove', handleMouseMove);
         if (rendererRef.current?.domElement?.parentNode === currentMount) {
           currentMount.removeChild(rendererRef.current.domElement);
         }
@@ -283,7 +284,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       controlsRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, [initialCameraPosition, initialCameraLookAt]);
 
   const handleClick = (event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current) return;
@@ -370,15 +371,21 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
             const equipmentForItem = filteredEquipmentData.find(e => e.id === anno.equipmentId);
             if (equipmentForItem) {
                 const pinDiv = document.createElement('div');
-                // Using a simple circle as a pin for now, can be replaced with an SVG or icon component later
                 pinDiv.innerHTML = `
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-blue-400 opacity-80">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="#FFD700" style="opacity: 0.9;">
                     <path d="M12 2C7.03 2 3 6.03 3 11c0 2.05.64 3.98 1.75 5.61L12 22l7.25-5.39C20.36 14.98 21 13.05 21 11c0-4.97-4.03-9-9-9zm0 2.5c1.93 0 3.5 1.57 3.5 3.5S13.93 11.5 12 11.5 8.5 9.93 8.5 8 10.07 4.5 12 4.5z"/>
                   </svg>`;
-                pinDiv.style.pointerEvents = 'none'; // So it doesn't interfere with equipment selection
+                pinDiv.style.pointerEvents = 'none';
 
                 const pinLabel = new CSS2DObject(pinDiv);
-                const yOffset = (equipmentForItem.size?.height || equipmentForItem.height || 0) / 2 + 0.5;
+                let yOffset = 0;
+                if (equipmentForItem.type === 'Tank' || equipmentForItem.type === 'Pipe') {
+                    yOffset = (equipmentForItem.height || 0) / 2 + 0.5;
+                } else if (equipmentForItem.size?.height) {
+                    yOffset = equipmentForItem.size.height / 2 + 0.5;
+                } else {
+                    yOffset = 1; // Default offset if no height/size info
+                }
                 pinLabel.position.set(equipmentForItem.position.x, equipmentForItem.position.y + yOffset, equipmentForItem.position.z);
                 
                 sceneRef.current?.add(pinLabel);
@@ -391,7 +398,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
   useEffect(() => {
     equipmentMeshesRef.current.forEach(obj => {
-      const objectId = obj.userData.id; 
+      const objectId = obj.userData.id;
 
       const applyEmissiveToMaterial = (material: THREE.Material | THREE.Material[], colorHex: number) => {
         const apply = (mat: THREE.Material) => {
@@ -421,11 +428,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (!objectId) return;
 
       if (selectedEquipmentIds.includes(objectId)) {
-        setEmissiveForObject(obj, 0xBE29FF); 
+        setEmissiveForObject(obj, 0xBE29FF);
       } else if (objectId === hoveredEquipmentId) {
-        setEmissiveForObject(obj, 0xFFD700); 
+        setEmissiveForObject(obj, 0xFFD700);
       } else {
-        setEmissiveForObject(obj, 0x000000); 
+        setEmissiveForObject(obj, 0x000000);
       }
     });
   }, [selectedEquipmentIds, hoveredEquipmentId]);
@@ -456,3 +463,4 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
+
