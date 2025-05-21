@@ -13,7 +13,8 @@ interface ThreeSceneProps {
   onSelectEquipment: (equipmentId: string | null) => void;
   cameraState?: CameraState; 
   onCameraChange?: (cameraState: CameraState) => void; 
-  initialCameraPosition?: { x: number; y: number; z: number };
+  initialCameraPosition: { x: number; y: number; z: number }; // Made mandatory
+  initialCameraLookAt: { x: number; y: number; z: number }; // Made mandatory
 }
 
 const ThreeScene: React.FC<ThreeSceneProps> = ({
@@ -23,7 +24,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   onSelectEquipment,
   cameraState: programmaticCameraState,
   onCameraChange,
-  initialCameraPosition = { x: 15, y: 15, z: 15 },
+  initialCameraPosition,
+  initialCameraLookAt,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -64,7 +66,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         mesh = new THREE.Mesh(geometry, material);
         break;
       case 'Pipe':
-        // For pipes, height is effectively length
         geometry = new THREE.CylinderGeometry(item.radius || 0.2, item.radius || 0.2, item.height || 5, 16);
         mesh = new THREE.Mesh(geometry, material);
         break;
@@ -73,11 +74,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         mesh = new THREE.Mesh(geometry, material);
         break;
       default: 
-        geometry = new THREE.SphereGeometry(item.radius || 1, 16, 16);
+        geometry = new THREE.SphereGeometry(1, 16, 16); // Default fallback
         mesh = new THREE.Mesh(geometry, material);
     }
     
-    // item.position is now considered the geometric center of the object
     mesh.position.set(item.position.x, item.position.y, item.position.z);
     
     if (item.rotation) {
@@ -90,8 +90,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     return mesh;
   }, []);
 
+  // Main scene setup - runs ONCE on mount
   useEffect(() => {
-    if (!mountRef.current || rendererRef.current) return; 
+    if (!mountRef.current) return; 
+    // Prevent re-initialization if already set up
+    if (rendererRef.current) return;
+
 
     const currentMount = mountRef.current;
 
@@ -123,16 +127,14 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     controlsRef.current = new OrbitControls(cameraRef.current, rendererRef.current.domElement);
     controlsRef.current.enableDamping = true;
-    // Initialize target from cameraPresets if available, or default
-    const initialLookAt = programmaticCameraState?.lookAt || { x: 0, y: 2, z: 0 };
-    controlsRef.current.target.set(initialLookAt.x, initialLookAt.y, initialLookAt.z);
+    controlsRef.current.target.set(initialCameraLookAt.x, initialCameraLookAt.y, initialCameraLookAt.z);
     controlsRef.current.update();
 
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x37474F, side: THREE.DoubleSide, metalness: 0.1, roughness: 0.8 });
     const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMesh.rotation.x = -Math.PI / 2;
-    groundMesh.position.y = 0; // Ensure ground is at y=0
+    groundMesh.position.y = 0;
     groundMesh.receiveShadow = true;
     sceneRef.current.add(groundMesh);
     
@@ -191,16 +193,15 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         });
       }
     };
-    if (controlsRef.current) { // Check if onCameraChangeRef.current exists if it's optional
+    if (controlsRef.current && onCameraChangeRef.current) { 
       controlsRef.current.addEventListener('end', handleControlsChangeEnd);
     }
 
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('resize', handleResize);
-      if (currentMount && rendererRef.current) {
+      if (currentMount && rendererRef.current?.domElement) {
         currentMount.removeEventListener('click', handleClick);
-        // Check if domElement is still a child before removing
         if (rendererRef.current.domElement.parentNode === currentMount) {
            currentMount.removeChild(rendererRef.current.domElement);
         }
@@ -236,25 +237,25 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (sceneRef.current) {
         sceneRef.current.remove(ambientLight, directionalLight, groundMesh); 
         groundMesh.geometry.dispose();
-        (groundMesh.material as THREE.Material).dispose();
+        if (groundMesh.material instanceof THREE.Material) groundMesh.material.dispose();
       }
       
-      if (rendererRef.current) rendererRef.current.dispose();
+      rendererRef.current?.dispose();
       
-      // Nullify refs to allow for re-initialization if component remounts
       sceneRef.current = null;
       cameraRef.current = null;
       rendererRef.current = null;
       controlsRef.current = null;
     };
-  // Main setup effect should run once, or if initialCameraPosition changes.
-  // Callbacks are handled by refs.
-  }, [initialCameraPosition, programmaticCameraState]); 
+  // IMPORTANT: Empty dependency array ensures this effect runs only ONCE on mount and cleanup on unmount.
+  // initialCameraPosition and initialCameraLookAt are used for the *first* setup.
+  // Subsequent changes to cameraState prop are handled by another useEffect.
+  }, []); 
 
+  // Update equipment meshes when equipment or layers change
   useEffect(() => {
     if (!sceneRef.current) return;
 
-    // Clear existing meshes
     equipmentMeshesRef.current.forEach(obj => {
         sceneRef.current?.remove(obj); 
         if (obj instanceof THREE.Mesh) {
@@ -264,7 +265,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
             } else if (obj.material) { 
                 (obj.material as THREE.Material).dispose();
             }
-        } else if (obj instanceof THREE.Group) { // Handle groups if any complex objects are groups
+        } else if (obj instanceof THREE.Group) {
             obj.traverse(child => {
                 if (child instanceof THREE.Mesh) {
                     child.geometry.dispose();
@@ -290,6 +291,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     });
   }, [equipment, layers, createEquipmentMesh]);
 
+  // Highlight selected equipment
   useEffect(() => {
     equipmentMeshesRef.current.forEach(obj => {
       const applyEmissive = (mesh: THREE.Mesh, apply: boolean) => {
@@ -305,7 +307,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
       if (obj instanceof THREE.Mesh) {
         applyEmissive(obj, isSelected);
-      } else if (obj instanceof THREE.Group) { // Handle groups
+      } else if (obj instanceof THREE.Group) {
         obj.traverse(child => { 
           if (child instanceof THREE.Mesh) {
             applyEmissive(child, isSelected);
@@ -315,21 +317,30 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     });
   }, [selectedEquipmentId]);
 
+  // Handle programmatic camera state changes (e.g., presets)
   useEffect(() => {
     if (programmaticCameraState && cameraRef.current && controlsRef.current) {
       const camera = cameraRef.current;
       const controls = controlsRef.current;
       
-      const oldControlsEnabled = controls.enabled;
-      controls.enabled = false; // Disable controls during programmatic update
+      // Check if the new state is significantly different to avoid unnecessary updates
+      const positionChanged = !camera.position.equals(programmaticCameraState.position);
+      const lookAtChanged = programmaticCameraState.lookAt && !controls.target.equals(programmaticCameraState.lookAt);
 
-      camera.position.copy(programmaticCameraState.position);
-      if (programmaticCameraState.lookAt) { // Ensure lookAt is defined
-          controls.target.copy(programmaticCameraState.lookAt);
+      if (positionChanged || lookAtChanged) {
+        const oldControlsEnabled = controls.enabled;
+        controls.enabled = false; 
+
+        if (positionChanged) {
+            camera.position.copy(programmaticCameraState.position);
+        }
+        if (lookAtChanged && programmaticCameraState.lookAt) {
+            controls.target.copy(programmaticCameraState.lookAt);
+        }
+        
+        controls.update(); 
+        controls.enabled = oldControlsEnabled;
       }
-      
-      controls.update(); 
-      controls.enabled = oldControlsEnabled; // Restore controls state
     }
   }, [programmaticCameraState]);
 
@@ -338,3 +349,5 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
+
+    

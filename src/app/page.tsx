@@ -33,14 +33,14 @@ const initialEquipment: Equipment[] = [
   { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
 
   // Pipes (position.y is centerline)
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: Math.PI / 2, y: 0, z: 0 } }, // Horizontal along Z
-  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: 0, y: 0, z: Math.PI / 2 } }, // Horizontal along X
-  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' }, // Vertical (base at y=0)
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } }, // Horizontal along X, adjust z to be center
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } }, // Horizontal along Z, adjust x to be center
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' }, // Vertical (base at y=0, so center is height/2)
 
   // Valves (position.y is geometric center)
-  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' }, // Assuming this y is its center
-  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' }, // Assuming this y is its center
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', position: { x: 8, y: 3.5, z: 8 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' }, // Assuming this y is its center
+  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', position: { x: 8, y: 3.5, z: 8 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 const initialLayers: Layer[] = [
@@ -63,7 +63,6 @@ export default function Terminal3DPage() {
   const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
   const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null);
-  // Initialize with the first preset for both position and lookAt
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
   const { toast } = useToast();
 
@@ -72,10 +71,10 @@ export default function Terminal3DPage() {
   const handleSelectEquipment = useCallback((equipmentId: string | null) => {
     setSelectedEquipmentId(equipmentId);
      if (equipmentId) {
-      const item = initialEquipment.find(e => e.id === equipmentId); // Use initialEquipment for toast to avoid stale closure if equipment state updates
+      const item = equipment.find(e => e.id === equipmentId);
       toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected.` });
     }
-  }, [toast]);
+  }, [toast, equipment]);
 
   const handleToggleLayer = useCallback((layerId: string) => {
     const layerIndex = layers.findIndex(l => l.id === layerId);
@@ -87,7 +86,7 @@ export default function Terminal3DPage() {
     const command: Command = {
       id: `toggle-layer-${layerId}-${Date.now()}`,
       type: 'LAYER_VISIBILITY',
-      description: `Toggle layer ${layers[layerIndex].name}`,
+      description: `Toggle layer ${oldLayers[layerIndex].name}`,
       execute: () => setLayers(newLayers),
       undo: () => setLayers(oldLayers),
     };
@@ -109,8 +108,6 @@ export default function Terminal3DPage() {
   }, [currentCameraState, executeCommand]);
   
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
-    // Only execute command if the new state is meaningfully different
-    // This basic check prevents rapid fire commands from minor orbit adjustments
     if (currentCameraState &&
         Math.abs(currentCameraState.position.x - newSceneCameraState.position.x) < 0.01 &&
         Math.abs(currentCameraState.position.y - newSceneCameraState.position.y) < 0.01 &&
@@ -182,7 +179,8 @@ export default function Terminal3DPage() {
               onSelectEquipment={handleSelectEquipment}
               cameraState={currentCameraState}
               onCameraChange={handleCameraChangeFromScene}
-              initialCameraPosition={cameraPresets[0].position} 
+              initialCameraPosition={cameraPresets[0].position}
+              initialCameraLookAt={cameraPresets[0].lookAt} 
             />
             <InfoPanel equipment={selectedEquipmentDetails} onClose={() => handleSelectEquipment(null)} />
           </SidebarInset>
@@ -191,3 +189,5 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+
+    
