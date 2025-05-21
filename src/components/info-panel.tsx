@@ -1,9 +1,10 @@
+
 "use client";
 
 import type { Equipment } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XIcon, InfoIcon } from 'lucide-react';
+import { XIcon, InfoIcon, TagIcon, LocateIcon } from 'lucide-react';
 
 interface InfoPanelProps {
   equipment: Equipment | null;
@@ -24,18 +25,32 @@ export function InfoPanel({ equipment, onClose }: InfoPanelProps) {
           <XIcon className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent>
-        <h3 className="text-md font-semibold mb-1">{equipment.name}</h3>
-        <CardDescription className="text-xs mb-2">Type: {equipment.type}</CardDescription>
-        <p className="text-sm mb-1">ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span></p>
-        <p className="text-sm mb-1">
+      <CardContent className="space-y-1">
+        <h3 className="text-md font-semibold">{equipment.name}</h3>
+        <p className="text-sm">
+          ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span>
+        </p>
+        <p className="text-sm">Type: {equipment.type}</p>
+        {equipment.category && (
+          <p className="text-sm flex items-center">
+            <TagIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+            Category: {equipment.category}
+          </p>
+        )}
+        {equipment.area && (
+          <p className="text-sm flex items-center">
+            <LocateIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+            Area: {equipment.area}
+          </p>
+        )}
+        <p className="text-sm">
           Position: (
             {equipment.position.x.toFixed(1)}, 
             {equipment.position.y.toFixed(1)}, 
             {equipment.position.z.toFixed(1)}
           )
         </p>
-        <p className="text-sm italic">{equipment.details}</p>
+        {equipment.details && <p className="text-sm italic pt-1">{equipment.details}</p>}
       </CardContent>
     </Card>
   );
