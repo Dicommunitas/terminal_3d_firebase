@@ -40,7 +40,7 @@ const initialEquipment: Equipment[] = [
   // Valves (position.y is geometric center)
   { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
   { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', position: { x: 8, y: 3.5, z: 8 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve, adjusted y to ground.' },
 ];
 
 const initialLayers: Layer[] = [
@@ -136,9 +136,9 @@ export default function Terminal3DPage() {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full flex-col bg-background">
+      <div className="flex h-screen w-full flex-col bg-background w-full">
         <SiteHeader />
-        <div className="flex flex-1 w-full overflow-hidden">
+        <div className="flex flex-1 w-full overflow-hidden w-full">
           <Sidebar collapsible="icon" className="border-r">
              <div className="flex h-full flex-col">
                 <SidebarHeader className="p-4 flex justify-between items-center">
@@ -158,12 +158,12 @@ export default function Terminal3DPage() {
                 </SidebarContent>
                  <Separator />
                 <SidebarFooter className="p-4">
-                   <p className="text-xs text-muted-foreground">&copy; 2024 Terminal 3D</p>
+                   <p className="text-xs text-muted-foreground">2025 Terminal 3D</p>
                 </SidebarFooter>
              </div>
           </Sidebar>
           
-          <SidebarInset className="flex-1 relative w-full bg-muted/20 min-w-0">
+          <SidebarInset className="flex-1 relative w-full bg-muted/20 min-w-0 w-full">
             <div className="absolute top-2 left-2 z-10 md:hidden">
                  <SidebarTrigger asChild>
                     <Button variant="ghost" size="icon">
