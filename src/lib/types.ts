@@ -3,7 +3,7 @@ export interface Equipment {
   id: string;
   name: string;
   type: 'Building' | 'Crane' | 'Tank' | 'Terrain' | 'Pipe' | 'Valve';
-  sistema?: string; // Renamed from category
+  sistema?: string;
   area?: string;
   operationalState?: string;
   position: { x: number; y: number; z: number };
@@ -18,7 +18,7 @@ export interface Equipment {
 export interface Layer {
   id: string;
   name: string;
-  equipmentType: Equipment['type'] | 'All';
+  equipmentType: Equipment['type'] | 'All' | 'Annotations'; // Added 'Annotations'
   isVisible: boolean;
 }
 
@@ -39,4 +39,11 @@ export interface PresetCameraView {
   name: string;
   position: { x: number; y: number; z: number };
   lookAt: { x: number; y: number; z: number };
+}
+
+export interface Annotation {
+  id: string;
+  text: string;
+  equipmentId: string; // ID of the equipment this annotation is attached to
+  position: { x: number; y: number; z: number }; // World position for the annotation
 }

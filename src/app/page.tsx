@@ -2,12 +2,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Equipment, Layer, Command, CameraState, PresetCameraView } from '@/lib/types';
+import type { Equipment, Layer, Command, CameraState, PresetCameraView, Annotation } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
+import { AnnotationDialog } from '@/components/annotation-dialog';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,33 +17,33 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
   // Buildings
-  { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'operando', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
-  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'operando', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
-  { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'NDD', area: 'Área 32', operationalState: 'operando', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
+  { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'operando', category: "Administrative", position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
+  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'operando', category: "Storage", position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
+  { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'NDD', area: 'Área 32', operationalState: 'manutenção', category: "Operational", position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
 
   // Cranes
-  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'MTBE', area: 'Área 40', operationalState: 'operando', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane over loading area.' },
-  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'QAV', area: 'Área 50', operationalState: 'manutenção', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'MTBE', area: 'Área 40', operationalState: 'operando', category: "Lifting", position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
+  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'QAV', area: 'Área 50', operationalState: 'em falha', category: "Lifting", position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
   
   // Tanks
-  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
-  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
-  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'em falha', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', category: "Storage", position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
+  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', category: "Storage", position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
+  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', category: "Processing", position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
 
   // Pipes
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'LASTRO', area: 'Área 35', operationalState: 'operando', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
-  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'operando', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
-  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'GA', area: 'Área 60', operationalState: 'operando', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'LASTRO', area: 'Área 35', operationalState: 'operando', category: "Transfer", position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'operando', category: "Transfer", position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'GA', area: 'Área 60', operationalState: 'não operando', category: "Transfer", position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
 
   // Valves
-  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
+  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', category: "Control", position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', category: "Control", position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', category: "Safety", position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 
@@ -53,6 +54,7 @@ const initialLayers: Layer[] = [
   { id: 'layer-tanks', name: 'Tanks', equipmentType: 'Tank', isVisible: true },
   { id: 'layer-pipes', name: 'Pipes', equipmentType: 'Pipe', isVisible: true },
   { id: 'layer-valves', name: 'Valves', equipmentType: 'Valve', isVisible: true },
+  { id: 'layer-annotations', name: 'Annotations', equipmentType: 'Annotations', isVisible: true },
 ];
 
 const cameraPresets: PresetCameraView[] = [
@@ -73,8 +75,12 @@ export default function Terminal3DPage() {
   const [selectedArea, setSelectedArea] = useState<string>('All');
   const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All');
 
-  const { toast } = useToast();
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [isAddAnnotationDialogOpen, setIsAddAnnotationDialogOpen] = useState(false);
+  const [annotationTargetEquipment, setAnnotationTargetEquipment] = useState<Equipment | null>(null);
 
+
+  const { toast } = useToast();
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
   const availableSistemas = useMemo(() => {
@@ -110,22 +116,16 @@ export default function Terminal3DPage() {
   const filteredEquipment = useMemo(() => {
     let itemsToFilter = equipmentData;
 
-    // Filter by sistema
     if (selectedSistema !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.sistema === selectedSistema);
     }
-
-    // Filter by area
     if (selectedArea !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.area === selectedArea);
     }
-
-    // Filter by operational state
     if (selectedOperationalState !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
     }
     
-    // Filter by search term (name, type, id)
     if (searchTerm.trim()) {
       const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
       itemsToFilter = itemsToFilter.filter(equip => {
@@ -135,7 +135,6 @@ export default function Terminal3DPage() {
         const sistema = equip.sistema?.toLowerCase() || ''; 
         const area = equip.area?.toLowerCase() || '';
         const operationalState = equip.operationalState?.toLowerCase() || '';
-
 
         return searchTerms.every(term => 
           name.includes(term) || 
@@ -266,10 +265,34 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentIds, equipmentData]);
 
+  const handleOpenAddAnnotationDialog = useCallback(() => {
+    if (selectedEquipmentDetails) {
+      setAnnotationTargetEquipment(selectedEquipmentDetails);
+      setIsAddAnnotationDialogOpen(true);
+    } else {
+      toast({ title: "No Equipment Selected", description: "Please select an equipment to add an annotation.", variant: "destructive" });
+    }
+  }, [selectedEquipmentDetails, toast]);
+
+  const handleAddAnnotationConfirm = useCallback((text: string) => {
+    if (!annotationTargetEquipment) return;
+
+    const newAnnotation: Annotation = {
+      id: `anno-${Date.now()}`,
+      text,
+      equipmentId: annotationTargetEquipment.id,
+      position: { ...annotationTargetEquipment.position, y: annotationTargetEquipment.position.y + (annotationTargetEquipment.size?.height || annotationTargetEquipment.height || 2) + 0.5 }, // Position above equipment
+    };
+    setAnnotations(prev => [...prev, newAnnotation]);
+    setIsAddAnnotationDialogOpen(false);
+    setAnnotationTargetEquipment(null);
+    toast({ title: "Annotation Added", description: `Annotation for ${annotationTargetEquipment.name} added.` });
+  }, [annotationTargetEquipment, toast]);
+
+
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="h-screen w-full relative bg-muted/20">
-        {/* Sidebar Trigger - always visible for offcanvas */}
         <div className="absolute top-4 left-4 z-30">
           <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
             <PanelLeft />
@@ -279,6 +302,7 @@ export default function Terminal3DPage() {
         <ThreeScene
           equipment={filteredEquipment}
           layers={layers}
+          annotations={annotations}
           selectedEquipmentIds={selectedEquipmentIds}
           onSelectEquipment={handleSelectEquipment}
           cameraState={currentCameraState}
@@ -286,7 +310,11 @@ export default function Terminal3DPage() {
           initialCameraPosition={cameraPresets[0].position}
           initialCameraLookAt={cameraPresets[0].lookAt} 
         />
-        <InfoPanel equipment={selectedEquipmentDetails} onClose={() => handleSelectEquipment(null, false)} />
+        <InfoPanel 
+          equipment={selectedEquipmentDetails} 
+          onClose={() => handleSelectEquipment(null, false)}
+          onOpenAddAnnotationDialog={handleOpenAddAnnotationDialog}
+        />
       </div>
 
       <Sidebar collapsible="offcanvas" className="border-r z-40"> 
@@ -390,7 +418,12 @@ export default function Terminal3DPage() {
           </SidebarFooter>
         </div>
       </Sidebar>
+      <AnnotationDialog
+        isOpen={isAddAnnotationDialogOpen}
+        onOpenChange={setIsAddAnnotationDialogOpen}
+        onConfirm={handleAddAnnotationConfirm}
+        equipmentName={annotationTargetEquipment?.name || ''}
+      />
     </SidebarProvider>
   );
 }
-

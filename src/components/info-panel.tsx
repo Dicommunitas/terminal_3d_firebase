@@ -2,16 +2,17 @@
 "use client";
 
 import type { Equipment } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon } from 'lucide-react';
+import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon, MessageSquarePlusIcon } from 'lucide-react';
 
 interface InfoPanelProps {
   equipment: Equipment | null;
   onClose: () => void;
+  onOpenAddAnnotationDialog: () => void;
 }
 
-export function InfoPanel({ equipment, onClose }: InfoPanelProps) {
+export function InfoPanel({ equipment, onClose, onOpenAddAnnotationDialog }: InfoPanelProps) {
   if (!equipment) return null;
 
   return (
@@ -25,7 +26,7 @@ export function InfoPanel({ equipment, onClose }: InfoPanelProps) {
           <XIcon className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-1">
+      <CardContent className="space-y-1 pb-3">
         <h3 className="text-md font-semibold">{equipment.name}</h3>
         <p className="text-sm">
           ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span>
@@ -33,7 +34,7 @@ export function InfoPanel({ equipment, onClose }: InfoPanelProps) {
         <p className="text-sm">Tipo: {equipment.type}</p>
         {equipment.sistema && (
           <p className="text-sm flex items-center">
-            <Settings2Icon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> {/* Using Settings2Icon for Sistema */}
+            <Settings2Icon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
             Sistema: {equipment.sistema}
           </p>
         )}
@@ -44,10 +45,10 @@ export function InfoPanel({ equipment, onClose }: InfoPanelProps) {
           </p>
         )}
         {equipment.operationalState && (
-          <p className="text-sm flex items-center">
-            <ActivityIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-            Estado Operacional: {equipment.operationalState}
-          </p>
+           <p className="text-sm flex items-center">
+           <ActivityIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+           Estado Operacional: {equipment.operationalState}
+         </p>
         )}
         {equipment.details && (
           <div className="text-sm pt-1">
@@ -59,6 +60,11 @@ export function InfoPanel({ equipment, onClose }: InfoPanelProps) {
           </div>
         )}
       </CardContent>
+      <CardFooter className="p-3 pt-0">
+        <Button onClick={onOpenAddAnnotationDialog} size="sm" className="w-full">
+          <MessageSquarePlusIcon className="mr-2 h-4 w-4" /> Adicionar Anotação
+        </Button>
+      </CardFooter>
     </Card>
   );
 }
