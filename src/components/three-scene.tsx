@@ -9,7 +9,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import type { Equipment, Layer, CameraState, Annotation } from '@/lib/types';
-import type { ColorMode } from '@/app/page';
+import type { ColorMode } from '@/app/page'; // Assuming ColorMode is exported from page.tsx
 
 interface ThreeSceneProps {
   equipment: Equipment[];
@@ -24,6 +24,17 @@ interface ThreeSceneProps {
   hoveredEquipmentId: string | null;
   setHoveredEquipmentId: (id: string | null) => void;
   colorMode: ColorMode;
+}
+
+// Helper function to get numeric value for product color generation
+function getCharNumericValue(char: string): number {
+  const charCode = char.toUpperCase().charCodeAt(0);
+  if (charCode >= '0'.charCodeAt(0) && charCode <= '9'.charCodeAt(0)) {
+    return charCode - '0'.charCodeAt(0); // 0-9
+  } else if (charCode >= 'A'.charCodeAt(0) && charCode <= 'Z'.charCodeAt(0)) {
+    return charCode - 'A'.charCodeAt(0) + 10; // 10-35 for A-Z
+  }
+  return 0; // Default for unexpected characters
 }
 
 const ThreeScene: React.FC<ThreeSceneProps> = ({
@@ -60,7 +71,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const hoveredEquipmentIdRef = useRef(hoveredEquipmentId);
   const setHoveredEquipmentIdRef = useRef(setHoveredEquipmentId);
   const lastProcessedCameraStateRef = useRef<CameraState | null>(null);
-  const lastProcessedEquipmentCountRef = useRef<number>(0);
 
 
   useEffect(() => {
@@ -107,22 +117,27 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     switch (currentGlobalColorMode) {
       case 'Produto':
         if (item.product && item.product !== "Não aplicável" && item.product.length >= 3) {
-          const r = (item.product.charCodeAt(0) % 256) / 255.0;
-          const g = (item.product.charCodeAt(1) % 256) / 255.0;
-          const b = (item.product.charCodeAt(2) % 256) / 255.0;
-          finalColor.setRGB(r, g, b);
+          const val1 = getCharNumericValue(item.product.charAt(0));
+          const val2 = getCharNumericValue(item.product.charAt(1));
+          const val3 = getCharNumericValue(item.product.charAt(2));
+
+          const r_norm = val1 / 35.0; // Normalize 0-35 to 0.0-1.0
+          const g_norm = val2 / 35.0;
+          const b_norm = val3 / 35.0;
+          
+          finalColor.setRGB(r_norm, g_norm, b_norm);
         } else {
           finalColor.set(item.color); 
         }
         break;
       case 'Estado Operacional':
         switch (item.operationalState) {
-          case 'operando': stateColor.setHex(0xFF0000); break; 
-          case 'não operando': stateColor.setHex(0x00FF00); break; 
-          case 'manutenção': stateColor.setHex(0xFFFF00); break; 
-          case 'em falha': stateColor.setHex(0xDA70D6); break; // Orchid - Lighter, pinkish purple
-          case 'Não aplicável': 
-          default: stateColor.set(item.color); break; // Use base color if not applicable or undefined
+          case 'operando': stateColor.setHex(0xFF0000); break; // Red
+          case 'não operando': stateColor.setHex(0x00FF00); break; // Green
+          case 'manutenção': stateColor.setHex(0xFFFF00); break; // Yellow
+          case 'em falha': stateColor.setHex(0xDA70D6); break; // Orchid (Light Purple/Pink)
+          case 'Não aplicável':
+          default: stateColor.set(item.color); break;
         }
         finalColor.copy(stateColor);
         break;
@@ -238,19 +253,19 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0xE6D8B0, 
+      color: 0xE6D8B0, // Sand color
       side: THREE.DoubleSide, 
       metalness: 0.1, 
       roughness: 0.8,
       transparent: true,
-      opacity: 0.4 
+      opacity: 0.4 // Increased transparency
     }); 
     groundMeshRef.current = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMeshRef.current.rotation.x = -Math.PI / 2;
     groundMeshRef.current.position.y = 0;
     groundMeshRef.current.receiveShadow = false;
     
-    handleResize(); // Call once after setup
+    handleResize(); 
 
     const delayedResizeTimeoutId = setTimeout(() => {
         handleResize();
@@ -282,7 +297,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
           lookAt: controlsRef.current.target.clone(),
         };
 
-        // Avoid redundant updates if camera hasn't significantly changed
         if (lastProcessedCameraStateRef.current) {
           const oldPos = lastProcessedCameraStateRef.current.position;
           const newPos = newCameraState.position;
@@ -357,8 +371,15 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
       rendererRef.current?.dispose();
       if (composerRef.current) {
-        composerRef.current.dispose();
+        // composerRef.current.dispose(); // EffectComposer doesn't have a dispose method directly
+        // Instead, dispose individual passes and clear the composer
+        composerRef.current.passes.forEach(pass => {
+          if (pass.dispose) pass.dispose();
+        });
+        composerRef.current.renderer.dispose(); // Dispose the renderer via composer
+        composerRef.current.passes = [];
       }
+
 
       if (labelRendererRef.current?.domElement?.parentNode === currentMount) {
         currentMount.removeChild(labelRendererRef.current.domElement);
@@ -433,9 +454,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     
     const currentEquipmentIds = new Set(filteredEquipmentData.map(e => e.id));
     const existingMeshIds = new Set(equipmentMeshesRef.current.map(mesh => mesh.userData.id));
-    let sceneChanged = false;
 
-    // Remove meshes that are no longer in filteredEquipmentData
     equipmentMeshesRef.current = equipmentMeshesRef.current.filter(mesh => {
         if (!currentEquipmentIds.has(mesh.userData.id)) {
             sceneRef.current?.remove(mesh);
@@ -447,56 +466,49 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
                     (mesh.material as THREE.Material).dispose();
                 }
             }
-            sceneChanged = true;
             return false;
         }
         return true;
     });
     
-    // Add new meshes or update existing ones
     filteredEquipmentData.forEach(item => {
         const existingMesh = equipmentMeshesRef.current.find(mesh => mesh.userData.id === item.id);
+        const layer = layers.find(l => l.equipmentType === item.type);
+        const isVisibleByLayer = layer?.isVisible ?? true;
+
         if (existingMesh) {
-            // Potentially update material if colorMode or item.color/operationalState changed
-            const newMaterial = createEquipmentMesh(item, colorMode).material;
-            if (existingMesh instanceof THREE.Mesh && newMaterial instanceof THREE.Material) {
-                 // Simple check if color or opacity changed to avoid unnecessary material recreation
-                const oldMat = existingMesh.material as THREE.MeshStandardMaterial;
-                const newMat = newMaterial as THREE.MeshStandardMaterial;
-                if (!oldMat.color.equals(newMat.color) || oldMat.opacity !== newMat.opacity) {
-                    oldMat.color.copy(newMat.color);
-                    oldMat.opacity = newMat.opacity;
-                    oldMat.transparent = newMat.transparent;
-                    oldMat.needsUpdate = true;
-                    sceneChanged = true;
+            existingMesh.visible = isVisibleByLayer;
+            if (isVisibleByLayer) {
+                const newMaterial = createEquipmentMesh(item, colorMode).material;
+                if (existingMesh instanceof THREE.Mesh && newMaterial instanceof THREE.Material) {
+                    const oldMat = existingMesh.material as THREE.MeshStandardMaterial;
+                    const newMat = newMaterial as THREE.MeshStandardMaterial;
+                    if (!oldMat.color.equals(newMat.color) || oldMat.opacity !== newMat.opacity || oldMat.transparent !== newMat.transparent) {
+                        oldMat.color.copy(newMat.color);
+                        oldMat.opacity = newMat.opacity;
+                        oldMat.transparent = newMat.transparent;
+                        oldMat.needsUpdate = true;
+                    }
                 }
             }
         } else {
-            const obj = createEquipmentMesh(item, colorMode);
-            sceneRef.current?.add(obj);
-            equipmentMeshesRef.current.push(obj);
-            sceneChanged = true;
+            if (isVisibleByLayer) {
+                const obj = createEquipmentMesh(item, colorMode);
+                sceneRef.current?.add(obj);
+                equipmentMeshesRef.current.push(obj);
+            }
         }
     });
 
-
-    // Manage terrain visibility
     const terrainLayer = layers.find(l => l.equipmentType === 'Terrain');
     if (terrainLayer && groundMeshRef.current && sceneRef.current) {
       const isGroundInScene = sceneRef.current.children.includes(groundMeshRef.current);
       if (terrainLayer.isVisible && !isGroundInScene) {
         sceneRef.current.add(groundMeshRef.current);
-        sceneChanged = true;
       } else if (!terrainLayer.isVisible && isGroundInScene) {
         sceneRef.current.remove(groundMeshRef.current);
-        sceneChanged = true;
       }
     }
-    if (filteredEquipmentData.length !== lastProcessedEquipmentCountRef.current) {
-        sceneChanged = true;
-        lastProcessedEquipmentCountRef.current = filteredEquipmentData.length;
-    }
-
 
   }, [filteredEquipmentData, layers, createEquipmentMesh, colorMode]);
 
@@ -504,7 +516,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (!outlinePassRef.current || !sceneRef.current) return;
   
     const objectsToOutline: THREE.Object3D[] = [];
-    const meshesToConsider = equipmentMeshesRef.current; 
+    const meshesToConsider = equipmentMeshesRef.current.filter(mesh => mesh.visible); 
   
     if (selectedEquipmentIds.length > 0) {
       selectedEquipmentIds.forEach(id => {
@@ -526,9 +538,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       outlinePassRef.current.edgeStrength = 4; 
       outlinePassRef.current.edgeThickness = 1; 
       outlinePassRef.current.edgeGlow = 0.5; 
-    } else {
-      outlinePassRef.current.selectedObjects = []; // Clear outline if nothing selected or hovered
     }
+    
     outlinePassRef.current.selectedObjects = objectsToOutline;
   }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); // Dependency on filteredEquipmentData/layers to re-evaluate if meshes change
 
