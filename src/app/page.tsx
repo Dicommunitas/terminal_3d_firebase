@@ -7,13 +7,13 @@ import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
-import { InfoPanel } from '@/components/info-panel';
+import { InfoPanel } from '@/components/info-panel'; // Added missing import
 // CommandHistoryPanel is no longer imported as its functionality is moved
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { PanelLeft, Undo2Icon, Redo2Icon } from 'lucide-react'; // Added Undo2Icon and Redo2Icon
+import { PanelLeft, Undo2Icon, Redo2Icon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -137,7 +137,7 @@ export default function Terminal3DPage() {
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full flex-col bg-background w-full">
         <div className="flex flex-1 w-full overflow-hidden w-full">
-          <Sidebar collapsible="icon" className="border-r">
+          <Sidebar collapsible="offcanvas" className="border-r"> {/* Changed collapsible to "offcanvas" */}
              <div className="flex h-full flex-col">
                 <SidebarHeader className="p-3 flex justify-between items-center border-b">
                     <div className="flex items-center">
@@ -150,9 +150,7 @@ export default function Terminal3DPage() {
                         <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                             <Redo2Icon className="h-5 w-5" />
                         </Button>
-                        <SidebarTrigger className="hidden md:flex data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Toggle sidebar">
-                            <PanelLeft className="h-5 w-5" />
-                        </SidebarTrigger>
+                        {/* Desktop SidebarTrigger removed from here */}
                     </div>
                 </SidebarHeader>
                 <SidebarContent className="p-0">
@@ -160,7 +158,6 @@ export default function Terminal3DPage() {
                     <div className="p-4 space-y-6 pb-6">
                       <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
                       <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
-                      {/* CommandHistoryPanel removed from here */}
                     </div>
                   </ScrollArea>
                 </SidebarContent>
@@ -172,13 +169,8 @@ export default function Terminal3DPage() {
           </Sidebar>
           
           <SidebarInset className="flex-1 relative w-full bg-muted/20 min-w-0 w-full">
-            <div className="absolute top-2 left-2 z-10 md:hidden">
-                 <SidebarTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <PanelLeft />
-                         <span className="sr-only">Toggle Sidebar</span>
-                    </Button>
-                 </SidebarTrigger>
+            <div className="absolute top-2 left-2 z-10"> {/* Removed md:hidden to make trigger always visible */}
+                 <SidebarTrigger className="h-10 w-10" /> {/* Using SidebarTrigger directly and sizing it */}
             </div>
             <ThreeScene
               equipment={equipment}
@@ -204,3 +196,8 @@ export default function Terminal3DPage() {
 
     
 
+
+
+    
+
+    
