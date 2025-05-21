@@ -163,7 +163,7 @@ export default function Terminal3DPage() {
              </div>
           </Sidebar>
           
-          <SidebarInset className="flex-1 relative bg-muted/20">
+          <SidebarInset className="flex-1 relative bg-muted/20 min-w-0"> {/* Added min-w-0 here */}
             <div className="absolute top-2 left-2 z-10 md:hidden">
                  <SidebarTrigger asChild>
                     <Button variant="ghost" size="icon">
