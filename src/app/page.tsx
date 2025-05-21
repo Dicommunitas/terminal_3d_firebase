@@ -12,7 +12,7 @@ import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter,
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Undo2Icon, Redo2Icon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeftClose } from 'lucide-react'; // Added PanelLeftClose
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -150,7 +150,6 @@ export default function Terminal3DPage() {
           initialCameraPosition={cameraPresets[0].position}
           initialCameraLookAt={cameraPresets[0].lookAt} 
         />
-        {/* InfoPanel's z-index is managed internally (currently z-10) */}
         <InfoPanel equipment={selectedEquipmentDetails} onClose={() => handleSelectEquipment(null)} />
       </div>
 
@@ -169,6 +168,11 @@ export default function Terminal3DPage() {
                 <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <Redo2Icon className="h-5 w-5" />
                 </Button>
+                <SidebarTrigger asChild className="h-8 w-8 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                  <Button variant="ghost" size="icon" aria-label="Close sidebar">
+                    <PanelLeftClose className="h-5 w-5" />
+                  </Button>
+                </SidebarTrigger>
             </div>
           </SidebarHeader>
           <SidebarContent className="p-0">
@@ -196,6 +200,8 @@ export default function Terminal3DPage() {
     
 
 
+
+    
 
     
 
