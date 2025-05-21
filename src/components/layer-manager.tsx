@@ -4,8 +4,8 @@
 import type { ColorMode } from '@/app/page'; // Assuming ColorMode is exported from page.tsx
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { PaletteIcon } from 'lucide-react'; // Using PaletteIcon as an example
+import { Card, CardContent } from '@/components/ui/card'; // Removed CardHeader, CardTitle
+// Removed PaletteIcon import
 
 interface LayerManagerProps {
   colorMode: ColorMode;
@@ -15,13 +15,8 @@ interface LayerManagerProps {
 export function LayerManager({ colorMode, onColorModeChange }: LayerManagerProps) {
   return (
     <Card className="shadow-md">
-      <CardHeader>
-        <CardTitle className="flex items-center text-lg">
-          <PaletteIcon className="mr-2 h-5 w-5" />
-          Colorization Mode
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
+      {/* CardHeader removed */}
+      <CardContent className="space-y-3 pt-4"> {/* Added pt-4 for padding since header is gone */}
         <div className="space-y-1">
           <Label htmlFor="color-mode-select" className="text-xs text-muted-foreground">
             Colorize equipment by
@@ -44,5 +39,3 @@ export function LayerManager({ colorMode, onColorModeChange }: LayerManagerProps
     </Card>
   );
 }
-
-    
