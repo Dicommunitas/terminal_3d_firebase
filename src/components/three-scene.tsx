@@ -11,8 +11,8 @@ interface ThreeSceneProps {
   layers: Layer[];
   selectedEquipmentId: string | null;
   onSelectEquipment: (equipmentId: string | null) => void;
-  cameraState?: CameraState; // For programmatic camera setting
-  onCameraChange?: (cameraState: CameraState) => void; // To report camera changes for undo/redo
+  cameraState?: CameraState; 
+  onCameraChange?: (cameraState: CameraState) => void; 
   initialCameraPosition?: { x: number; y: number; z: number };
 }
 
@@ -34,49 +34,51 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
 
+  const onSelectEquipmentRef = useRef(onSelectEquipment);
+  const onCameraChangeRef = useRef(onCameraChange);
+
+  useEffect(() => {
+    onSelectEquipmentRef.current = onSelectEquipment;
+  }, [onSelectEquipment]);
+
+  useEffect(() => {
+    onCameraChangeRef.current = onCameraChange;
+  }, [onCameraChange]);
+
   const createEquipmentMesh = useCallback((item: Equipment): THREE.Object3D => {
     let geometry: THREE.BufferGeometry;
     const material = new THREE.MeshStandardMaterial({ color: item.color, metalness: 0.3, roughness: 0.6 });
     let mesh: THREE.Mesh;
-    let yPosOffset = 0;
 
     switch (item.type) {
       case 'Building':
         geometry = new THREE.BoxGeometry(item.size?.width || 5, item.size?.height || 5, item.size?.depth || 5);
-        yPosOffset = (item.size?.height || 5) / 2;
         mesh = new THREE.Mesh(geometry, material);
         break;
       case 'Crane': 
         geometry = new THREE.BoxGeometry(item.size?.width || 3, item.size?.height || 10, item.size?.depth || 3);
-        yPosOffset = (item.size?.height || 10) / 2;
         mesh = new THREE.Mesh(geometry, material);
         break;
       case 'Tank':
         geometry = new THREE.CylinderGeometry(item.radius || 2, item.radius || 2, item.height || 4, 32);
-        yPosOffset = (item.height || 4) / 2;
         mesh = new THREE.Mesh(geometry, material);
         break;
       case 'Pipe':
+        // For pipes, height is effectively length
         geometry = new THREE.CylinderGeometry(item.radius || 0.2, item.radius || 0.2, item.height || 5, 16);
-        // For pipes, yPosOffset is applied if the pipe is vertical by default.
-        // If rotated, its position y should handle its height off the ground.
-        // The current logic adds (item.height/2) to item.position.y.
-        yPosOffset = (item.height || 5) / 2; 
         mesh = new THREE.Mesh(geometry, material);
         break;
       case 'Valve':
         geometry = new THREE.SphereGeometry(item.radius || 0.3, 16, 16);
-        // For valves, yPosOffset is applied.
-        yPosOffset = (item.radius || 0.3); 
         mesh = new THREE.Mesh(geometry, material);
         break;
       default: 
         geometry = new THREE.SphereGeometry(item.radius || 1, 16, 16);
-        yPosOffset = (item.radius || 1);
         mesh = new THREE.Mesh(geometry, material);
     }
     
-    mesh.position.set(item.position.x, item.position.y + yPosOffset, item.position.z);
+    // item.position is now considered the geometric center of the object
+    mesh.position.set(item.position.x, item.position.y, item.position.z);
     
     if (item.rotation) {
       mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
@@ -121,13 +123,16 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     controlsRef.current = new OrbitControls(cameraRef.current, rendererRef.current.domElement);
     controlsRef.current.enableDamping = true;
-    controlsRef.current.target.set(0, 2, 0); 
+    // Initialize target from cameraPresets if available, or default
+    const initialLookAt = programmaticCameraState?.lookAt || { x: 0, y: 2, z: 0 };
+    controlsRef.current.target.set(initialLookAt.x, initialLookAt.y, initialLookAt.z);
     controlsRef.current.update();
 
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x37474F, side: THREE.DoubleSide, metalness: 0.1, roughness: 0.8 });
     const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMesh.rotation.x = -Math.PI / 2;
+    groundMesh.position.y = 0; // Ensure ground is at y=0
     groundMesh.receiveShadow = true;
     sceneRef.current.add(groundMesh);
     
@@ -168,25 +173,25 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
               selectedObject = selectedObject.parent;
             }
             if (selectedObject.userData.id) {
-              onSelectEquipment(selectedObject.userData.id);
+              onSelectEquipmentRef.current(selectedObject.userData.id);
             } else {
-              onSelectEquipment(null); 
+              onSelectEquipmentRef.current(null); 
             }
         } else {
-            onSelectEquipment(null);
+            onSelectEquipmentRef.current(null);
         }
     };
     currentMount.addEventListener('click', handleClick);
     
     const handleControlsChangeEnd = () => {
-      if (cameraRef.current && controlsRef.current && onCameraChange) {
-        onCameraChange({
+      if (cameraRef.current && controlsRef.current && onCameraChangeRef.current) {
+        onCameraChangeRef.current({
           position: cameraRef.current.position.clone(),
           lookAt: controlsRef.current.target.clone(),
         });
       }
     };
-    if (controlsRef.current && onCameraChange) {
+    if (controlsRef.current) { // Check if onCameraChangeRef.current exists if it's optional
       controlsRef.current.addEventListener('end', handleControlsChangeEnd);
     }
 
@@ -195,12 +200,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       window.removeEventListener('resize', handleResize);
       if (currentMount && rendererRef.current) {
         currentMount.removeEventListener('click', handleClick);
+        // Check if domElement is still a child before removing
         if (rendererRef.current.domElement.parentNode === currentMount) {
-             currentMount.removeChild(rendererRef.current.domElement);
+           currentMount.removeChild(rendererRef.current.domElement);
         }
       }
       if (controlsRef.current) {
-        if (onCameraChange) controlsRef.current.removeEventListener('end', handleControlsChangeEnd);
+        controlsRef.current.removeEventListener('end', handleControlsChangeEnd);
         controlsRef.current.dispose();
       }
       equipmentMeshesRef.current.forEach(obj => {
@@ -210,7 +216,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
           if (Array.isArray(obj.material)) {
             obj.material.forEach(material => material.dispose());
           } else if (obj.material) {
-            obj.material.dispose();
+            (obj.material as THREE.Material).dispose();
           }
         } else if (obj instanceof THREE.Group) {
           obj.traverse(child => {
@@ -219,7 +225,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
               if (Array.isArray(child.material)) {
                 child.material.forEach(material => material.dispose());
               } else if (child.material) {
-                child.material.dispose();
+                (child.material as THREE.Material).dispose();
               }
             }
           });
@@ -235,17 +241,20 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       
       if (rendererRef.current) rendererRef.current.dispose();
       
+      // Nullify refs to allow for re-initialization if component remounts
       sceneRef.current = null;
       cameraRef.current = null;
       rendererRef.current = null;
       controlsRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSelectEquipment, onCameraChange, initialCameraPosition]); 
+  // Main setup effect should run once, or if initialCameraPosition changes.
+  // Callbacks are handled by refs.
+  }, [initialCameraPosition, programmaticCameraState]); 
 
   useEffect(() => {
     if (!sceneRef.current) return;
 
+    // Clear existing meshes
     equipmentMeshesRef.current.forEach(obj => {
         sceneRef.current?.remove(obj); 
         if (obj instanceof THREE.Mesh) {
@@ -253,16 +262,16 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
             if (Array.isArray(obj.material)) {
                 obj.material.forEach(material => material.dispose());
             } else if (obj.material) { 
-                obj.material.dispose();
+                (obj.material as THREE.Material).dispose();
             }
-        } else if (obj instanceof THREE.Group) {
+        } else if (obj instanceof THREE.Group) { // Handle groups if any complex objects are groups
             obj.traverse(child => {
                 if (child instanceof THREE.Mesh) {
                     child.geometry.dispose();
                     if (Array.isArray(child.material)) {
                         child.material.forEach(material => material.dispose());
                     } else if (child.material) { 
-                        child.material.dispose();
+                        (child.material as THREE.Material).dispose();
                     }
                 }
             });
@@ -285,22 +294,23 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     equipmentMeshesRef.current.forEach(obj => {
       const applyEmissive = (mesh: THREE.Mesh, apply: boolean) => {
         if (mesh.material instanceof THREE.MeshStandardMaterial) {
-          mesh.material.emissive.setHex(apply ? 0xBE29FF : 0x000000); // Use theme accent or black
+          mesh.material.emissive.setHex(apply ? 0xBE29FF : 0x000000); 
         }
       };
 
+      let isSelected = false;
       if (obj.userData.id === selectedEquipmentId) {
-        if (obj instanceof THREE.Mesh) {
-          applyEmissive(obj, true);
-        } else if (obj instanceof THREE.Group) {
-          obj.traverse(child => { if (child instanceof THREE.Mesh) applyEmissive(child, true); });
-        }
-      } else {
-        if (obj instanceof THREE.Mesh) {
-          applyEmissive(obj, false);
-        } else if (obj instanceof THREE.Group) {
-          obj.traverse(child => { if (child instanceof THREE.Mesh) applyEmissive(child, false); });
-        }
+          isSelected = true;
+      }
+
+      if (obj instanceof THREE.Mesh) {
+        applyEmissive(obj, isSelected);
+      } else if (obj instanceof THREE.Group) { // Handle groups
+        obj.traverse(child => { 
+          if (child instanceof THREE.Mesh) {
+            applyEmissive(child, isSelected);
+          }
+        });
       }
     });
   }, [selectedEquipmentId]);
@@ -311,23 +321,20 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const controls = controlsRef.current;
       
       const oldControlsEnabled = controls.enabled;
-      // Temporarily disable controls during programmatic update to prevent conflicts.
-      controls.enabled = false;
+      controls.enabled = false; // Disable controls during programmatic update
 
       camera.position.copy(programmaticCameraState.position);
-      // Ensure lookAt is always defined in CameraState for safety, though types suggest it is.
-      controls.target.copy(programmaticCameraState.lookAt || new THREE.Vector3(0,0,0)); 
+      if (programmaticCameraState.lookAt) { // Ensure lookAt is defined
+          controls.target.copy(programmaticCameraState.lookAt);
+      }
       
-      controls.update(); // Crucial to apply changes to controls internal state
-
-      // Restore previous controls state.
-      controls.enabled = oldControlsEnabled;
+      controls.update(); 
+      controls.enabled = oldControlsEnabled; // Restore controls state
     }
-  }, [programmaticCameraState]); // Only depend on programmaticCameraState.
+  }, [programmaticCameraState]);
 
 
   return <div ref={mountRef} className="w-full h-full" />;
 };
 
 export default ThreeScene;
-
