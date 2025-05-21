@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon, Settings2Icon, LocateIcon, ActivityIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon, Settings2Icon, LocateIcon, ActivityIcon, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -36,7 +36,6 @@ const initialEquipment: Equipment[] = [
   { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ODB', area: 'Área 34', operationalState: 'manutenção', product: '70H', category: 'Control', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
   { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 60', operationalState: 'em falha', product: '198', category: 'Control', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
-
 
 const initialLayers: Layer[] = [
   { id: 'layer-terrain', name: 'Terrain', equipmentType: 'Terrain', isVisible: true },
@@ -67,6 +66,7 @@ export default function Terminal3DPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
+  // const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All'); // Removed
   
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [isAnnotationDialogOpen, setIsAnnotationDialogOpen] = useState(false);
@@ -94,7 +94,7 @@ export default function Terminal3DPage() {
     return ['All', ...Array.from(areas).sort()];
   }, []);
 
-  const availableOperationalStates = useMemo(() => {
+  const availableOperationalStates = useMemo(() => { // This is still used by InfoPanel
     const states = new Set<string>();
     initialEquipment.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
@@ -130,6 +130,9 @@ export default function Terminal3DPage() {
     if (selectedArea !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.area === selectedArea);
     }
+    // if (selectedOperationalState !== 'All') { // Removed
+    //   itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
+    // }
     
     if (searchTerm.trim()) {
       const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
@@ -146,7 +149,7 @@ export default function Terminal3DPage() {
       });
     }
     return itemsToFilter;
-  }, [equipmentData, searchTerm, selectedSistema, selectedArea]);
+  }, [equipmentData, searchTerm, selectedSistema, selectedArea]); // Removed selectedOperationalState from dependencies
 
   const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentIds];
@@ -466,31 +469,6 @@ export default function Terminal3DPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="op-state-filter" className="text-xs text-muted-foreground flex items-center">
-                        <ActivityIcon className="mr-1.5 h-3.5 w-3.5" />
-                         Filter by Operational State
-                      </Label>
-                      <Select value={equipmentData.find(e => e.operationalState)?.operationalState || 'All'} onValueChange={(value) => {
-                          const equip = equipmentData.find(e => e.operationalState === value);
-                          if(equip) {
-                            // This is not ideal - we should have a separate state for this filter
-                            // For now, this will just re-filter based on the first equipment that matches this state
-                            // A better approach would be to have `selectedOperationalStateFilter` state
-                          }
-                      }}>
-                        <SelectTrigger id="op-state-filter" className="h-9">
-                          <SelectValue placeholder="Select state" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableOperationalStates.map(state => (
-                            <SelectItem key={state} value={state}>
-                              {state}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </CardContent>
                 </Card>
                 <LayerManager 
@@ -519,4 +497,3 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
-
