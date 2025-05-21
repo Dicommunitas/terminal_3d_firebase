@@ -113,7 +113,7 @@ export default function Terminal3DPage() {
       if (equip.product) products.add(equip.product);
     });
     // Filter out "Não aplicável" for the dropdown, but keep it in the data for display
-    return Array.from(products).filter(p => p !== "Não aplicável").sort();
+    return ['All', ...Array.from(products).filter(p => p !== "Não aplicável").sort()];
   }, []);
 
 
@@ -379,7 +379,7 @@ export default function Terminal3DPage() {
           onOperationalStateChange={handleOperationalStateChange}
           availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All' && s !== 'Não aplicável')}
           onProductChange={handleProductChange}
-          availableProductsList={availableProducts}
+          availableProductsList={availableProducts.filter(p => p !== 'All' && p !== 'Não aplicável')}
         />
       </div>
 
@@ -472,10 +472,6 @@ export default function Terminal3DPage() {
               </div>
             </ScrollArea>
           </SidebarContent>
-          <Separator />
-          <SidebarFooter className="p-4">
-             <p className="text-xs text-muted-foreground">2025 Terminal 3D</p>
-          </SidebarFooter>
         </div>
       </Sidebar>
       <AnnotationDialog
