@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Equipment, Layer, Command, CameraState, PresetCameraView, Annotation } from '@/lib/types';
+import type { Equipment, Layer, Command, CameraState, PresetCameraView, Annotation, Product } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { LayerManager } from '@/components/layer-manager';
@@ -17,8 +17,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon, Settings2Icon, LocateIcon, ActivityIcon, Terminal } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon, Settings2Icon, LocateIcon, ActivityIcon, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+
+export type ColorMode = 'Produto' | 'Estado Operacional' | 'Equipamento';
 
 const initialEquipment: Equipment[] = [
   { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Administrative', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
@@ -54,8 +56,6 @@ const cameraPresets: PresetCameraView[] = [
   { name: 'Piping Detail', position: { x: -2, y: 5, z: 8 }, lookAt: { x: -2, y: 2, z: 0 } },
 ];
 
-export type ColorMode = 'Produto' | 'Estado Operacional' | 'Equipamento';
-
 export default function Terminal3DPage() {
   const [equipmentData, setEquipmentData] = useState<Equipment[]>(initialEquipment);
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
@@ -66,7 +66,6 @@ export default function Terminal3DPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
-  // const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All'); // Removed
   
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [isAnnotationDialogOpen, setIsAnnotationDialogOpen] = useState(false);
@@ -94,7 +93,7 @@ export default function Terminal3DPage() {
     return ['All', ...Array.from(areas).sort()];
   }, []);
 
-  const availableOperationalStates = useMemo(() => { // This is still used by InfoPanel
+  const availableOperationalStates = useMemo(() => {
     const states = new Set<string>();
     initialEquipment.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
@@ -107,17 +106,14 @@ export default function Terminal3DPage() {
       return a.localeCompare(b);
     })];
   }, []);
-
+  
   const availableProducts = useMemo(() => {
     const products = new Set<string>();
     initialEquipment.forEach(equip => {
       if (equip.product) products.add(equip.product);
     });
-    return Array.from(products).sort((a, b) => {
-        if (a === 'Não aplicável') return -1;
-        if (b === 'Não aplicável') return 1;
-        return a.localeCompare(b);
-    });
+    // Filter out "Não aplicável" for the dropdown, but keep it in the data for display
+    return Array.from(products).filter(p => p !== "Não aplicável").sort();
   }, []);
 
 
@@ -130,9 +126,6 @@ export default function Terminal3DPage() {
     if (selectedArea !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.area === selectedArea);
     }
-    // if (selectedOperationalState !== 'All') { // Removed
-    //   itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
-    // }
     
     if (searchTerm.trim()) {
       const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
@@ -149,7 +142,7 @@ export default function Terminal3DPage() {
       });
     }
     return itemsToFilter;
-  }, [equipmentData, searchTerm, selectedSistema, selectedArea]); // Removed selectedOperationalState from dependencies
+  }, [equipmentData, searchTerm, selectedSistema, selectedArea]);
 
   const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentIds];
@@ -384,9 +377,9 @@ export default function Terminal3DPage() {
           onOpenAnnotationDialog={handleOpenAnnotationDialog}
           onDeleteAnnotation={handleDeleteAnnotation}
           onOperationalStateChange={handleOperationalStateChange}
-          availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All')}
+          availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All' && s !== 'Não aplicável')}
           onProductChange={handleProductChange}
-          availableProductsList={availableProducts.filter(p => p !== 'Não aplicável')}
+          availableProductsList={availableProducts}
         />
       </div>
 
@@ -394,19 +387,17 @@ export default function Terminal3DPage() {
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-2">
-               <SidebarTrigger variant="ghost" size="icon" aria-label="Close sidebar" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <PanelLeftClose className="h-5 w-5" />
-              </SidebarTrigger>
+              <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                  <Undo2Icon className="h-5 w-5" />
+              </Button>
               <span className="font-semibold text-lg">Terminal 3D</span>
+              <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                  <Redo2Icon className="h-5 w-5" />
+              </Button>
             </div>
-            <div className="flex items-center space-x-1">
-                <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                    <Undo2Icon className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                    <Redo2Icon className="h-5 w-5" />
-                </Button>
-            </div>
+            <SidebarTrigger variant="ghost" size="icon" aria-label="Close sidebar" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+              <PanelLeftClose className="h-5 w-5" />
+            </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent className="p-0">
             <ScrollArea className="h-full">
@@ -497,3 +488,4 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+
