@@ -58,11 +58,15 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         break;
       case 'Pipe':
         geometry = new THREE.CylinderGeometry(item.radius || 0.2, item.radius || 0.2, item.height || 5, 16);
+        // For pipes, yPosOffset is applied if the pipe is vertical by default.
+        // If rotated, its position y should handle its height off the ground.
+        // The current logic adds (item.height/2) to item.position.y.
         yPosOffset = (item.height || 5) / 2; 
         mesh = new THREE.Mesh(geometry, material);
         break;
       case 'Valve':
         geometry = new THREE.SphereGeometry(item.radius || 0.3, 16, 16);
+        // For valves, yPosOffset is applied.
         yPosOffset = (item.radius || 0.3); 
         mesh = new THREE.Mesh(geometry, material);
         break;
@@ -85,7 +89,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!mountRef.current || rendererRef.current) return; // Prevent re-initialization if already initialized
+    if (!mountRef.current || rendererRef.current) return; 
 
     const currentMount = mountRef.current;
 
@@ -118,7 +122,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     controlsRef.current = new OrbitControls(cameraRef.current, rendererRef.current.domElement);
     controlsRef.current.enableDamping = true;
     controlsRef.current.target.set(0, 2, 0); 
-    controlsRef.current.update(); // Initial update
+    controlsRef.current.update();
 
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x37474F, side: THREE.DoubleSide, metalness: 0.1, roughness: 0.8 });
@@ -148,7 +152,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     
     const handleClick = (event: MouseEvent) => {
         if (!mountRef.current || !cameraRef.current || !sceneRef.current) return;
-        const currentMountForClick = mountRef.current; // Capture ref for closure
+        const currentMountForClick = mountRef.current; 
 
         const rect = currentMountForClick.getBoundingClientRect();
         mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -224,35 +228,31 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       equipmentMeshesRef.current = [];
 
       if (sceneRef.current) {
-         // Dispose other scene objects like lights, ground if necessary, though often managed by scene disposal itself
-        sceneRef.current.remove(ambientLight, directionalLight, groundMesh); // Explicitly remove from scene
+        sceneRef.current.remove(ambientLight, directionalLight, groundMesh); 
         groundMesh.geometry.dispose();
         (groundMesh.material as THREE.Material).dispose();
-        // Lights don't have geometry/material to dispose in the same way
       }
       
       if (rendererRef.current) rendererRef.current.dispose();
       
-      // Nullify refs
       sceneRef.current = null;
       cameraRef.current = null;
       rendererRef.current = null;
       controlsRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [onSelectEquipment, onCameraChange, initialCameraPosition]); // Dependencies for main setup
+  }, [onSelectEquipment, onCameraChange, initialCameraPosition]); 
 
   useEffect(() => {
     if (!sceneRef.current) return;
 
-    // Dispose old meshes before removing and clearing the array
     equipmentMeshesRef.current.forEach(obj => {
-        sceneRef.current?.remove(obj); // Remove from scene first
+        sceneRef.current?.remove(obj); 
         if (obj instanceof THREE.Mesh) {
             obj.geometry.dispose();
             if (Array.isArray(obj.material)) {
                 obj.material.forEach(material => material.dispose());
-            } else if (obj.material) { // Check if material exists
+            } else if (obj.material) { 
                 obj.material.dispose();
             }
         } else if (obj instanceof THREE.Group) {
@@ -261,14 +261,14 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
                     child.geometry.dispose();
                     if (Array.isArray(child.material)) {
                         child.material.forEach(material => material.dispose());
-                    } else if (child.material) { // Check if material exists
+                    } else if (child.material) { 
                         child.material.dispose();
                     }
                 }
             });
         }
     });
-    equipmentMeshesRef.current = []; // Clear the array
+    equipmentMeshesRef.current = []; 
 
     const visibleLayers = layers.filter(l => l.isVisible);
     equipment.forEach(item => {
@@ -285,7 +285,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     equipmentMeshesRef.current.forEach(obj => {
       const applyEmissive = (mesh: THREE.Mesh, apply: boolean) => {
         if (mesh.material instanceof THREE.MeshStandardMaterial) {
-          mesh.material.emissive.setHex(apply ? 0xBE29FF : 0x000000);
+          mesh.material.emissive.setHex(apply ? 0xBE29FF : 0x000000); // Use theme accent or black
         }
       };
 
@@ -311,22 +311,19 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const controls = controlsRef.current;
       
       const oldControlsEnabled = controls.enabled;
-      // Temporarily disable controls during programmatic update ONLY if onCameraChange is defined,
-      // implying controls are interactive and might fight the update.
-      if (typeof onCameraChange === 'function') {
-        controls.enabled = false;
-      }
+      // Temporarily disable controls during programmatic update to prevent conflicts.
+      controls.enabled = false;
 
       camera.position.copy(programmaticCameraState.position);
-      controls.target.copy(programmaticCameraState.lookAt);
+      // Ensure lookAt is always defined in CameraState for safety, though types suggest it is.
+      controls.target.copy(programmaticCameraState.lookAt || new THREE.Vector3(0,0,0)); 
       
       controls.update(); // Crucial to apply changes to controls internal state
 
-      if (typeof onCameraChange === 'function') {
-        controls.enabled = oldControlsEnabled;
-      }
+      // Restore previous controls state.
+      controls.enabled = oldControlsEnabled;
     }
-  }, [programmaticCameraState, onCameraChange]);
+  }, [programmaticCameraState]); // Only depend on programmaticCameraState.
 
 
   return <div ref={mountRef} className="w-full h-full" />;
