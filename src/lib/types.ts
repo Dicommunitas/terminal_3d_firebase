@@ -1,11 +1,12 @@
 export interface Equipment {
   id: string;
   name: string;
-  type: 'Building' | 'Crane' | 'Tank' | 'Terrain';
+  type: 'Building' | 'Crane' | 'Tank' | 'Terrain' | 'Pipe' | 'Valve';
   position: { x: number; y: number; z: number };
+  rotation?: { x: number; y: number; z: number }; // Optional rotation
   size?: { width: number; height: number; depth: number }; // For boxes
-  radius?: number; // For spheres/cylinders
-  height?: number; // For cylinders
+  radius?: number; // For spheres/cylinders/pipes
+  height?: number; // For cylinders/tanks/pipes (length for pipes)
   color: string;
   details: string;
 }

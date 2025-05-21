@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -17,23 +18,44 @@ import { PanelLeft, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
-  { id: 'bldg-01', name: 'Main Office', type: 'Building', position: { x: -10, y: 0, z: -5 }, size: { width: 8, height: 6, depth: 10 }, color: '#888888', details: 'Primary administrative building.' },
-  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', position: { x: 10, y: 0, z: -8 }, size: { width: 15, height: 8, depth: 12 }, color: '#888888', details: 'Storage for dry goods.' },
-  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', position: { x: 0, y: 0, z: 5 }, size: { width: 12, height: 10, depth: 2 }, color: '#FFA500', details: 'Heavy lift gantry crane.' },
-  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', position: { x: -5, y: 0, z: 10 }, radius: 3, height: 5, color: '#0077FF', details: 'Liquid storage tank.' },
-  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', position: { x: 5, y: 0, z: 12 }, radius: 2.5, height: 4, color: '#00AAFF', details: 'Auxiliary liquid storage.' },
+  // Buildings
+  { id: 'bldg-01', name: 'Main Office', type: 'Building', position: { x: -15, y: 0, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
+  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', position: { x: 15, y: 0, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
+  { id: 'bldg-03', name: 'Control Room', type: 'Building', position: { x: 0, y: 0, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
+
+  // Cranes
+  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', position: { x: 0, y: 0, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane over loading area.' },
+  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', position: { x: -10, y: 0, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  
+  // Tanks
+  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', position: { x: -8, y: 0, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
+  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', position: { x: -2, y: 0, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
+  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', position: { x: 5, y: 0, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+
+  // Pipes
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: Math.PI / 2, y: 0, z: 0 } }, // Horizontal along Z
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: 0, y: 0, z: Math.PI / 2 } }, // Horizontal along X
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', position: { x: 8, y: 0, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' }, // Vertical
+
+  // Valves
+  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', position: { x: 8, y: 3.5, z: 8 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 const initialLayers: Layer[] = [
   { id: 'layer-buildings', name: 'Buildings', equipmentType: 'Building', isVisible: true },
   { id: 'layer-cranes', name: 'Cranes', equipmentType: 'Crane', isVisible: true },
   { id: 'layer-tanks', name: 'Tanks', equipmentType: 'Tank', isVisible: true },
+  { id: 'layer-pipes', name: 'Pipes', equipmentType: 'Pipe', isVisible: true },
+  { id: 'layer-valves', name: 'Valves', equipmentType: 'Valve', isVisible: true },
 ];
 
 const cameraPresets: PresetCameraView[] = [
   { name: 'Overview', position: { x: 25, y: 20, z: 25 }, lookAt: { x: 0, y: 2, z: 0 } },
   { name: 'Crane Area', position: { x: 0, y: 8, z: 15 }, lookAt: { x: 0, y: 5, z: 5 } },
-  { name: 'Tank Farm', position: { x: 0, y: 10, z: 20 }, lookAt: { x: 0, y: 2, z: 10 } },
+  { name: 'Tank Farm', position: { x: -5, y: 10, z: 20 }, lookAt: { x: -5, y: 2, z: 10 } },
+  { name: 'Piping Detail', position: { x: -2, y: 5, z: 8 }, lookAt: { x: -2, y: 2, z: 0 } },
 ];
 
 
@@ -47,7 +69,6 @@ export default function Terminal3DPage() {
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
   const handleSelectEquipment = useCallback((equipmentId: string | null) => {
-    // This interaction might not need undo/redo, or could be a simple command
     setSelectedEquipmentId(equipmentId);
      if (equipmentId) {
       const item = equipment.find(e => e.id === equipmentId);
@@ -73,7 +94,7 @@ export default function Terminal3DPage() {
   }, [layers, executeCommand]);
 
   const handleSetCameraView = useCallback((view: PresetCameraView) => {
-    const oldCameraState = { ...currentCameraState } as CameraState; // clone or ensure it's a new object
+    const oldCameraState = { ...currentCameraState } as CameraState; 
     const newCameraState = { position: view.position, lookAt: view.lookAt };
 
     const command: Command = {
@@ -87,14 +108,7 @@ export default function Terminal3DPage() {
   }, [currentCameraState, executeCommand]);
 
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
-    // This is called by OrbitControls 'end' event
-    // Debounce or check if significantly different to avoid flooding history
     const oldCameraState = { ...currentCameraState } as CameraState;
-
-    // Check if camera state actually changed significantly to avoid spamming history
-    // For simplicity, we'll assume any 'end' event is a meaningful change
-    // In a real app, add a threshold check here.
-
     const command: Command = {
         id: `orbit-camera-${Date.now()}`,
         type: 'CAMERA_MOVE',
