@@ -1,13 +1,16 @@
+
 export interface Equipment {
   id: string;
   name: string;
   type: 'Building' | 'Crane' | 'Tank' | 'Terrain' | 'Pipe' | 'Valve';
-  category?: string; // Added category
+  category?: string;
+  area?: string;
+  operationalState?: string; // Added operational state
   position: { x: number; y: number; z: number };
-  rotation?: { x: number; y: number; z: number }; // Optional rotation
-  size?: { width: number; height: number; depth: number }; // For boxes
-  radius?: number; // For spheres/cylinders/pipes
-  height?: number; // For cylinders/tanks/pipes (length for pipes)
+  rotation?: { x: number; y: number; z: number };
+  size?: { width: number; height: number; depth: number };
+  radius?: number;
+  height?: number;
   color: string;
   details: string;
 }
@@ -15,7 +18,7 @@ export interface Equipment {
 export interface Layer {
   id: string;
   name: string;
-  equipmentType: Equipment['type'] | 'All'; // Allows filtering by specific types or showing all
+  equipmentType: Equipment['type'] | 'All';
   isVisible: boolean;
 }
 
@@ -29,7 +32,7 @@ export interface Command {
   type: 'CAMERA_MOVE' | 'LAYER_VISIBILITY' | 'EQUIPMENT_SELECT';
   execute: () => void;
   undo: () => void;
-  description: string; // For display in UI if needed
+  description: string;
 }
 
 export interface PresetCameraView {
