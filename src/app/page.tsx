@@ -151,11 +151,6 @@ export default function Terminal3DPage() {
                 <SidebarContent className="p-0">
                   <ScrollArea className="h-full">
                     <div className="p-4 space-y-6 pb-6">
-                       <div className="pt-2 pb-3">
-                         <h3 className="text-base font-semibold flex items-center text-foreground">
-                            <Settings2 className="mr-2 h-5 w-5 text-primary"/> Panel Controls
-                         </h3>
-                       </div>
                       <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
                       <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
                       <CommandHistoryPanel canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} />
@@ -196,6 +191,8 @@ export default function Terminal3DPage() {
   );
 }
     
+    
+
     
 
     
