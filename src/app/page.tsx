@@ -25,16 +25,16 @@ const initialEquipment: Equipment[] = [
   { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Storage', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
   { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'MTBE', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Operational', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
   { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: 'GEN', category: 'Lifting', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'não operando', product: 'N/A', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'manutenção', product: 'CRD', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Crude Oil.' },
+  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: 'N/A', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', product: 'CRD', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Crude Oil.' },
   { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'em falha', product: 'GSL', category: 'Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Gasoline.' },
-  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'operando', product: 'DSL', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank for Diesel.' },
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'manutenção', product: 'CRD', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'manutenção', product: 'DSL', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank for Diesel.' },
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'operando', product: 'CRD', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
   { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'MTBE', area: 'Área 34', operationalState: 'não operando', product: 'DSL', category: 'Transfer', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
   { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', product: 'H2O', category: 'Transfer', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section for water.' },
   { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', product: 'CRD', category: 'Control', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ODB', area: 'Área 34', operationalState: 'não operando', product: 'DSL', category: 'Control', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 60', operationalState: 'manutenção', product: 'NTR', category: 'Control', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve for Nitrogen.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ODB', area: 'Área 34', operationalState: 'manutenção', product: 'DSL', category: 'Control', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 60', operationalState: 'em falha', product: 'NTR', category: 'Control', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve for Nitrogen.' },
 ];
 
 
@@ -67,7 +67,6 @@ export default function Terminal3DPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
-  const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All');
   
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
   const [isAnnotationDialogOpen, setIsAnnotationDialogOpen] = useState(false);
@@ -100,7 +99,13 @@ export default function Terminal3DPage() {
     initialEquipment.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
-    return ['All', ...Array.from(states).sort()];
+    return ['All', ...Array.from(states).sort((a,b) => {
+      if (a === 'Não aplicável') return 1;
+      if (b === 'Não aplicável') return -1;
+      if (a === 'All') return -1;
+      if (b === 'All') return 1;
+      return a.localeCompare(b);
+    })];
   }, []);
 
   const availableProducts = useMemo(() => {
@@ -125,9 +130,6 @@ export default function Terminal3DPage() {
     if (selectedArea !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.area === selectedArea);
     }
-    if (selectedOperationalState !== 'All') {
-      itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
-    }
     
     if (searchTerm.trim()) {
       const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
@@ -144,7 +146,7 @@ export default function Terminal3DPage() {
       });
     }
     return itemsToFilter;
-  }, [equipmentData, searchTerm, selectedSistema, selectedArea, selectedOperationalState]);
+  }, [equipmentData, searchTerm, selectedSistema, selectedArea]);
 
   const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentIds];
@@ -276,17 +278,20 @@ export default function Terminal3DPage() {
   const handleSaveAnnotation = useCallback((text: string) => {
     if (!annotationTargetEquipment) return;
 
+    const existingAnnotation = annotations.find(a => a.equipmentId === annotationTargetEquipment.id);
     let newAnnotations: Annotation[];
     let toastDescription: string;
 
-    const existingAnnotationIndex = annotations.findIndex(a => a.equipmentId === annotationTargetEquipment.id);
-
-    if (existingAnnotationIndex > -1) {
-      newAnnotations = annotations.map((anno, index) => 
-        index === existingAnnotationIndex ? { ...anno, text: text, createdAt: new Date().toISOString() } : anno
+    if (existingAnnotation) {
+      // Update existing annotation
+      newAnnotations = annotations.map(anno =>
+        anno.equipmentId === annotationTargetEquipment.id
+          ? { ...anno, text: text, createdAt: new Date().toISOString() } 
+          : anno
       );
       toastDescription = `Annotation for ${annotationTargetEquipment.name} updated.`;
     } else {
+      // Add new annotation
       const newAnnotation: Annotation = {
         equipmentId: annotationTargetEquipment.id,
         text,
@@ -457,21 +462,6 @@ export default function Terminal3DPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
-                      <Label htmlFor="operational-state-filter" className="text-xs text-muted-foreground">Filter by Operational State</Label>
-                      <Select value={selectedOperationalState} onValueChange={setSelectedOperationalState}>
-                        <SelectTrigger id="operational-state-filter" className="h-9">
-                          <SelectValue placeholder="Select state" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableOperationalStates.map(state => (
-                            <SelectItem key={state} value={state}>
-                              {state}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </CardContent>
                 </Card>
                 <LayerManager 
@@ -500,7 +490,3 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
-
-    
-
-    
