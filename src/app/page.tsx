@@ -12,7 +12,7 @@ import { AnnotationDialog } from '@/components/annotation-dialog';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,6 +37,7 @@ const initialEquipment: Equipment[] = [
   { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', category: 'Safety Valve', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
+
 const initialLayers: Layer[] = [
   { id: 'layer-terrain', name: 'Terrain', equipmentType: 'Terrain', isVisible: true },
   { id: 'layer-buildings', name: 'Buildings', equipmentType: 'Building', isVisible: true },
@@ -59,6 +60,7 @@ export default function Terminal3DPage() {
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
+  const [hoveredEquipmentId, setHoveredEquipmentId] = useState<string | null>(null);
   
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
@@ -308,6 +310,16 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentDetails, annotations]);
 
+  const handleOperationalStateChange = useCallback((equipmentId: string, newState: string) => {
+    setEquipmentData(prevData => 
+      prevData.map(equip => 
+        equip.id === equipmentId ? { ...equip, operationalState: newState } : equip
+      )
+    );
+    const equip = equipmentData.find(e => e.id === equipmentId);
+    toast({ title: "State Updated", description: `${equip?.name || 'Equipment'} state changed to ${newState}.`});
+  }, [equipmentData, toast]);
+
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -327,7 +339,9 @@ export default function Terminal3DPage() {
           cameraState={currentCameraState}
           onCameraChange={handleCameraChangeFromScene}
           initialCameraPosition={cameraPresets[0].position}
-          initialCameraLookAt={cameraPresets[0].lookAt} 
+          initialCameraLookAt={cameraPresets[0].lookAt}
+          hoveredEquipmentId={hoveredEquipmentId}
+          setHoveredEquipmentId={setHoveredEquipmentId}
         />
         <InfoPanel 
           equipment={selectedEquipmentDetails}
@@ -335,6 +349,8 @@ export default function Terminal3DPage() {
           onClose={() => handleSelectEquipment(null, false)}
           onOpenAnnotationDialog={handleOpenAnnotationDialog}
           onDeleteAnnotation={handleDeleteAnnotation}
+          onOperationalStateChange={handleOperationalStateChange}
+          availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All')}
         />
       </div>
 
@@ -449,6 +465,4 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
-
-
     
