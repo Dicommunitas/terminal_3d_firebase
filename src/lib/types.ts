@@ -6,6 +6,7 @@ export interface Equipment {
   sistema?: string;
   area?: string;
   operationalState?: string;
+  product?: string; // Added product attribute
   position: { x: number; y: number; z: number };
   rotation?: { x: number; y: number; z: number };
   size?: { width: number; height: number; depth: number };
@@ -29,7 +30,7 @@ export interface CameraState {
 
 export interface Command {
   id: string;
-  type: 'CAMERA_MOVE' | 'LAYER_VISIBILITY' | 'EQUIPMENT_SELECT' | 'ANNOTATION_CHANGE';
+  type: 'CAMERA_MOVE' | 'LAYER_VISIBILITY' | 'EQUIPMENT_SELECT';
   execute: () => void;
   undo: () => void;
   description: string;
@@ -42,7 +43,7 @@ export interface PresetCameraView {
 }
 
 export interface Annotation {
-  equipmentId: string; // ID of the equipment this annotation is attached to
+  equipmentId: string;
   text: string;
-  createdAt: string; // ISO date string
+  createdAt: string;
 }

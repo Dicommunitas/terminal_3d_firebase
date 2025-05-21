@@ -5,7 +5,9 @@ import type { Equipment, Annotation } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon, MessageSquarePlusIcon, Edit3Icon, Trash2Icon, CalendarDays } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon, MessageSquarePlusIcon, Edit3Icon, Trash2Icon, CalendarDays, PackageIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 interface InfoPanelProps {
@@ -14,9 +16,19 @@ interface InfoPanelProps {
   onClose: () => void;
   onOpenAnnotationDialog: () => void;
   onDeleteAnnotation: (equipmentId: string) => void;
+  onOperationalStateChange: (equipmentId: string, newState: string) => void;
+  availableOperationalStatesList: string[];
 }
 
-export function InfoPanel({ equipment, annotation, onClose, onOpenAnnotationDialog, onDeleteAnnotation }: InfoPanelProps) {
+export function InfoPanel({ 
+  equipment, 
+  annotation, 
+  onClose, 
+  onOpenAnnotationDialog, 
+  onDeleteAnnotation,
+  onOperationalStateChange,
+  availableOperationalStatesList 
+}: InfoPanelProps) {
   if (!equipment) return null;
 
   const handleDeleteClick = () => {
@@ -38,12 +50,13 @@ export function InfoPanel({ equipment, annotation, onClose, onOpenAnnotationDial
           <XIcon className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-1 pb-3 overflow-y-auto flex-grow">
+      <CardContent className="space-y-1.5 pb-3 overflow-y-auto flex-grow">
         <h3 className="text-md font-semibold">{equipment.name}</h3>
         <p className="text-sm">
           ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span>
         </p>
         <p className="text-sm">Tipo: {equipment.type}</p>
+        
         {equipment.sistema && (
           <p className="text-sm flex items-center">
             <Settings2Icon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -56,16 +69,41 @@ export function InfoPanel({ equipment, annotation, onClose, onOpenAnnotationDial
             Área: {equipment.area}
           </p>
         )}
-        {equipment.operationalState && (
-           <p className="text-sm flex items-center">
-           <ActivityIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-           Estado Operacional: {equipment.operationalState}
-         </p>
+         {equipment.product && (
+          <p className="text-sm flex items-center">
+            <PackageIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+            Produto: {equipment.product}
+          </p>
         )}
+        {equipment.operationalState && (
+          <div className="space-y-1 text-sm">
+            <Label htmlFor={`op-state-select-${equipment.id}`} className="flex items-center text-xs font-normal text-muted-foreground">
+              <ActivityIcon className="mr-1.5 h-3.5 w-3.5" />
+              Estado Operacional:
+            </Label>
+            <Select
+              value={equipment.operationalState}
+              onValueChange={(newState) => onOperationalStateChange(equipment.id, newState)}
+              disabled={equipment.operationalState === "Não aplicável"}
+            >
+              <SelectTrigger id={`op-state-select-${equipment.id}`} className="h-8 text-xs">
+                <SelectValue placeholder="Select state" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableOperationalStatesList.map(state => (
+                  <SelectItem key={state} value={state} className="text-xs">
+                    {state}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {equipment.details && (
-          <div className="text-sm pt-1">
-            <div className="flex items-center">
-              <FileTextIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
+          <div className="text-sm pt-2">
+            <div className="flex items-center text-muted-foreground">
+              <FileTextIcon className="mr-1.5 h-3.5 w-3.5" />
               <span>Detalhes:</span>
             </div>
             <p className="italic pl-5 text-xs">{equipment.details}</p>
@@ -97,7 +135,6 @@ export function InfoPanel({ equipment, annotation, onClose, onOpenAnnotationDial
             <MessageSquarePlusIcon className="mr-2 h-4 w-4" /> Adicionar Anotação
           </Button>
         )}
-
       </CardContent>
     </Card>
   );
