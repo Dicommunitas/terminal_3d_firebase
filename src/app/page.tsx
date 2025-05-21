@@ -8,12 +8,12 @@ import ThreeScene from '@/components/three-scene';
 import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
-import { CommandHistoryPanel } from '@/components/command-history-panel';
+// CommandHistoryPanel is no longer imported as its functionality is moved
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { PanelLeft } from 'lucide-react';
+import { PanelLeft, Undo2Icon, Redo2Icon } from 'lucide-react'; // Added Undo2Icon and Redo2Icon
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -141,19 +141,26 @@ export default function Terminal3DPage() {
              <div className="flex h-full flex-col">
                 <SidebarHeader className="p-3 flex justify-between items-center border-b">
                     <div className="flex items-center">
-                        {/* Terminal icon removed here */}
                         <span className="font-semibold text-lg">Terminal 3D</span>
                     </div>
-                    <SidebarTrigger className="hidden md:flex data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Toggle sidebar">
-                        <PanelLeft className="h-5 w-5" />
-                    </SidebarTrigger>
+                    <div className="flex items-center space-x-1">
+                        <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                            <Undo2Icon className="h-5 w-5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                            <Redo2Icon className="h-5 w-5" />
+                        </Button>
+                        <SidebarTrigger className="hidden md:flex data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Toggle sidebar">
+                            <PanelLeft className="h-5 w-5" />
+                        </SidebarTrigger>
+                    </div>
                 </SidebarHeader>
                 <SidebarContent className="p-0">
                   <ScrollArea className="h-full">
                     <div className="p-4 space-y-6 pb-6">
                       <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
                       <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
-                      <CommandHistoryPanel canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} />
+                      {/* CommandHistoryPanel removed from here */}
                     </div>
                   </ScrollArea>
                 </SidebarContent>
@@ -196,3 +203,4 @@ export default function Terminal3DPage() {
     
 
     
+
