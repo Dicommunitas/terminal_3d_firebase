@@ -2,6 +2,7 @@ export interface Equipment {
   id: string;
   name: string;
   type: 'Building' | 'Crane' | 'Tank' | 'Terrain' | 'Pipe' | 'Valve';
+  category?: string; // Added category
   position: { x: number; y: number; z: number };
   rotation?: { x: number; y: number; z: number }; // Optional rotation
   size?: { width: number; height: number; depth: number }; // For boxes
