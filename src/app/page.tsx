@@ -13,7 +13,7 @@ import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter,
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { PanelLeft, Settings2, Terminal } from 'lucide-react';
+import { PanelLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -141,7 +141,7 @@ export default function Terminal3DPage() {
              <div className="flex h-full flex-col">
                 <SidebarHeader className="p-3 flex justify-between items-center border-b">
                     <div className="flex items-center">
-                        <Terminal className="mr-2 h-6 w-6 text-primary" />
+                        {/* Terminal icon removed here */}
                         <span className="font-semibold text-lg">Terminal 3D</span>
                     </div>
                     <SidebarTrigger className="hidden md:flex data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Toggle sidebar">
