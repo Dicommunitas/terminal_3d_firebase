@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -44,6 +44,7 @@ const initialEquipment: Equipment[] = [
 ];
 
 const initialLayers: Layer[] = [
+  { id: 'layer-terrain', name: 'Terrain', equipmentType: 'Terrain', isVisible: true },
   { id: 'layer-buildings', name: 'Buildings', equipmentType: 'Building', isVisible: true },
   { id: 'layer-cranes', name: 'Cranes', equipmentType: 'Crane', isVisible: true },
   { id: 'layer-tanks', name: 'Tanks', equipmentType: 'Tank', isVisible: true },
@@ -221,7 +222,7 @@ export default function Terminal3DPage() {
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-2">
-              <SidebarTrigger variant="ghost" size="icon" aria-label="Close sidebar" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+               <SidebarTrigger variant="ghost" size="icon" aria-label="Close sidebar" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <PanelLeftClose className="h-5 w-5" />
               </SidebarTrigger>
               <span className="font-semibold text-lg">Terminal 3D</span>

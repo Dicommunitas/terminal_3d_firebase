@@ -9,8 +9,8 @@ import type { Equipment, Layer, CameraState } from '@/lib/types';
 interface ThreeSceneProps {
   equipment: Equipment[];
   layers: Layer[];
-  selectedEquipmentIds: string[]; // Changed from string | null
-  onSelectEquipment: (equipmentId: string | null, isMultiSelectModifierPressed: boolean) => void; // Signature updated
+  selectedEquipmentIds: string[];
+  onSelectEquipment: (equipmentId: string | null, isMultiSelectModifierPressed: boolean) => void;
   cameraState?: CameraState;
   onCameraChange?: (cameraState: CameraState) => void;
   initialCameraPosition: { x: number; y: number; z: number };
@@ -35,6 +35,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const equipmentMeshesRef = useRef<THREE.Object3D[]>([]);
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
+  const groundMeshRef = useRef<THREE.Mesh | null>(null);
+
 
   const onSelectEquipmentRef = useRef(onSelectEquipment);
   const onCameraChangeRef = useRef(onCameraChange);
@@ -101,11 +103,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (mountRef.current && cameraRef.current && rendererRef.current) {
       const width = Math.max(1, mountRef.current.clientWidth);
       const height = Math.max(1, mountRef.current.clientHeight);
-      if (cameraRef.current.aspect !== width / height) {
+      if (cameraRef.current.aspect !== width / height && height > 0) { // ensure height > 0
         cameraRef.current.aspect = width / height;
         cameraRef.current.updateProjectionMatrix();
       }
-      rendererRef.current.setSize(width, height);
+      if (width > 0 && height > 0) { // ensure dimensions > 0
+         rendererRef.current.setSize(width, height);
+      }
     }
   }, []);
 
@@ -164,6 +168,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     rendererRef.current.shadowMap.enabled = true;
     
     currentMount.appendChild(rendererRef.current.domElement);
+    handleResize(); // Call resize after appending
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     sceneRef.current.add(ambientLight);
@@ -179,16 +184,16 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     controlsRef.current.target.set(initialCameraLookAt.x, initialCameraLookAt.y, initialCameraLookAt.z);
     controlsRef.current.update();
 
+    // Create ground mesh and store in ref
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x37474F, side: THREE.DoubleSide, metalness: 0.1, roughness: 0.8 });
-    const groundMesh = new THREE.Mesh(groundGeometry, groundMaterial);
-    groundMesh.rotation.x = -Math.PI / 2;
-    groundMesh.position.y = 0;
-    groundMesh.receiveShadow = true;
-    sceneRef.current.add(groundMesh);
+    groundMeshRef.current = new THREE.Mesh(groundGeometry, groundMaterial);
+    groundMeshRef.current.rotation.x = -Math.PI / 2;
+    groundMeshRef.current.position.y = 0;
+    groundMeshRef.current.receiveShadow = true;
+    // Ground mesh will be added to scene based on layer visibility in another useEffect
     
-    handleResize(); // Initial resize
-    const resizeTimeoutId = setTimeout(() => { // Fallback resize
+    const resizeTimeoutId = setTimeout(() => {
       handleResize();
     }, 150);
 
@@ -260,10 +265,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (sceneRef.current) {
         if (ambientLight) sceneRef.current.remove(ambientLight);
         if (directionalLight) sceneRef.current.remove(directionalLight);
-        if (groundMesh) {
-          sceneRef.current.remove(groundMesh);
-          groundMesh.geometry.dispose();
-          if (groundMesh.material instanceof THREE.Material) groundMesh.material.dispose();
+        if (groundMeshRef.current) {
+          sceneRef.current.remove(groundMeshRef.current); // Ensure removed if present
+          groundMeshRef.current.geometry.dispose();
+          if (groundMeshRef.current.material instanceof THREE.Material) groundMeshRef.current.material.dispose();
+          groundMeshRef.current = null;
         }
       }
       rendererRef.current?.dispose();
@@ -272,8 +278,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       rendererRef.current = null;
       controlsRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialCameraPosition, initialCameraLookAt, handleResize, createEquipmentMesh]); // Added createEquipmentMesh and handleResize
+  }, [initialCameraPosition, initialCameraLookAt, handleResize, createEquipmentMesh]);
 
   const handleClick = (event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current) return;
@@ -297,16 +302,17 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (selectedObject.userData.id) {
         onSelectEquipmentRef.current(selectedObject.userData.id, isMultiSelectModifierPressed);
       } else {
-        onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); // Clicked on non-identifiable part of an object group or ground
+        onSelectEquipmentRef.current(null, isMultiSelectModifierPressed);
       }
     } else {
-      onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); // Clicked on empty space
+      onSelectEquipmentRef.current(null, isMultiSelectModifierPressed);
     }
   };
 
   useEffect(() => {
     if (!sceneRef.current) return;
 
+    // Clear existing equipment meshes
     equipmentMeshesRef.current.forEach(obj => {
       sceneRef.current?.remove(obj);
       if (obj instanceof THREE.Mesh) {
@@ -331,6 +337,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     });
     equipmentMeshesRef.current = [];
 
+    // Add new equipment meshes based on layers
     const visibleLayers = layers.filter(l => l.isVisible);
     equipment.forEach(item => {
       const itemLayer = visibleLayers.find(l => l.equipmentType === item.type || l.equipmentType === 'All');
@@ -340,6 +347,18 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         equipmentMeshesRef.current.push(obj);
       }
     });
+
+    // Handle Terrain/Ground visibility
+    const terrainLayer = layers.find(l => l.equipmentType === 'Terrain');
+    if (terrainLayer && groundMeshRef.current && sceneRef.current) {
+      const isGroundInScene = sceneRef.current.children.includes(groundMeshRef.current);
+      if (terrainLayer.isVisible && !isGroundInScene) {
+        sceneRef.current.add(groundMeshRef.current);
+      } else if (!terrainLayer.isVisible && isGroundInScene) {
+        sceneRef.current.remove(groundMeshRef.current);
+      }
+    }
+
   }, [equipment, layers, createEquipmentMesh]);
 
   useEffect(() => {
@@ -381,7 +400,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         setEmissiveForObject(obj, 0x000000); // No highlight
       }
     });
-  }, [selectedEquipmentIds, hoveredEquipmentId]); // Removed equipmentMeshesRef as it's a ref
+  }, [selectedEquipmentIds, hoveredEquipmentId]);
 
   useEffect(() => {
     if (programmaticCameraState && cameraRef.current && controlsRef.current) {
@@ -411,4 +430,5 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 export default ThreeScene;
 
     
+
 
