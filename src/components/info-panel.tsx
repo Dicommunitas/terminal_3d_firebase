@@ -4,7 +4,7 @@
 import type { Equipment } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon } from 'lucide-react';
+import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon } from 'lucide-react';
 
 interface InfoPanelProps {
   equipment: Equipment | null;
@@ -31,10 +31,10 @@ export function InfoPanel({ equipment, onClose }: InfoPanelProps) {
           ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span>
         </p>
         <p className="text-sm">Tipo: {equipment.type}</p>
-        {equipment.category && (
+        {equipment.sistema && (
           <p className="text-sm flex items-center">
-            <TagIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-            Categoria: {equipment.category}
+            <Settings2Icon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" /> {/* Using Settings2Icon for Sistema */}
+            Sistema: {equipment.sistema}
           </p>
         )}
         {equipment.area && (

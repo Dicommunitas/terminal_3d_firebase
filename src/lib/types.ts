@@ -3,9 +3,9 @@ export interface Equipment {
   id: string;
   name: string;
   type: 'Building' | 'Crane' | 'Tank' | 'Terrain' | 'Pipe' | 'Valve';
-  category?: string;
+  sistema?: string; // Renamed from category
   area?: string;
-  operationalState?: string; // Added operational state
+  operationalState?: string;
   position: { x: number; y: number; z: number };
   rotation?: { x: number; y: number; z: number };
   size?: { width: number; height: number; depth: number };

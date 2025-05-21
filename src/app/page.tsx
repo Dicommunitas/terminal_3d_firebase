@@ -21,28 +21,28 @@ import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
   // Buildings
-  { id: 'bldg-01', name: 'Main Office', type: 'Building', category: 'Administrative', area: 'Área 20', operationalState: 'operando', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
-  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', category: 'Storage', area: 'Área 31', operationalState: 'operando', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
-  { id: 'bldg-03', name: 'Control Room', type: 'Building', category: 'Operational', area: 'Área 32', operationalState: 'operando', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
+  { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'operando', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
+  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'operando', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
+  { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'NDD', area: 'Área 32', operationalState: 'operando', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
 
   // Cranes
-  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', category: 'Lifting Equipment', area: 'Área 40', operationalState: 'operando', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane over loading area.' },
-  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', category: 'Lifting Equipment', area: 'Área 50', operationalState: 'manutenção', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'MTBE', area: 'Área 40', operationalState: 'operando', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane over loading area.' },
+  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'QAV', area: 'Área 50', operationalState: 'manutenção', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
   
   // Tanks
-  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', category: 'Product Storage', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
-  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', category: 'Product Storage', area: 'Área 33', operationalState: 'não operando', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
-  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', category: 'Process Equipment', area: 'Área 34', operationalState: 'em falha', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
+  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
+  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'em falha', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
 
   // Pipes
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', category: 'Piping System', area: 'Área 35', operationalState: 'operando', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
-  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', category: 'Piping System', area: 'Área 34', operationalState: 'operando', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
-  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', category: 'Piping System', area: 'Área 60', operationalState: 'operando', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'LASTRO', area: 'Área 35', operationalState: 'operando', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'operando', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'GA', area: 'Área 60', operationalState: 'operando', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
 
   // Valves
-  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', category: 'Control Valve', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', category: 'Control Valve', area: 'Área 34', operationalState: 'manutenção', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', category: 'Safety Valve', area: 'Área 60', operationalState: 'em falha', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
+  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 
@@ -69,7 +69,7 @@ export default function Terminal3DPage() {
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
+  const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
   const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All');
 
@@ -77,14 +77,14 @@ export default function Terminal3DPage() {
 
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
-  const availableCategories = useMemo(() => {
-    const categories = new Set<string>();
+  const availableSistemas = useMemo(() => {
+    const sistemas = new Set<string>();
     equipmentData.forEach(equip => {
-      if (equip.category) {
-        categories.add(equip.category);
+      if (equip.sistema) {
+        sistemas.add(equip.sistema);
       }
     });
-    return ['All', ...Array.from(categories).sort()];
+    return ['All', ...Array.from(sistemas).sort()];
   }, [equipmentData]);
 
   const availableAreas = useMemo(() => {
@@ -110,9 +110,9 @@ export default function Terminal3DPage() {
   const filteredEquipment = useMemo(() => {
     let itemsToFilter = equipmentData;
 
-    // Filter by category
-    if (selectedCategory !== 'All') {
-      itemsToFilter = itemsToFilter.filter(equip => equip.category === selectedCategory);
+    // Filter by sistema
+    if (selectedSistema !== 'All') {
+      itemsToFilter = itemsToFilter.filter(equip => equip.sistema === selectedSistema);
     }
 
     // Filter by area
@@ -132,7 +132,7 @@ export default function Terminal3DPage() {
         const name = equip.name.toLowerCase();
         const type = equip.type.toLowerCase();
         const id = equip.id.toLowerCase();
-        const category = equip.category?.toLowerCase() || ''; 
+        const sistema = equip.sistema?.toLowerCase() || ''; 
         const area = equip.area?.toLowerCase() || '';
         const operationalState = equip.operationalState?.toLowerCase() || '';
 
@@ -141,14 +141,14 @@ export default function Terminal3DPage() {
           name.includes(term) || 
           type.includes(term) || 
           id.includes(term) ||
-          category.includes(term) ||
+          sistema.includes(term) ||
           area.includes(term) ||
           operationalState.includes(term)
         );
       });
     }
     return itemsToFilter;
-  }, [equipmentData, searchTerm, selectedCategory, selectedArea, selectedOperationalState]);
+  }, [equipmentData, searchTerm, selectedSistema, selectedArea, selectedOperationalState]);
 
   const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentIds];
@@ -315,7 +315,7 @@ export default function Terminal3DPage() {
                     <div className="relative">
                       <Input
                         type="search"
-                        placeholder="Search by name, type, ID, category, area, state..."
+                        placeholder="Search by name, type, ID, system, area, state..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="h-9 pr-9" 
@@ -333,15 +333,15 @@ export default function Terminal3DPage() {
                       )}
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="category-filter" className="text-xs text-muted-foreground">Filter by Category</Label>
-                      <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                        <SelectTrigger id="category-filter" className="h-9">
-                          <SelectValue placeholder="Select category" />
+                      <Label htmlFor="sistema-filter" className="text-xs text-muted-foreground">Filter by Sistema</Label>
+                      <Select value={selectedSistema} onValueChange={setSelectedSistema}>
+                        <SelectTrigger id="sistema-filter" className="h-9">
+                          <SelectValue placeholder="Select sistema" />
                         </SelectTrigger>
                         <SelectContent>
-                          {availableCategories.map(category => (
-                            <SelectItem key={category} value={category}>
-                              {category}
+                          {availableSistemas.map(sistema => (
+                            <SelectItem key={sistema} value={sistema}>
+                              {sistema}
                             </SelectItem>
                           ))}
                         </SelectContent>
