@@ -17,24 +17,24 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon, Terminal, Settings2Icon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
-  { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'operando', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
-  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'operando', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
-  { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'NDD', area: 'Área 32', operationalState: 'manutenção', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
-  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'MTBE', area: 'Área 40', operationalState: 'operando', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'QAV', area: 'Área 50', operationalState: 'em falha', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
-  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
-  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'LASTRO', area: 'Área 35', operationalState: 'operando', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
-  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'operando', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
-  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'GA', area: 'Área 60', operationalState: 'não operando', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
-  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
+  { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'operando', category: 'Administrative', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
+  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'operando', category: 'Storage', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
+  { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'NDD', area: 'Área 32', operationalState: 'manutenção', category: 'Operational', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
+  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'MTBE', area: 'Área 40', operationalState: 'operando', category: 'Heavy Lift', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
+  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'QAV', area: 'Área 50', operationalState: 'em falha', category: 'Workshop', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', category: 'Product Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
+  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', category: 'Auxiliary Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
+  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'LASTRO', area: 'Área 35', operationalState: 'operando', category: 'Transfer Line', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'operando', category: 'Transfer Line', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'GA', area: 'Área 60', operationalState: 'não operando', category: 'Utility Line', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
+  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', category: 'Control Valve', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', category: 'Control Valve', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', category: 'Safety Valve', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 const initialLayers: Layer[] = [
@@ -59,6 +59,7 @@ export default function Terminal3DPage() {
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
@@ -256,68 +257,48 @@ export default function Terminal3DPage() {
   const handleSaveAnnotation = useCallback((text: string) => {
     if (!annotationTargetEquipment) return;
 
-    const oldAnnotations = [...annotations];
     let newAnnotations: Annotation[];
-    let description: string;
+    let toastDescription: string;
 
-    const existingAnnotationIndex = oldAnnotations.findIndex(a => a.equipmentId === annotationTargetEquipment.id);
+    const existingAnnotationIndex = annotations.findIndex(a => a.equipmentId === annotationTargetEquipment.id);
 
     if (existingAnnotationIndex > -1) {
-      // Update existing annotation
-      newAnnotations = oldAnnotations.map((anno, index) => 
+      newAnnotations = annotations.map((anno, index) => 
         index === existingAnnotationIndex ? { ...anno, text: text } : anno
       );
-      description = `Annotation for ${annotationTargetEquipment.name} updated.`;
+      toastDescription = `Annotation for ${annotationTargetEquipment.name} updated.`;
     } else {
-      // Add new annotation
       const newAnnotation: Annotation = {
         equipmentId: annotationTargetEquipment.id,
         text,
         createdAt: new Date().toISOString(),
       };
-      newAnnotations = [...oldAnnotations, newAnnotation];
-      description = `Annotation for ${annotationTargetEquipment.name} added.`;
+      newAnnotations = [...annotations, newAnnotation];
+      toastDescription = `Annotation for ${annotationTargetEquipment.name} added.`;
     }
     
-    const command: Command = {
-      id: `save-annotation-${annotationTargetEquipment.id}-${Date.now()}`,
-      type: 'ANNOTATION_CHANGE',
-      description: description,
-      execute: () => setAnnotations(newAnnotations),
-      undo: () => setAnnotations(oldAnnotations),
-    };
-    executeCommand(command);
-    
+    setAnnotations(newAnnotations);
     setIsAnnotationDialogOpen(false);
     setEditingAnnotation(null);
     setAnnotationTargetEquipment(null);
-    toast({ title: "Annotation Saved", description: description });
+    toast({ title: "Annotation Saved", description: toastDescription });
 
-  }, [annotationTargetEquipment, annotations, executeCommand, toast]);
+  }, [annotationTargetEquipment, annotations, toast]);
 
   const handleDeleteAnnotation = useCallback((equipmentId: string) => {
     const equipment = initialEquipment.find(e => e.id === equipmentId);
     if (!equipment) return;
 
-    const oldAnnotations = [...annotations];
-    const newAnnotations = oldAnnotations.filter(a => a.equipmentId !== equipmentId);
+    const newAnnotations = annotations.filter(a => a.equipmentId !== equipmentId);
 
-    if (oldAnnotations.length === newAnnotations.length) {
+    if (annotations.length === newAnnotations.length) {
       toast({ title: "No Annotation", description: `No annotation found for ${equipment.name} to delete.`, variant: "destructive" });
       return;
     }
     
-    const command: Command = {
-      id: `delete-annotation-${equipmentId}-${Date.now()}`,
-      type: 'ANNOTATION_CHANGE',
-      description: `Annotation for ${equipment.name} deleted.`,
-      execute: () => setAnnotations(newAnnotations),
-      undo: () => setAnnotations(oldAnnotations),
-    };
-    executeCommand(command);
-
+    setAnnotations(newAnnotations);
     toast({ title: "Annotation Deleted", description: `Annotation for ${equipment.name} has been deleted.` });
-  }, [annotations, executeCommand, toast]);
+  }, [annotations, toast]);
 
 
   const equipmentAnnotation = useMemo(() => {
@@ -468,3 +449,6 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+
+
+    
