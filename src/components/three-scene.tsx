@@ -9,6 +9,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import type { Equipment, Layer, CameraState, Annotation } from '@/lib/types';
+import type { ColorMode } from '@/app/page';
 
 interface ThreeSceneProps {
   equipment: Equipment[];
@@ -22,6 +23,7 @@ interface ThreeSceneProps {
   initialCameraLookAt: { x: number; y: number; z: number };
   hoveredEquipmentId: string | null;
   setHoveredEquipmentId: (id: string | null) => void;
+  colorMode: ColorMode;
 }
 
 const ThreeScene: React.FC<ThreeSceneProps> = ({
@@ -36,6 +38,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   initialCameraLookAt,
   hoveredEquipmentId,
   setHoveredEquipmentId,
+  colorMode,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -65,7 +68,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   useEffect(() => {
     onCameraChangeRef.current = onCameraChange;
   }, [onCameraChange]);
-
+  
   useEffect(() => {
     hoveredEquipmentIdRef.current = hoveredEquipmentId;
   }, [hoveredEquipmentId]);
@@ -74,13 +77,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     setHoveredEquipmentIdRef.current = setHoveredEquipmentId;
   }, [setHoveredEquipmentId]);
 
-
   const handleResize = useCallback(() => {
     if (mountRef.current && cameraRef.current && rendererRef.current && labelRendererRef.current && composerRef.current) {
       const width = Math.max(1, mountRef.current.clientWidth);
       const height = Math.max(1, mountRef.current.clientHeight);
-      
-      // console.log(`[ThreeScene] handleResize CALLED. New dimensions: ${width}x${height}`);
       
       if (cameraRef.current.aspect !== width / height && height > 0 && width > 0) {
         cameraRef.current.aspect = width / height;
@@ -98,40 +98,45 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   }, []);
 
 
-  const createEquipmentMesh = useCallback((item: Equipment): THREE.Object3D => {
-    let stateColorHex: number;
-    
-    // console.log(`[ThreeScene createEquipmentMesh] Processing ${item.id}, state: ${item.operationalState}, original color: ${item.color}`);
+  const createEquipmentMesh = useCallback((item: Equipment, currentGlobalColorMode: ColorMode): THREE.Object3D => {
+    let finalColor = new THREE.Color();
 
-    switch (item.operationalState) {
-      case 'operando':
-        stateColorHex = 0xFF0000; // Vermelho
+    switch (currentGlobalColorMode) {
+      case 'Produto':
+        if (item.product && item.product !== "Não aplicável" && item.product.length >= 3) {
+          const r = (item.product.charCodeAt(0) % 256) / 255.0;
+          const g = (item.product.charCodeAt(1) % 256) / 255.0;
+          const b = (item.product.charCodeAt(2) % 256) / 255.0;
+          finalColor.setRGB(r, g, b);
+        } else {
+          finalColor.set(item.color); // Fallback to base item color
+        }
         break;
-      case 'não operando':
-        stateColorHex = 0x00FF00; // Verde
+      case 'Estado Operacional':
+        switch (item.operationalState) {
+          case 'operando': finalColor.setHex(0xFF0000); break; 
+          case 'não operando': finalColor.setHex(0x00FF00); break; 
+          case 'manutenção': finalColor.setHex(0xFFFF00); break; 
+          case 'em falha': finalColor.setHex(0x800080); break; 
+          case 'Não aplicável': 
+          default: finalColor.set(item.color); break;
+        }
         break;
-      case 'manutenção':
-        stateColorHex = 0xFFFF00; // Amarelo
-        break;
-      case 'em falha':
-        stateColorHex = 0x800080; // Roxo
-        break;
-      case 'Não aplicável':
+      case 'Equipamento':
       default:
-        stateColorHex = new THREE.Color(item.color).getHex();
+        finalColor.set(item.color);
         break;
     }
-    // console.log(`[ThreeScene createEquipmentMesh] Final color for ${item.id}: #${stateColorHex.toString(16)}`);
     
     const material = new THREE.MeshStandardMaterial({ 
-        color: stateColorHex, 
+        color: finalColor, 
         metalness: 0.3, 
         roughness: 0.6 
     });
 
     if (item.operationalState === 'Não aplicável') {
         material.transparent = true;
-        material.opacity = 0.5; // Aumentada transparência
+        material.opacity = 0.5;
     } else {
         material.transparent = false;
         material.opacity = 1.0;
@@ -170,7 +175,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (item.rotation) {
       mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
     }
-    mesh.userData = { id: item.id, type: item.type, originalColor: item.color };
+    mesh.userData = { id: item.id, type: item.type };
     mesh.castShadow = false; 
     mesh.receiveShadow = false;
     return mesh;
@@ -178,29 +183,23 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
 
   useEffect(() => {
-    // console.log("[ThreeScene] Main setup useEffect RUNNING");
     if (!mountRef.current) return;
     const currentMount = mountRef.current;
-    // console.log(`[ThreeScene] Mount dimensions AT START of useEffect: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
     
     sceneRef.current = new THREE.Scene();
-    const skyHorizonColor = 0xA9C1D1; // Light grayish blue
+    const skyHorizonColor = 0xA9C1D1; 
     sceneRef.current.background = new THREE.Color(skyHorizonColor); 
     sceneRef.current.fog = new THREE.Fog(skyHorizonColor, 40, 150); 
-    // console.log("[ThreeScene] Scene created");
     
     const initialWidth = Math.max(1, currentMount.clientWidth);
     const initialHeight = Math.max(1, currentMount.clientHeight);
 
     cameraRef.current = new THREE.PerspectiveCamera(75, initialWidth / initialHeight, 0.1, 1000);
     cameraRef.current.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
-    // console.log("[ThreeScene] Camera created at:", cameraRef.current.position.clone());
     
     rendererRef.current = new THREE.WebGLRenderer({ antialias: true });
     currentMount.appendChild(rendererRef.current.domElement);
-    // console.log("[ThreeScene] Renderer DOM element appended.");
     
-    // console.log(`[ThreeScene] Attempting initial resize. Mount dimensions BEFORE first handleResize: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
     handleResize(); 
 
     labelRendererRef.current = new CSS2DRenderer();
@@ -217,7 +216,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     outlinePassRef.current.edgeStrength = 3;
     outlinePassRef.current.edgeGlow = 0.5;
     outlinePassRef.current.edgeThickness = 1;
-    outlinePassRef.current.visibleEdgeColor.set('#000000'); 
     composerRef.current.addPass(outlinePassRef.current);
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
@@ -230,13 +228,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     directionalLight.position.set(10, 15, 10);
     directionalLight.castShadow = false;
     sceneRef.current.add(directionalLight);
-    // console.log("[ThreeScene] Lights added");
     
     controlsRef.current = new OrbitControls(cameraRef.current, rendererRef.current.domElement);
     controlsRef.current.enableDamping = true;
     controlsRef.current.target.set(initialCameraLookAt.x, initialCameraLookAt.y, initialCameraLookAt.z);
     controlsRef.current.update();
-    // console.log("[ThreeScene] OrbitControls created, target:", controlsRef.current.target.clone());
     
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
@@ -245,16 +241,14 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       metalness: 0.1, 
       roughness: 0.8,
       transparent: true,
-      opacity: 0.4  // Aumentada transparência
+      opacity: 0.4
     }); 
     groundMeshRef.current = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMeshRef.current.rotation.x = -Math.PI / 2;
     groundMeshRef.current.position.y = 0;
     groundMeshRef.current.receiveShadow = false;
-    // console.log("[ThreeScene] Ground plane added");
     
     const delayedResizeTimeoutId = setTimeout(() => {
-        // console.log(`[ThreeScene] Attempting DELAYED resize. Mount dimensions BEFORE delayed handleResize: ${mountRef.current?.clientWidth}x${mountRef.current?.clientHeight}`);
         handleResize();
     }, 150);
 
@@ -264,7 +258,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     window.addEventListener('resize', handleResize);
     currentMount.addEventListener('click', handleClick);
     currentMount.addEventListener('mousemove', handleMouseMove);
-    // console.log("[ThreeScene] Event listeners added.");
 
     let animationFrameId: number;
     const animate = () => {
@@ -276,7 +269,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         labelRendererRef.current.render(sceneRef.current, cameraRef.current);
       }
     };
-    // console.log("[ThreeScene] Animation loop started");
     animate();
 
     const handleControlsChangeEnd = () => {
@@ -292,9 +284,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (controlsRef.current && onCameraChangeRef.current) {
       controlsRef.current.addEventListener('end', handleControlsChangeEnd);
     }
-    // console.log("[ThreeScene] Main setup useEffect FINISHED");
+    
     return () => {
-      // console.log("[ThreeScene] Cleanup function RUNNING");
       cancelAnimationFrame(animationFrameId);
       clearTimeout(delayedResizeTimeoutId);
       if (currentMount) resizeObserver.unobserve(currentMount);
@@ -350,9 +341,9 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         currentMount.removeChild(labelRendererRef.current.domElement);
       }
       labelRendererRef.current = null;
-      // console.log("[ThreeScene] Cleanup FINISHED");
     };
-  }, [initialCameraPosition, initialCameraLookAt, handleResize, createEquipmentMesh]); // Adicionado createEquipmentMesh e handleResize
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current || equipmentMeshesRef.current.length === 0) {
@@ -416,7 +407,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   }, []); 
 
   useEffect(() => {
-    // console.log(`[ThreeScene] Updating equipment. Current mesh count: ${equipmentMeshesRef.current.length}`);
     if (!sceneRef.current) return;
 
     equipmentMeshesRef.current.forEach(obj => {
@@ -431,7 +421,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
     });
     equipmentMeshesRef.current = [];
-    // console.log("[ThreeScene] Old equipment meshes removed and disposed.");
     
     const visibleLayers = layers.filter(l => l.isVisible);
     
@@ -439,14 +428,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const itemLayer = visibleLayers.find(l => l.equipmentType === item.type || l.equipmentType === 'All');
       return !!itemLayer;
     });
-    // console.log(`[ThreeScene] Visible layers: ${visibleLayers.map(l => l.name).join(', ')}. Equipment to render: ${equipmentToRender.length}`);
 
     equipmentToRender.forEach(item => {
-      const obj = createEquipmentMesh(item);
+      const obj = createEquipmentMesh(item, colorMode);
       sceneRef.current?.add(obj);
       equipmentMeshesRef.current.push(obj);
     });
-    // console.log(`[ThreeScene] Added ${equipmentMeshesRef.current.length} new equipment meshes. Total scene children: ${sceneRef.current.children.length}`);
 
     const terrainLayer = layers.find(l => l.equipmentType === 'Terrain');
     if (terrainLayer && groundMeshRef.current && sceneRef.current) {
@@ -457,14 +444,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         sceneRef.current.remove(groundMeshRef.current);
       }
     }
-  }, [filteredEquipmentData, layers, createEquipmentMesh]);
+  }, [filteredEquipmentData, layers, createEquipmentMesh, colorMode]);
 
   useEffect(() => {
-    // console.log(`[ThreeScene] Highlighting effect. Selected: ${selectedEquipmentIds.join(',')}, Hovered: ${hoveredEquipmentId}`);
     if (!outlinePassRef.current || !sceneRef.current) return;
   
     const objectsToOutline: THREE.Object3D[] = [];
-    const meshesToConsider = equipmentMeshesRef.current;
+    const meshesToConsider = equipmentMeshesRef.current; 
   
     if (selectedEquipmentIds.length > 0) {
       selectedEquipmentIds.forEach(id => {
@@ -475,7 +461,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       });
       outlinePassRef.current.visibleEdgeColor.set(0x0000FF); // Strong blue for selected
       outlinePassRef.current.edgeStrength = 5; 
-      outlinePassRef.current.edgeThickness = 2.5;
+      outlinePassRef.current.edgeThickness = 1.5; // Adjusted from 2.5 for potentially finer strong outline
       outlinePassRef.current.edgeGlow = 0.7; 
     } else if (hoveredEquipmentId) {
       const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.id === hoveredEquipmentId);
@@ -484,14 +470,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
       outlinePassRef.current.visibleEdgeColor.set(0x87CEFA); // Light blue for hover
       outlinePassRef.current.edgeStrength = 4; 
-      outlinePassRef.current.edgeThickness = 2;
+      outlinePassRef.current.edgeThickness = 1; // Adjusted from 2 for finer hover outline
       outlinePassRef.current.edgeGlow = 0.5; 
     } else {
-      // No selection or hover, clear outline
       outlinePassRef.current.selectedObjects = [];
     }
     outlinePassRef.current.selectedObjects = objectsToOutline;
-  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); // layers and filteredEquipmentData ensure meshesToConsider is up-to-date
+  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); 
 
   useEffect(() => {
     if (!sceneRef.current || !labelRendererRef.current) return;
@@ -544,7 +529,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   }, [annotations, layers, filteredEquipmentData]); 
 
   useEffect(() => {
-    // console.log("[ThreeScene] Programmatic camera update:", programmaticCameraState);
     if (programmaticCameraState && cameraRef.current && controlsRef.current) {
       const camera = cameraRef.current;
       const controls = controlsRef.current;
@@ -556,7 +540,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const lookAtChanged = !controls.target.equals(targetLookAt);
       
       if (positionChanged || lookAtChanged) {
-        // console.log(`[ThreeScene] Applying programmatic camera change. Pos changed: ${positionChanged} LookAt changed: ${lookAtChanged}`);
         const oldControlsEnabled = controls.enabled;
         controls.enabled = false; 
         if (positionChanged) camera.position.copy(targetPosition);
@@ -571,3 +554,5 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
+
+    
