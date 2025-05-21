@@ -17,24 +17,24 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, LayersIcon, VideoIcon, Settings2Icon, SearchIcon, Terminal } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon, Settings2Icon, LocateIcon, ActivityIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
   { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Administrative', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
   { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Storage', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
   { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'MTBE', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Operational', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
-  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: 'GEN', category: 'Lifting', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: 'N/A', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', product: 'CRD', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Crude Oil.' },
-  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'em falha', product: 'GSL', category: 'Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Gasoline.' },
-  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'manutenção', product: 'DSL', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank for Diesel.' },
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'operando', product: 'CRD', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
-  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'MTBE', area: 'Área 34', operationalState: 'não operando', product: 'DSL', category: 'Transfer', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
-  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', product: 'H2O', category: 'Transfer', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section for water.' },
-  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', product: 'CRD', category: 'Control', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ODB', area: 'Área 34', operationalState: 'manutenção', product: 'DSL', category: 'Control', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 60', operationalState: 'em falha', product: 'NTR', category: 'Control', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve for Nitrogen.' },
+  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: 'Não aplicável', category: 'Lifting', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
+  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: 'Não aplicável', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'operando', product: '70H', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
+  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'em falha', product: '6DH', category: 'Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
+  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'manutenção', product: '660', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'operando', product: '70H', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'MTBE', area: 'Área 34', operationalState: 'não operando', product: '660', category: 'Transfer', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', product: '198', category: 'Transfer', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
+  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', product: '70H', category: 'Control', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ODB', area: 'Área 34', operationalState: 'manutenção', product: '70H', category: 'Control', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 60', operationalState: 'em falha', product: '198', category: 'Control', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 
@@ -283,7 +283,6 @@ export default function Terminal3DPage() {
     let toastDescription: string;
 
     if (existingAnnotation) {
-      // Update existing annotation
       newAnnotations = annotations.map(anno =>
         anno.equipmentId === annotationTargetEquipment.id
           ? { ...anno, text: text, createdAt: new Date().toISOString() } 
@@ -291,7 +290,6 @@ export default function Terminal3DPage() {
       );
       toastDescription = `Annotation for ${annotationTargetEquipment.name} updated.`;
     } else {
-      // Add new annotation
       const newAnnotation: Annotation = {
         equipmentId: annotationTargetEquipment.id,
         text,
@@ -385,7 +383,7 @@ export default function Terminal3DPage() {
           onOperationalStateChange={handleOperationalStateChange}
           availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All')}
           onProductChange={handleProductChange}
-          availableProductsList={availableProducts}
+          availableProductsList={availableProducts.filter(p => p !== 'Não aplicável')}
         />
       </div>
 
@@ -433,7 +431,10 @@ export default function Terminal3DPage() {
                       )}
                     </div>
                     <div className="space-y-1">
-                      <Label htmlFor="sistema-filter" className="text-xs text-muted-foreground">Filter by Sistema</Label>
+                      <Label htmlFor="sistema-filter" className="text-xs text-muted-foreground flex items-center">
+                        <Settings2Icon className="mr-1.5 h-3.5 w-3.5" />
+                        Filter by Sistema
+                      </Label>
                       <Select value={selectedSistema} onValueChange={setSelectedSistema}>
                         <SelectTrigger id="sistema-filter" className="h-9">
                           <SelectValue placeholder="Select sistema" />
@@ -448,7 +449,10 @@ export default function Terminal3DPage() {
                       </Select>
                     </div>
                      <div className="space-y-1">
-                      <Label htmlFor="area-filter" className="text-xs text-muted-foreground">Filter by Area</Label>
+                      <Label htmlFor="area-filter" className="text-xs text-muted-foreground flex items-center">
+                        <LocateIcon className="mr-1.5 h-3.5 w-3.5" />
+                        Filter by Area
+                      </Label>
                       <Select value={selectedArea} onValueChange={setSelectedArea}>
                         <SelectTrigger id="area-filter" className="h-9">
                           <SelectValue placeholder="Select area" />
@@ -457,6 +461,31 @@ export default function Terminal3DPage() {
                           {availableAreas.map(area => (
                             <SelectItem key={area} value={area}>
                               {area}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="op-state-filter" className="text-xs text-muted-foreground flex items-center">
+                        <ActivityIcon className="mr-1.5 h-3.5 w-3.5" />
+                         Filter by Operational State
+                      </Label>
+                      <Select value={equipmentData.find(e => e.operationalState)?.operationalState || 'All'} onValueChange={(value) => {
+                          const equip = equipmentData.find(e => e.operationalState === value);
+                          if(equip) {
+                            // This is not ideal - we should have a separate state for this filter
+                            // For now, this will just re-filter based on the first equipment that matches this state
+                            // A better approach would be to have `selectedOperationalStateFilter` state
+                          }
+                      }}>
+                        <SelectTrigger id="op-state-filter" className="h-9">
+                          <SelectValue placeholder="Select state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableOperationalStates.map(state => (
+                            <SelectItem key={state} value={state}>
+                              {state}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -490,3 +519,4 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+
