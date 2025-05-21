@@ -7,12 +7,12 @@ import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
-import { InfoPanel } from '@/components/info-panel';
+import { InfoPanel } from '@/components/info-panel'; // Ensured InfoPanel is imported
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Undo2Icon, Redo2Icon, PanelLeftClose } from 'lucide-react'; // Added PanelLeftClose
+import { Undo2Icon, Redo2Icon, PanelLeftClose } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -158,9 +158,15 @@ export default function Terminal3DPage() {
       <Sidebar collapsible="offcanvas" className="border-r z-40"> 
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
-            <div className="flex items-center">
-                <span className="font-semibold text-lg">Terminal 3D</span>
+            {/* Left Group: Toggle Button + Title */}
+            <div className="flex items-center space-x-2">
+              <SidebarTrigger variant="ghost" size="icon" aria-label="Close sidebar" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <PanelLeftClose className="h-5 w-5" />
+              </SidebarTrigger>
+              <span className="font-semibold text-lg">Terminal 3D</span>
             </div>
+
+            {/* Right Group: Undo/Redo Buttons */}
             <div className="flex items-center space-x-1">
                 <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <Undo2Icon className="h-5 w-5" />
@@ -168,11 +174,6 @@ export default function Terminal3DPage() {
                 <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <Redo2Icon className="h-5 w-5" />
                 </Button>
-                <SidebarTrigger asChild className="h-8 w-8 data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                  <Button variant="ghost" size="icon" aria-label="Close sidebar">
-                    <PanelLeftClose className="h-5 w-5" />
-                  </Button>
-                </SidebarTrigger>
             </div>
           </SidebarHeader>
           <SidebarContent className="p-0">
