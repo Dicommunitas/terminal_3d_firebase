@@ -9,12 +9,12 @@ import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { CommandHistoryPanel } from '@/components/command-history-panel';
-import { SiteHeader } from '@/components/site-header';
+// import { SiteHeader } from '@/components/site-header'; // SiteHeader removed
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { PanelLeft, Settings2 } from 'lucide-react';
+import { PanelLeft, Settings2, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -137,19 +137,28 @@ export default function Terminal3DPage() {
   return (
     <SidebarProvider defaultOpen={true}>
       <div className="flex h-screen w-full flex-col bg-background w-full">
-        <SiteHeader />
+        {/* <SiteHeader /> Removed */}
         <div className="flex flex-1 w-full overflow-hidden w-full">
           <Sidebar collapsible="icon" className="border-r">
              <div className="flex h-full flex-col">
-                <SidebarHeader className="p-4 flex justify-between items-center">
-                    <h2 className="text-xl font-semibold flex items-center">
-                        <Settings2 className="mr-2 h-5 w-5"/> Controls
-                    </h2>
+                <SidebarHeader className="p-3 flex justify-between items-center border-b">
+                    <div className="flex items-center">
+                        <Terminal className="mr-2 h-6 w-6 text-primary" />
+                        <span className="font-semibold text-lg">Terminal 3D</span>
+                    </div>
+                    <SidebarTrigger className="hidden md:flex data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground" aria-label="Toggle sidebar">
+                        <PanelLeft className="h-5 w-5" />
+                    </SidebarTrigger>
                 </SidebarHeader>
-                <Separator />
+                {/* Separator removed as SidebarHeader now has border-b */}
                 <SidebarContent className="p-0">
                   <ScrollArea className="h-full">
-                    <div className="p-4 space-y-6">
+                    <div className="p-4 space-y-4 pb-6"> {/* Added pb-6 for bottom padding */}
+                       <div className="pt-2 pb-3">
+                         <h3 className="text-base font-semibold flex items-center text-foreground">
+                            <Settings2 className="mr-2 h-5 w-5 text-primary"/> Panel Controls
+                         </h3>
+                       </div>
                       <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
                       <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
                       <CommandHistoryPanel canUndo={canUndo} canRedo={canRedo} onUndo={undo} onRedo={redo} />
@@ -189,4 +198,6 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+    
+
     
