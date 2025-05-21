@@ -14,16 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, Settings2, Terminal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 
 const initialEquipment: Equipment[] = [
   // Buildings (position.y is geometric center, assuming base is on y=0)
@@ -74,30 +66,29 @@ export default function Terminal3DPage() {
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('All');
   const { toast } = useToast();
 
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
-  const equipmentTypes = useMemo(() => {
-    const types = new Set(initialEquipment.map(e => e.type).filter(type => type !== 'Terrain'));
-    return ['All', ...Array.from(types)];
-  }, []);
-
   const filteredEquipment = useMemo(() => {
-    let tempEquipment = [...equipmentData];
-
-    if (selectedTypeFilter !== 'All') {
-      tempEquipment = tempEquipment.filter(equip => equip.type === selectedTypeFilter);
+    if (!searchTerm.trim()) {
+      return equipmentData;
     }
 
-    if (searchTerm) {
-      tempEquipment = tempEquipment.filter(equip =>
-        equip.name.toLowerCase().includes(searchTerm.toLowerCase())
+    const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+
+    return equipmentData.filter(equip => {
+      const name = equip.name.toLowerCase();
+      const type = equip.type.toLowerCase();
+      const id = equip.id.toLowerCase();
+
+      return searchTerms.every(term => 
+        name.includes(term) || 
+        type.includes(term) || 
+        id.includes(term)
       );
-    }
-    return tempEquipment;
-  }, [equipmentData, searchTerm, selectedTypeFilter]);
+    });
+  }, [equipmentData, searchTerm]);
 
   const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentIds];
@@ -116,15 +107,16 @@ export default function Terminal3DPage() {
     } else {
       if (equipmentId) {
         if (oldSelection.length === 1 && oldSelection[0] === equipmentId) {
-            newSelection = oldSelection;
+            newSelection = oldSelection; // Keep selection if clicking the same single selected item
         } else {
-            newSelection = [equipmentId];
+            newSelection = [equipmentId]; // New single selection
         }
       } else {
-        newSelection = [];
+        newSelection = []; // Deselect all
       }
     }
     
+    // Avoid command if selection hasn't actually changed
     const oldSelectionSorted = [...oldSelection].sort();
     const newSelectionSorted = [...newSelection].sort();
 
@@ -185,6 +177,7 @@ export default function Terminal3DPage() {
   }, [currentCameraState, executeCommand]);
   
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
+    // Debounce or threshold check to avoid too many updates
     if (currentCameraState &&
         Math.abs(currentCameraState.position.x - newSceneCameraState.position.x) < 0.01 &&
         Math.abs(currentCameraState.position.y - newSceneCameraState.position.y) < 0.01 &&
@@ -209,6 +202,7 @@ export default function Terminal3DPage() {
 
   const selectedEquipmentDetails = useMemo(() => {
     if (selectedEquipmentIds.length > 0) {
+      // Display details of the last selected item in a multi-selection scenario
       const lastSelectedId = selectedEquipmentIds[selectedEquipmentIds.length - 1];
       return equipmentData.find(e => e.id === lastSelectedId) || null;
     }
@@ -218,6 +212,7 @@ export default function Terminal3DPage() {
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="h-screen w-full relative bg-muted/20">
+        {/* Sidebar Trigger for mobile/always visible */}
         <div className="absolute top-4 left-4 z-30">
           <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
             <PanelLeft />
@@ -263,7 +258,7 @@ export default function Terminal3DPage() {
                     <div className="relative">
                       <Input
                         type="search"
-                        placeholder="Search equipment..."
+                        placeholder="Search by name, type, ID..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="h-9 pr-9" 
@@ -279,27 +274,6 @@ export default function Terminal3DPage() {
                           <XIcon className="h-4 w-4" />
                         </Button>
                       )}
-                    </div>
-                    <div>
-                      <Label htmlFor="type-filter-select" className="text-xs font-medium mb-1 block text-muted-foreground">
-                        Filter by Type
-                      </Label>
-                      <Select
-                        value={selectedTypeFilter}
-                        onValueChange={setSelectedTypeFilter}
-                        name="type-filter-select"
-                      >
-                        <SelectTrigger className="h-9">
-                          <SelectValue placeholder="All Types" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {equipmentTypes.map(type => (
-                            <SelectItem key={type} value={type}>
-                              {type === 'All' ? 'All Types' : type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
                     </div>
                   </CardContent>
                 </Card>
@@ -337,4 +311,5 @@ export default function Terminal3DPage() {
     
 
     
+
 
