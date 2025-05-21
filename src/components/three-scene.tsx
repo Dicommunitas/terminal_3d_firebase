@@ -9,8 +9,8 @@ import type { Equipment, Layer, CameraState } from '@/lib/types';
 interface ThreeSceneProps {
   equipment: Equipment[];
   layers: Layer[];
-  selectedEquipmentId: string | null;
-  onSelectEquipment: (equipmentId: string | null) => void;
+  selectedEquipmentIds: string[]; // Changed from string | null
+  onSelectEquipment: (equipmentId: string | null, isMultiSelectModifierPressed: boolean) => void; // Signature updated
   cameraState?: CameraState;
   onCameraChange?: (cameraState: CameraState) => void;
   initialCameraPosition: { x: number; y: number; z: number };
@@ -20,7 +20,7 @@ interface ThreeSceneProps {
 const ThreeScene: React.FC<ThreeSceneProps> = ({
   equipment,
   layers,
-  selectedEquipmentId,
+  selectedEquipmentIds,
   onSelectEquipment,
   cameraState: programmaticCameraState,
   onCameraChange,
@@ -101,14 +101,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (mountRef.current && cameraRef.current && rendererRef.current) {
       const width = Math.max(1, mountRef.current.clientWidth);
       const height = Math.max(1, mountRef.current.clientHeight);
-      // console.log(`[ThreeScene] handleResize CALLED. New dimensions: ${width}x${height}`);
       if (cameraRef.current.aspect !== width / height) {
         cameraRef.current.aspect = width / height;
         cameraRef.current.updateProjectionMatrix();
       }
       rendererRef.current.setSize(width, height);
-    } else {
-      // console.log('[ThreeScene] handleResize: refs not ready.');
     }
   }, []);
 
@@ -148,34 +145,25 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (hoveredEquipmentIdRef.current !== foundHoverId) {
       setHoveredEquipmentId(foundHoverId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
+
   useEffect(() => {
-    // console.log('[ThreeScene] Main setup useEffect RUNNING');
     if (!mountRef.current || rendererRef.current) {
-      // console.log('[ThreeScene] Main setup: mountRef.current missing or renderer already initialized. Bailing.');
       return;
     }
     const currentMount = mountRef.current;
-    // console.log(`[ThreeScene] Mount dimensions AT START of useEffect: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
 
     sceneRef.current = new THREE.Scene();
     sceneRef.current.background = new THREE.Color(0x2B3035);
-    // console.log('[ThreeScene] Scene created');
 
-    cameraRef.current = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+    cameraRef.current = new THREE.PerspectiveCamera(75, 1, 0.1, 1000); // Aspect will be set by handleResize
     cameraRef.current.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
-    // console.log('[ThreeScene] Camera created at:', cameraRef.current.position);
-
+    
     rendererRef.current = new THREE.WebGLRenderer({ antialias: true });
     rendererRef.current.shadowMap.enabled = true;
     
     currentMount.appendChild(rendererRef.current.domElement);
-    // console.log('[ThreeScene] Renderer DOM element appended.');
-
-    // console.log(`[ThreeScene] Attempting initial resize. Mount dimensions BEFORE first handleResize: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
-    handleResize();
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     sceneRef.current.add(ambientLight);
@@ -185,13 +173,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     directionalLight.shadow.mapSize.width = 2048;
     directionalLight.shadow.mapSize.height = 2048;
     sceneRef.current.add(directionalLight);
-    // console.log('[ThreeScene] Lights added');
 
     controlsRef.current = new OrbitControls(cameraRef.current, rendererRef.current.domElement);
     controlsRef.current.enableDamping = true;
     controlsRef.current.target.set(initialCameraLookAt.x, initialCameraLookAt.y, initialCameraLookAt.z);
     controlsRef.current.update();
-    // console.log('[ThreeScene] OrbitControls created, target:', controlsRef.current.target);
 
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x37474F, side: THREE.DoubleSide, metalness: 0.1, roughness: 0.8 });
@@ -200,16 +186,15 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     groundMesh.position.y = 0;
     groundMesh.receiveShadow = true;
     sceneRef.current.add(groundMesh);
-    // console.log('[ThreeScene] Ground plane added');
+    
+    handleResize(); // Initial resize
+    const resizeTimeoutId = setTimeout(() => { // Fallback resize
+      handleResize();
+    }, 150);
 
     window.addEventListener('resize', handleResize);
     currentMount.addEventListener('click', handleClick);
     currentMount.addEventListener('mousemove', handleMouseMove); 
-
-    const resizeTimeoutId = setTimeout(() => {
-      // console.log(`[ThreeScene] Attempting DELAYED resize. Mount dimensions BEFORE delayed handleResize: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
-      handleResize();
-    }, 150);
 
     let animationFrameId: number;
     const animate = () => {
@@ -220,7 +205,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
     };
     animate();
-    // console.log('[ThreeScene] Animation loop started');
 
     const handleControlsChangeEnd = () => {
       if (cameraRef.current && controlsRef.current && onCameraChangeRef.current) {
@@ -233,10 +217,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (controlsRef.current && onCameraChangeRef.current) {
       controlsRef.current.addEventListener('end', handleControlsChangeEnd);
     }
-    // console.log('[ThreeScene] Main setup useEffect FINISHED');
 
     return () => {
-      // console.log('[ThreeScene] Cleanup function RUNNING');
       cancelAnimationFrame(animationFrameId);
       clearTimeout(resizeTimeoutId);
       window.removeEventListener('resize', handleResize);
@@ -291,7 +273,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       controlsRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialCameraPosition, initialCameraLookAt, handleResize, createEquipmentMesh]); // Added createEquipmentMesh and handleResize
 
   const handleClick = (event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current) return;
@@ -303,6 +285,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
     const intersects = raycasterRef.current.intersectObjects(equipmentMeshesRef.current, true);
+    
+    const isMultiSelectModifierPressed = event.ctrlKey || event.metaKey;
 
     if (intersects.length > 0) {
       let selectedObject = intersects[0].object;
@@ -311,17 +295,16 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         selectedObject = selectedObject.parent;
       }
       if (selectedObject.userData.id) {
-        onSelectEquipmentRef.current(selectedObject.userData.id);
+        onSelectEquipmentRef.current(selectedObject.userData.id, isMultiSelectModifierPressed);
       } else {
-        onSelectEquipmentRef.current(null);
+        onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); // Clicked on non-identifiable part of an object group or ground
       }
     } else {
-      onSelectEquipmentRef.current(null);
+      onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); // Clicked on empty space
     }
   };
 
   useEffect(() => {
-    // console.log('[ThreeScene] Updating equipment. Current mesh count:', equipmentMeshesRef.current.length);
     if (!sceneRef.current) return;
 
     equipmentMeshesRef.current.forEach(obj => {
@@ -347,25 +330,19 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
     });
     equipmentMeshesRef.current = [];
-    // console.log('[ThreeScene] Old equipment meshes removed and disposed.');
 
     const visibleLayers = layers.filter(l => l.isVisible);
-    // console.log('[ThreeScene] Visible layers:', visibleLayers.map(l => l.name));
-    let addedCount = 0;
     equipment.forEach(item => {
       const itemLayer = visibleLayers.find(l => l.equipmentType === item.type || l.equipmentType === 'All');
       if (itemLayer) {
         const obj = createEquipmentMesh(item);
         sceneRef.current?.add(obj);
         equipmentMeshesRef.current.push(obj);
-        addedCount++;
       }
     });
-    // console.log(`[ThreeScene] Added ${addedCount} new equipment meshes. Total scene children: ${sceneRef.current.children.length}`);
   }, [equipment, layers, createEquipmentMesh]);
 
   useEffect(() => {
-    // console.log(`[ThreeScene] Highlighting effect. Selected: ${selectedEquipmentId}, Hovered: ${hoveredEquipmentId}`);
     equipmentMeshesRef.current.forEach(obj => {
       const objectId = obj.userData.id; 
 
@@ -396,19 +373,18 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
       if (!objectId) return;
 
-      if (objectId === selectedEquipmentId) {
+      if (selectedEquipmentIds.includes(objectId)) {
         setEmissiveForObject(obj, 0xBE29FF); // Purple for selected
       } else if (objectId === hoveredEquipmentId) {
-        setEmissiveForObject(obj, 0xFFD700); // Yellow for hovered
+        setEmissiveForObject(obj, 0xFFD700); // Yellow for hovered (and not selected)
       } else {
         setEmissiveForObject(obj, 0x000000); // No highlight
       }
     });
-  }, [selectedEquipmentId, hoveredEquipmentId]);
+  }, [selectedEquipmentIds, hoveredEquipmentId]); // Removed equipmentMeshesRef as it's a ref
 
   useEffect(() => {
     if (programmaticCameraState && cameraRef.current && controlsRef.current) {
-      // console.log('[ThreeScene] Programmatic camera update:', programmaticCameraState);
       const camera = cameraRef.current;
       const controls = controlsRef.current;
 
@@ -419,7 +395,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const lookAtChanged = !controls.target.equals(targetLookAt);
 
       if (positionChanged || lookAtChanged) {
-        // console.log(`[ThreeScene] Applying programmatic camera change. Pos changed: ${positionChanged} LookAt changed: ${lookAtChanged}`);
         const oldControlsEnabled = controls.enabled;
         controls.enabled = false; 
         if (positionChanged) camera.position.copy(targetPosition);
@@ -436,3 +411,4 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 export default ThreeScene;
 
     
+

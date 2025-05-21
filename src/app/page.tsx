@@ -7,12 +7,12 @@ import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
-import { InfoPanel } from '@/components/info-panel'; // Ensured InfoPanel is imported
+import { InfoPanel } from '@/components/info-panel';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Undo2Icon, Redo2Icon, PanelLeftClose } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -58,21 +58,71 @@ const cameraPresets: PresetCameraView[] = [
 
 
 export default function Terminal3DPage() {
-  const [equipment, setEquipment] = useState<Equipment[]>(initialEquipment);
+  const [equipmentData, setEquipmentData] = useState<Equipment[]>(initialEquipment); // Renamed for clarity if needed in future
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
-  const [selectedEquipmentId, setSelectedEquipmentId] = useState<string | null>(null);
+  const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
   const { toast } = useToast();
 
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
-  const handleSelectEquipment = useCallback((equipmentId: string | null) => {
-    setSelectedEquipmentId(equipmentId);
-     if (equipmentId) {
-      const item = equipment.find(e => e.id === equipmentId);
-      toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected.` });
+  const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
+    const oldSelection = [...selectedEquipmentIds];
+    let newSelection: string[];
+
+    if (isMultiSelectModifierPressed) {
+      if (equipmentId) {
+        if (oldSelection.includes(equipmentId)) {
+          newSelection = oldSelection.filter(id => id !== equipmentId); // Toggle off
+        } else {
+          newSelection = [...oldSelection, equipmentId]; // Add to selection
+        }
+      } else {
+        // Clicked on empty space with modifier, maintain current selection
+        newSelection = oldSelection; 
+      }
+    } else {
+      if (equipmentId) {
+        // Single select or re-selecting an item already in a multi-selection
+        // If it's already the only selected item, keep it. Otherwise, make it the only selected item.
+        if (oldSelection.includes(equipmentId) && oldSelection.length === 1) {
+          newSelection = oldSelection;
+        } else {
+          newSelection = [equipmentId];
+        }
+      } else {
+        newSelection = []; // Click on empty space, clear selection
+      }
     }
-  }, [toast, equipment]);
+    
+    // Sort arrays before comparison to ensure order doesn't cause false positives
+    const oldSelectionSorted = [...oldSelection].sort();
+    const newSelectionSorted = [...newSelection].sort();
+
+    if (JSON.stringify(oldSelectionSorted) === JSON.stringify(newSelectionSorted)) {
+        return; // No actual change in selection
+    }
+
+    const command: Command = {
+      id: `select-equipment-${Date.now()}`,
+      type: 'EQUIPMENT_SELECT',
+      description: `Update equipment selection. ${newSelection.length} item(s) selected.`,
+      execute: () => setSelectedEquipmentIds(newSelection),
+      undo: () => setSelectedEquipmentIds(oldSelection),
+    };
+    executeCommand(command);
+
+    if (newSelection.length === 1) {
+      const item = equipmentData.find(e => e.id === newSelection[0]);
+      toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected. ${newSelection.length} item(s) total.` });
+    } else if (newSelection.length > 1) {
+      toast({ title: "Selection Updated", description: `${newSelection.length} items selected.` });
+    } else if (oldSelection.length > 0 && newSelection.length === 0) {
+      toast({ title: "Selection Cleared" });
+    }
+
+  }, [selectedEquipmentIds, executeCommand, equipmentData, toast]);
+
 
   const handleToggleLayer = useCallback((layerId: string) => {
     const layerIndex = layers.findIndex(l => l.id === layerId);
@@ -129,36 +179,39 @@ export default function Terminal3DPage() {
 
 
   const selectedEquipmentDetails = useMemo(() => {
-    return equipment.find(e => e.id === selectedEquipmentId) || null;
-  }, [selectedEquipmentId, equipment]);
+    if (selectedEquipmentIds.length > 0) {
+      // Display details of the last selected item
+      const lastSelectedId = selectedEquipmentIds[selectedEquipmentIds.length - 1];
+      return equipmentData.find(e => e.id === lastSelectedId) || null;
+    }
+    return null;
+  }, [selectedEquipmentIds, equipmentData]);
 
   return (
-    <SidebarProvider defaultOpen={false}> {/* Sidebar starts closed for overlay */}
-      {/* Main content area for 3D scene, InfoPanel, and floating trigger */}
+    <SidebarProvider defaultOpen={false}>
       <div className="h-screen w-full relative bg-muted/20">
-        <div className="absolute top-4 left-4 z-30"> {/* Trigger needs to be above scene & InfoPanel */}
-          <SidebarTrigger className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2" />
+        <div className="absolute top-4 left-4 z-30">
+          <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
+            <PanelLeft />
+          </SidebarTrigger>
         </div>
 
         <ThreeScene
-          equipment={equipment}
+          equipment={equipmentData}
           layers={layers}
-          selectedEquipmentId={selectedEquipmentId}
+          selectedEquipmentIds={selectedEquipmentIds}
           onSelectEquipment={handleSelectEquipment}
           cameraState={currentCameraState}
           onCameraChange={handleCameraChangeFromScene}
           initialCameraPosition={cameraPresets[0].position}
           initialCameraLookAt={cameraPresets[0].lookAt} 
         />
-        <InfoPanel equipment={selectedEquipmentDetails} onClose={() => handleSelectEquipment(null)} />
+        <InfoPanel equipment={selectedEquipmentDetails} onClose={() => handleSelectEquipment(null, false)} />
       </div>
 
-      {/* Sidebar itself. collapsible="offcanvas" makes it fixed & overlay. */}
-      {/* Assign higher z-index to ensure it's on top of InfoPanel and Trigger when open */}
       <Sidebar collapsible="offcanvas" className="border-r z-40"> 
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
-            {/* Left Group: Toggle Button + Title */}
             <div className="flex items-center space-x-2">
               <SidebarTrigger variant="ghost" size="icon" aria-label="Close sidebar" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <PanelLeftClose className="h-5 w-5" />
@@ -166,7 +219,6 @@ export default function Terminal3DPage() {
               <span className="font-semibold text-lg">Terminal 3D</span>
             </div>
 
-            {/* Right Group: Undo/Redo Buttons */}
             <div className="flex items-center space-x-1">
                 <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <Undo2Icon className="h-5 w-5" />
@@ -200,8 +252,6 @@ export default function Terminal3DPage() {
 
     
 
-
-
     
 
     
@@ -209,3 +259,4 @@ export default function Terminal3DPage() {
     
 
     
+
