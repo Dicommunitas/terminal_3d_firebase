@@ -11,10 +11,10 @@ import { InfoPanel } from '@/components/info-panel';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Undo2Icon, Redo2Icon, PanelLeftClose, PanelLeft, SearchIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -94,10 +94,11 @@ export default function Terminal3DPage() {
       }
     } else {
       if (equipmentId) {
-        if (oldSelection.includes(equipmentId) && oldSelection.length === 1) {
-          newSelection = oldSelection;
+        // If the clicked item is already the only selected item, do nothing.
+        if (oldSelection.length === 1 && oldSelection[0] === equipmentId) {
+            newSelection = oldSelection;
         } else {
-          newSelection = [equipmentId];
+            newSelection = [equipmentId];
         }
       } else {
         newSelection = [];
@@ -121,7 +122,7 @@ export default function Terminal3DPage() {
     executeCommand(command);
 
     if (newSelection.length === 1) {
-      const item = equipmentData.find(e => e.id === newSelection[0]); // Use original equipmentData for toast
+      const item = equipmentData.find(e => e.id === newSelection[0]);
       toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected. ${newSelection.length} item(s) total.` });
     } else if (newSelection.length > 1) {
       toast({ title: "Selection Updated", description: `${newSelection.length} items selected.` });
@@ -189,7 +190,7 @@ export default function Terminal3DPage() {
   const selectedEquipmentDetails = useMemo(() => {
     if (selectedEquipmentIds.length > 0) {
       const lastSelectedId = selectedEquipmentIds[selectedEquipmentIds.length - 1];
-      return equipmentData.find(e => e.id === lastSelectedId) || null; // Use original equipmentData
+      return equipmentData.find(e => e.id === lastSelectedId) || null;
     }
     return null;
   }, [selectedEquipmentIds, equipmentData]);
@@ -204,7 +205,7 @@ export default function Terminal3DPage() {
         </div>
 
         <ThreeScene
-          equipment={filteredEquipment} // Pass filtered equipment to scene
+          equipment={filteredEquipment}
           layers={layers}
           selectedEquipmentIds={selectedEquipmentIds}
           onSelectEquipment={handleSelectEquipment}
@@ -238,19 +239,27 @@ export default function Terminal3DPage() {
             <ScrollArea className="h-full">
               <div className="p-4 space-y-6 pb-6">
                 <Card className="shadow-md">
-                  <CardHeader>
-                    <CardTitle className="flex items-center text-lg">
-                      <SearchIcon className="mr-2 h-5 w-5" />
-                      Search Equipment
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <Input
-                      type="search"
-                      placeholder="Enter equipment name..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+                  <CardContent className="p-3">
+                    <div className="relative">
+                      <Input
+                        type="search"
+                        placeholder="Search equipment..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-9 pr-9" 
+                      />
+                      {searchTerm && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setSearchTerm('')}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0 h-6 w-6 text-muted-foreground hover:text-foreground"
+                          aria-label="Clear search"
+                        >
+                          <XIcon className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
                 <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
@@ -283,5 +292,7 @@ export default function Terminal3DPage() {
     
 
 
+
+    
 
     
