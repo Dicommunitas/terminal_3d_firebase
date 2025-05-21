@@ -18,7 +18,7 @@ export interface Equipment {
 export interface Layer {
   id: string;
   name: string;
-  equipmentType: Equipment['type'] | 'All' | 'Annotations'; // Added 'Annotations'
+  equipmentType: Equipment['type'] | 'All' | 'Annotations';
   isVisible: boolean;
 }
 
@@ -29,7 +29,7 @@ export interface CameraState {
 
 export interface Command {
   id: string;
-  type: 'CAMERA_MOVE' | 'LAYER_VISIBILITY' | 'EQUIPMENT_SELECT';
+  type: 'CAMERA_MOVE' | 'LAYER_VISIBILITY' | 'EQUIPMENT_SELECT' | 'ANNOTATION_CHANGE';
   execute: () => void;
   undo: () => void;
   description: string;
@@ -42,8 +42,7 @@ export interface PresetCameraView {
 }
 
 export interface Annotation {
-  id: string;
-  text: string;
   equipmentId: string; // ID of the equipment this annotation is attached to
-  position: { x: number; y: number; z: number }; // World position for the annotation
+  text: string;
+  createdAt: string; // ISO date string
 }

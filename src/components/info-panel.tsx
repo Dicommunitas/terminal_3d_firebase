@@ -1,22 +1,34 @@
 
 "use client";
 
-import type { Equipment } from '@/lib/types';
+import type { Equipment, Annotation } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon, MessageSquarePlusIcon } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon, MessageSquarePlusIcon, Edit3Icon, Trash2Icon, CalendarDays } from 'lucide-react';
+import { format, parseISO } from 'date-fns';
 
 interface InfoPanelProps {
   equipment: Equipment | null;
+  annotation: Annotation | null;
   onClose: () => void;
-  onOpenAddAnnotationDialog: () => void;
+  onOpenAnnotationDialog: () => void;
+  onDeleteAnnotation: (equipmentId: string) => void;
 }
 
-export function InfoPanel({ equipment, onClose, onOpenAddAnnotationDialog }: InfoPanelProps) {
+export function InfoPanel({ equipment, annotation, onClose, onOpenAnnotationDialog, onDeleteAnnotation }: InfoPanelProps) {
   if (!equipment) return null;
 
+  const handleDeleteClick = () => {
+    if (equipment) {
+      onDeleteAnnotation(equipment.id);
+    }
+  };
+  
+  const formattedDate = annotation?.createdAt ? format(parseISO(annotation.createdAt), "dd/MM/yyyy HH:mm") : null;
+
   return (
-    <Card className="absolute top-4 right-4 w-80 shadow-xl z-10 bg-card/90 backdrop-blur-sm">
+    <Card className="absolute top-4 right-4 w-80 shadow-xl z-20 bg-card/90 backdrop-blur-sm max-h-[calc(100vh-2rem)] flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-lg flex items-center">
           <InfoIcon className="mr-2 h-5 w-5 text-primary" />
@@ -26,7 +38,7 @@ export function InfoPanel({ equipment, onClose, onOpenAddAnnotationDialog }: Inf
           <XIcon className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-1 pb-3">
+      <CardContent className="space-y-1 pb-3 overflow-y-auto flex-grow">
         <h3 className="text-md font-semibold">{equipment.name}</h3>
         <p className="text-sm">
           ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span>
@@ -56,15 +68,37 @@ export function InfoPanel({ equipment, onClose, onOpenAddAnnotationDialog }: Inf
               <FileTextIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
               <span>Detalhes:</span>
             </div>
-            <p className="italic pl-5">{equipment.details}</p>
+            <p className="italic pl-5 text-xs">{equipment.details}</p>
           </div>
         )}
+        <Separator className="my-3"/>
+        {annotation ? (
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+                <h4 className="text-sm font-medium flex items-center"><Edit3Icon className="mr-2 h-4 w-4 text-primary"/>Anotação</h4>
+                {formattedDate && (
+                    <span className="text-xs text-muted-foreground flex items-center">
+                        <CalendarDays className="mr-1 h-3 w-3" /> {formattedDate}
+                    </span>
+                )}
+            </div>
+            <p className="text-xs bg-muted/50 p-2 rounded whitespace-pre-wrap break-words">{annotation.text}</p>
+            <div className="flex space-x-2 pt-1">
+              <Button onClick={onOpenAnnotationDialog} size="sm" variant="outline" className="flex-1">
+                <Edit3Icon className="mr-2 h-4 w-4" /> Editar
+              </Button>
+              <Button onClick={handleDeleteClick} size="sm" variant="destructive" className="flex-1">
+                <Trash2Icon className="mr-2 h-4 w-4" /> Excluir
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button onClick={onOpenAnnotationDialog} size="sm" className="w-full">
+            <MessageSquarePlusIcon className="mr-2 h-4 w-4" /> Adicionar Anotação
+          </Button>
+        )}
+
       </CardContent>
-      <CardFooter className="p-3 pt-0">
-        <Button onClick={onOpenAddAnnotationDialog} size="sm" className="w-full">
-          <MessageSquarePlusIcon className="mr-2 h-4 w-4" /> Adicionar Anotação
-        </Button>
-      </CardFooter>
     </Card>
   );
 }

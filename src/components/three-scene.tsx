@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import type { Equipment, Layer, CameraState, Annotation } from '@/lib/types';
+import { StickyNote } from 'lucide-react'; // Using StickyNote for pin icon
 
 interface ThreeSceneProps {
   equipment: Equipment[];
@@ -20,7 +21,7 @@ interface ThreeSceneProps {
 }
 
 const ThreeScene: React.FC<ThreeSceneProps> = ({
-  equipment,
+  equipment: filteredEquipmentData, // Renamed to avoid confusion with internal equipment list
   layers,
   annotations,
   selectedEquipmentIds,
@@ -34,10 +35,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
-  const labelRendererRef = useRef<CSS2DRenderer | null>(null);
+  const labelRendererRef = useRef<CSS2DRenderer | null>(null); // For annotation pins
   const controlsRef = useRef<OrbitControls | null>(null);
   const equipmentMeshesRef = useRef<THREE.Object3D[]>([]);
-  const annotationObjectsRef = useRef<CSS2DObject[]>([]);
+  const annotationPinObjectsRef = useRef<CSS2DObject[]>([]); // For pins
   const raycasterRef = useRef(new THREE.Raycaster());
   const mouseRef = useRef(new THREE.Vector2());
   const groundMeshRef = useRef<THREE.Mesh | null>(null);
@@ -108,7 +109,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const width = Math.max(1, mountRef.current.clientWidth);
       const height = Math.max(1, mountRef.current.clientHeight);
       
-      if (cameraRef.current.aspect !== width / height && height > 0) {
+      if (cameraRef.current.aspect !== width / height && height > 0 && width > 0) {
         cameraRef.current.aspect = width / height;
         cameraRef.current.updateProjectionMatrix();
       }
@@ -120,12 +121,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   }, []);
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
-    if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current) {
+    if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current || equipmentMeshesRef.current.length === 0) {
       if (hoveredEquipmentIdRef.current !== null) setHoveredEquipmentId(null);
-      return;
-    }
-    if (equipmentMeshesRef.current.length === 0) {
-       if (hoveredEquipmentIdRef.current !== null) setHoveredEquipmentId(null);
       return;
     }
 
@@ -173,10 +170,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     labelRendererRef.current = new CSS2DRenderer();
     labelRendererRef.current.domElement.style.position = 'absolute';
     labelRendererRef.current.domElement.style.top = '0px';
-    labelRendererRef.current.domElement.style.pointerEvents = 'none'; // Important for mouse events to pass through to canvas
+    labelRendererRef.current.domElement.style.pointerEvents = 'none'; 
     currentMount.appendChild(labelRendererRef.current.domElement);
     
-    handleResize(); 
+    handleResize();
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     sceneRef.current.add(ambientLight);
@@ -199,9 +196,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     groundMeshRef.current.position.y = 0;
     groundMeshRef.current.receiveShadow = true;
     
-    const resizeTimeoutId = setTimeout(() => {
-      handleResize();
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(currentMount);
+    
+    const initialResizeTimeoutId = setTimeout(() => {
+        handleResize();
     }, 150);
+
 
     window.addEventListener('resize', handleResize);
     currentMount.addEventListener('click', handleClick);
@@ -234,7 +235,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     return () => {
       cancelAnimationFrame(animationFrameId);
-      clearTimeout(resizeTimeoutId);
+      clearTimeout(initialResizeTimeoutId);
+      resizeObserver.disconnect();
       window.removeEventListener('resize', handleResize);
       if (currentMount) {
         currentMount.removeEventListener('click', handleClick);
@@ -256,15 +258,14 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
           obj.geometry.dispose();
           if (Array.isArray(obj.material)) obj.material.forEach(m => m.dispose());
           else if (obj.material) (obj.material as THREE.Material).dispose();
-        } else if (obj instanceof THREE.Group) { /* handle group disposal if needed */ }
+        }
       });
       equipmentMeshesRef.current = [];
 
-      annotationObjectsRef.current.forEach(annoObj => {
+      annotationPinObjectsRef.current.forEach(annoObj => {
         sceneRef.current?.remove(annoObj);
-         // CSS2DObject children (HTML elements) are managed by the browser, no specific Three.js disposal needed for them here
       });
-      annotationObjectsRef.current = [];
+      annotationPinObjectsRef.current = [];
 
       if (sceneRef.current) {
         if (groundMeshRef.current) {
@@ -275,7 +276,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         }
       }
       rendererRef.current?.dispose();
-      // labelRendererRef.current doesn't have a dispose method
       sceneRef.current = null;
       cameraRef.current = null;
       rendererRef.current = null;
@@ -283,10 +283,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       controlsRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []); 
 
   const handleClick = (event: MouseEvent) => {
-    if (!mountRef.current || !cameraRef.current || !sceneRef.current) return;
+    if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current) return;
     const currentMountForClick = mountRef.current;
 
     const rect = currentMountForClick.getBoundingClientRect();
@@ -328,7 +328,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     equipmentMeshesRef.current = [];
 
     const visibleLayers = layers.filter(l => l.isVisible);
-    equipment.forEach(item => {
+    filteredEquipmentData.forEach(item => {
       const itemLayer = visibleLayers.find(l => l.equipmentType === item.type || l.equipmentType === 'All');
       if (itemLayer) {
         const obj = createEquipmentMesh(item);
@@ -347,18 +347,16 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
     }
 
-  }, [equipment, layers, createEquipmentMesh]);
+  }, [filteredEquipmentData, layers, createEquipmentMesh]);
 
-  // Effect for updating annotations
+  // Effect for updating annotation pins
   useEffect(() => {
     if (!sceneRef.current || !labelRendererRef.current) return;
 
-    // Clear existing annotation objects
-    annotationObjectsRef.current.forEach(obj => {
+    annotationPinObjectsRef.current.forEach(obj => {
       sceneRef.current?.remove(obj);
-      // HTML elements inside CSS2DObject are managed by CSS2DRenderer
     });
-    annotationObjectsRef.current = [];
+    annotationPinObjectsRef.current = [];
 
     const annotationsLayer = layers.find(l => l.equipmentType === 'Annotations');
     const areAnnotationsVisible = annotationsLayer?.isVisible ?? true;
@@ -367,21 +365,28 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         labelRendererRef.current.domElement.style.display = areAnnotationsVisible ? '' : 'none';
     }
 
-
     if (areAnnotationsVisible) {
         annotations.forEach(anno => {
-        const annotationDiv = document.createElement('div');
-        annotationDiv.className = 'text-xs bg-black/50 text-white p-1 rounded select-none'; // Basic styling
-        annotationDiv.textContent = anno.text;
+            const equipmentForItem = filteredEquipmentData.find(e => e.id === anno.equipmentId);
+            if (equipmentForItem) {
+                const pinDiv = document.createElement('div');
+                // Using a simple circle as a pin for now, can be replaced with an SVG or icon component later
+                pinDiv.innerHTML = `
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" class="text-blue-400 opacity-80">
+                    <path d="M12 2C7.03 2 3 6.03 3 11c0 2.05.64 3.98 1.75 5.61L12 22l7.25-5.39C20.36 14.98 21 13.05 21 11c0-4.97-4.03-9-9-9zm0 2.5c1.93 0 3.5 1.57 3.5 3.5S13.93 11.5 12 11.5 8.5 9.93 8.5 8 10.07 4.5 12 4.5z"/>
+                  </svg>`;
+                pinDiv.style.pointerEvents = 'none'; // So it doesn't interfere with equipment selection
 
-        const annotationLabel = new CSS2DObject(annotationDiv);
-        annotationLabel.position.set(anno.position.x, anno.position.y, anno.position.z);
-        
-        sceneRef.current?.add(annotationLabel);
-        annotationObjectsRef.current.push(annotationLabel);
+                const pinLabel = new CSS2DObject(pinDiv);
+                const yOffset = (equipmentForItem.size?.height || equipmentForItem.height || 0) / 2 + 0.5;
+                pinLabel.position.set(equipmentForItem.position.x, equipmentForItem.position.y + yOffset, equipmentForItem.position.z);
+                
+                sceneRef.current?.add(pinLabel);
+                annotationPinObjectsRef.current.push(pinLabel);
+            }
         });
     }
-  }, [annotations, layers]);
+  }, [annotations, layers, filteredEquipmentData]);
 
 
   useEffect(() => {

@@ -21,31 +21,21 @@ import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose, XIcon, SearchIcon } fr
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
-  // Buildings
-  { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'operando', category: "Administrative", position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
-  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'operando', category: "Storage", position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
-  { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'NDD', area: 'Área 32', operationalState: 'manutenção', category: "Operational", position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
-
-  // Cranes
-  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'MTBE', area: 'Área 40', operationalState: 'operando', category: "Lifting", position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'QAV', area: 'Área 50', operationalState: 'em falha', category: "Lifting", position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  
-  // Tanks
-  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', category: "Storage", position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
-  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', category: "Storage", position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
-  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', category: "Processing", position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
-
-  // Pipes
-  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'LASTRO', area: 'Área 35', operationalState: 'operando', category: "Transfer", position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
-  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'operando', category: "Transfer", position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
-  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'GA', area: 'Área 60', operationalState: 'não operando', category: "Transfer", position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
-
-  // Valves
-  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', category: "Control", position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', category: "Control", position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', category: "Safety", position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
+  { id: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'operando', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
+  { id: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'operando', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
+  { id: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'NDD', area: 'Área 32', operationalState: 'manutenção', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
+  { id: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'MTBE', area: 'Área 40', operationalState: 'operando', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
+  { id: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'QAV', area: 'Área 50', operationalState: 'em falha', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { id: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for Product A.' },
+  { id: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage for Product B.' },
+  { id: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { id: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'LASTRO', area: 'Área 35', operationalState: 'operando', position: { x: -5, y: 1, z: 0 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { id: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'operando', position: { x: 0, y: 2.5, z: 5 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
+  { id: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'GA', area: 'Área 60', operationalState: 'não operando', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
+  { id: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { id: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 34', operationalState: 'manutenção', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { id: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
-
 
 const initialLayers: Layer[] = [
   { id: 'layer-terrain', name: 'Terrain', equipmentType: 'Terrain', isVisible: true },
@@ -64,7 +54,6 @@ const cameraPresets: PresetCameraView[] = [
   { name: 'Piping Detail', position: { x: -2, y: 5, z: 8 }, lookAt: { x: -2, y: 2, z: 0 } },
 ];
 
-
 export default function Terminal3DPage() {
   const [equipmentData, setEquipmentData] = useState<Equipment[]>(initialEquipment);
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
@@ -74,47 +63,41 @@ export default function Terminal3DPage() {
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
   const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All');
-
+  
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [isAddAnnotationDialogOpen, setIsAddAnnotationDialogOpen] = useState(false);
+  const [isAnnotationDialogOpen, setIsAnnotationDialogOpen] = useState(false);
   const [annotationTargetEquipment, setAnnotationTargetEquipment] = useState<Equipment | null>(null);
-
+  const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(null);
 
   const { toast } = useToast();
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
   const availableSistemas = useMemo(() => {
     const sistemas = new Set<string>();
-    equipmentData.forEach(equip => {
-      if (equip.sistema) {
-        sistemas.add(equip.sistema);
-      }
+    initialEquipment.forEach(equip => {
+      if (equip.sistema) sistemas.add(equip.sistema);
     });
     return ['All', ...Array.from(sistemas).sort()];
-  }, [equipmentData]);
+  }, []);
 
   const availableAreas = useMemo(() => {
     const areas = new Set<string>();
-    equipmentData.forEach(equip => {
-      if (equip.area) {
-        areas.add(equip.area);
-      }
+    initialEquipment.forEach(equip => {
+      if (equip.area) areas.add(equip.area);
     });
     return ['All', ...Array.from(areas).sort()];
-  }, [equipmentData]);
+  }, []);
 
   const availableOperationalStates = useMemo(() => {
     const states = new Set<string>();
-    equipmentData.forEach(equip => {
-      if (equip.operationalState) {
-        states.add(equip.operationalState);
-      }
+    initialEquipment.forEach(equip => {
+      if (equip.operationalState) states.add(equip.operationalState);
     });
     return ['All', ...Array.from(states).sort()];
-  }, [equipmentData]);
+  }, []);
 
   const filteredEquipment = useMemo(() => {
-    let itemsToFilter = equipmentData;
+    let itemsToFilter = initialEquipment;
 
     if (selectedSistema !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.sistema === selectedSistema);
@@ -132,22 +115,16 @@ export default function Terminal3DPage() {
         const name = equip.name.toLowerCase();
         const type = equip.type.toLowerCase();
         const id = equip.id.toLowerCase();
-        const sistema = equip.sistema?.toLowerCase() || ''; 
-        const area = equip.area?.toLowerCase() || '';
-        const operationalState = equip.operationalState?.toLowerCase() || '';
-
+        
         return searchTerms.every(term => 
           name.includes(term) || 
           type.includes(term) || 
-          id.includes(term) ||
-          sistema.includes(term) ||
-          area.includes(term) ||
-          operationalState.includes(term)
+          id.includes(term)
         );
       });
     }
     return itemsToFilter;
-  }, [equipmentData, searchTerm, selectedSistema, selectedArea, selectedOperationalState]);
+  }, [searchTerm, selectedSistema, selectedArea, selectedOperationalState]);
 
   const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentIds];
@@ -192,7 +169,7 @@ export default function Terminal3DPage() {
     executeCommand(command);
 
     if (newSelection.length === 1) {
-      const item = equipmentData.find(e => e.id === newSelection[0]);
+      const item = initialEquipment.find(e => e.id === newSelection[0]);
       toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected. ${newSelection.length} item(s) total.` });
     } else if (newSelection.length > 1) {
       toast({ title: "Selection Updated", description: `${newSelection.length} items selected.` });
@@ -200,7 +177,7 @@ export default function Terminal3DPage() {
       toast({ title: "Selection Cleared" });
     }
 
-  }, [selectedEquipmentIds, executeCommand, equipmentData, toast]);
+  }, [selectedEquipmentIds, executeCommand, toast]);
 
 
   const handleToggleLayer = useCallback((layerId: string) => {
@@ -260,34 +237,95 @@ export default function Terminal3DPage() {
   const selectedEquipmentDetails = useMemo(() => {
     if (selectedEquipmentIds.length > 0) {
       const lastSelectedId = selectedEquipmentIds[selectedEquipmentIds.length - 1];
-      return equipmentData.find(e => e.id === lastSelectedId) || null;
+      return initialEquipment.find(e => e.id === lastSelectedId) || null;
     }
     return null;
-  }, [selectedEquipmentIds, equipmentData]);
+  }, [selectedEquipmentIds]);
 
-  const handleOpenAddAnnotationDialog = useCallback(() => {
+  const handleOpenAnnotationDialog = useCallback(() => {
     if (selectedEquipmentDetails) {
+      const existing = annotations.find(a => a.equipmentId === selectedEquipmentDetails.id);
+      setEditingAnnotation(existing || null);
       setAnnotationTargetEquipment(selectedEquipmentDetails);
-      setIsAddAnnotationDialogOpen(true);
+      setIsAnnotationDialogOpen(true);
     } else {
-      toast({ title: "No Equipment Selected", description: "Please select an equipment to add an annotation.", variant: "destructive" });
+      toast({ title: "No Equipment Selected", description: "Please select an equipment to manage its annotation.", variant: "destructive" });
     }
-  }, [selectedEquipmentDetails, toast]);
+  }, [selectedEquipmentDetails, annotations, toast]);
 
-  const handleAddAnnotationConfirm = useCallback((text: string) => {
+  const handleSaveAnnotation = useCallback((text: string) => {
     if (!annotationTargetEquipment) return;
 
-    const newAnnotation: Annotation = {
-      id: `anno-${Date.now()}`,
-      text,
-      equipmentId: annotationTargetEquipment.id,
-      position: { ...annotationTargetEquipment.position, y: annotationTargetEquipment.position.y + (annotationTargetEquipment.size?.height || annotationTargetEquipment.height || 2) + 0.5 }, // Position above equipment
+    const oldAnnotations = [...annotations];
+    let newAnnotations: Annotation[];
+    let description: string;
+
+    const existingAnnotationIndex = oldAnnotations.findIndex(a => a.equipmentId === annotationTargetEquipment.id);
+
+    if (existingAnnotationIndex > -1) {
+      // Update existing annotation
+      newAnnotations = oldAnnotations.map((anno, index) => 
+        index === existingAnnotationIndex ? { ...anno, text: text } : anno
+      );
+      description = `Annotation for ${annotationTargetEquipment.name} updated.`;
+    } else {
+      // Add new annotation
+      const newAnnotation: Annotation = {
+        equipmentId: annotationTargetEquipment.id,
+        text,
+        createdAt: new Date().toISOString(),
+      };
+      newAnnotations = [...oldAnnotations, newAnnotation];
+      description = `Annotation for ${annotationTargetEquipment.name} added.`;
+    }
+    
+    const command: Command = {
+      id: `save-annotation-${annotationTargetEquipment.id}-${Date.now()}`,
+      type: 'ANNOTATION_CHANGE',
+      description: description,
+      execute: () => setAnnotations(newAnnotations),
+      undo: () => setAnnotations(oldAnnotations),
     };
-    setAnnotations(prev => [...prev, newAnnotation]);
-    setIsAddAnnotationDialogOpen(false);
+    executeCommand(command);
+    
+    setIsAnnotationDialogOpen(false);
+    setEditingAnnotation(null);
     setAnnotationTargetEquipment(null);
-    toast({ title: "Annotation Added", description: `Annotation for ${annotationTargetEquipment.name} added.` });
-  }, [annotationTargetEquipment, toast]);
+    toast({ title: "Annotation Saved", description: description });
+
+  }, [annotationTargetEquipment, annotations, executeCommand, toast]);
+
+  const handleDeleteAnnotation = useCallback((equipmentId: string) => {
+    const equipment = initialEquipment.find(e => e.id === equipmentId);
+    if (!equipment) return;
+
+    const oldAnnotations = [...annotations];
+    const newAnnotations = oldAnnotations.filter(a => a.equipmentId !== equipmentId);
+
+    if (oldAnnotations.length === newAnnotations.length) {
+      toast({ title: "No Annotation", description: `No annotation found for ${equipment.name} to delete.`, variant: "destructive" });
+      return;
+    }
+    
+    const command: Command = {
+      id: `delete-annotation-${equipmentId}-${Date.now()}`,
+      type: 'ANNOTATION_CHANGE',
+      description: `Annotation for ${equipment.name} deleted.`,
+      execute: () => setAnnotations(newAnnotations),
+      undo: () => setAnnotations(oldAnnotations),
+    };
+    executeCommand(command);
+
+    toast({ title: "Annotation Deleted", description: `Annotation for ${equipment.name} has been deleted.` });
+  }, [annotations, executeCommand, toast]);
+
+
+  const equipmentAnnotation = useMemo(() => {
+    if (selectedEquipmentDetails) {
+      return annotations.find(a => a.equipmentId === selectedEquipmentDetails.id) || null;
+    }
+    return null;
+  }, [selectedEquipmentDetails, annotations]);
 
 
   return (
@@ -302,7 +340,7 @@ export default function Terminal3DPage() {
         <ThreeScene
           equipment={filteredEquipment}
           layers={layers}
-          annotations={annotations}
+          annotations={annotations} 
           selectedEquipmentIds={selectedEquipmentIds}
           onSelectEquipment={handleSelectEquipment}
           cameraState={currentCameraState}
@@ -311,9 +349,11 @@ export default function Terminal3DPage() {
           initialCameraLookAt={cameraPresets[0].lookAt} 
         />
         <InfoPanel 
-          equipment={selectedEquipmentDetails} 
+          equipment={selectedEquipmentDetails}
+          annotation={equipmentAnnotation}
           onClose={() => handleSelectEquipment(null, false)}
-          onOpenAddAnnotationDialog={handleOpenAddAnnotationDialog}
+          onOpenAnnotationDialog={handleOpenAnnotationDialog}
+          onDeleteAnnotation={handleDeleteAnnotation}
         />
       </div>
 
@@ -343,7 +383,7 @@ export default function Terminal3DPage() {
                     <div className="relative">
                       <Input
                         type="search"
-                        placeholder="Search by name, type, ID, system, area, state..."
+                        placeholder="Search name, type, ID..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="h-9 pr-9" 
@@ -419,9 +459,10 @@ export default function Terminal3DPage() {
         </div>
       </Sidebar>
       <AnnotationDialog
-        isOpen={isAddAnnotationDialogOpen}
-        onOpenChange={setIsAddAnnotationDialogOpen}
-        onConfirm={handleAddAnnotationConfirm}
+        isOpen={isAnnotationDialogOpen}
+        onOpenChange={setIsAnnotationDialogOpen}
+        onConfirm={handleSaveAnnotation}
+        currentAnnotation={editingAnnotation}
         equipmentName={annotationTargetEquipment?.name || ''}
       />
     </SidebarProvider>

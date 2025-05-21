@@ -12,29 +12,31 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea"; // Changed from Input
 import { Label } from "@/components/ui/label";
+import type { Annotation } from '@/lib/types';
 
 interface AnnotationDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onConfirm: (text: string) => void;
+  currentAnnotation: Annotation | null;
   equipmentName: string;
 }
 
-export function AnnotationDialog({ isOpen, onOpenChange, onConfirm, equipmentName }: AnnotationDialogProps) {
+export function AnnotationDialog({ isOpen, onOpenChange, onConfirm, currentAnnotation, equipmentName }: AnnotationDialogProps) {
   const [annotationText, setAnnotationText] = useState('');
 
   useEffect(() => {
     if (isOpen) {
-      setAnnotationText(''); // Reset text when dialog opens
+      setAnnotationText(currentAnnotation?.text || ''); // Pre-fill if editing, otherwise empty
     }
-  }, [isOpen]);
+  }, [isOpen, currentAnnotation]);
 
   const handleConfirm = () => {
-    if (annotationText.trim()) {
-      onConfirm(annotationText.trim());
-    }
+    // Basic validation: allow saving empty text if user wants to clear it (or make it required)
+    // For now, we allow empty text.
+    onConfirm(annotationText); 
     onOpenChange(false); // Close dialog
   };
 
@@ -42,22 +44,23 @@ export function AnnotationDialog({ isOpen, onOpenChange, onConfirm, equipmentNam
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Adicionar Anotação</DialogTitle>
+          <DialogTitle>{currentAnnotation ? 'Editar Anotação' : 'Adicionar Anotação'}</DialogTitle>
           <DialogDescription>
-            Adicionar uma anotação para {equipmentName ? `"${equipmentName}"` : "o equipamento selecionado"}.
+            {currentAnnotation ? `Editando anotação para` : `Adicionar uma anotação para`} {equipmentName ? `"${equipmentName}"` : "o equipamento selecionado"}.
+            A data de criação/modificação será registrada automaticamente.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="annotation-text" className="text-right col-span-1">
-              Texto
+          <div className="grid grid-cols-1 items-start gap-2"> {/* Adjusted for Textarea */}
+            <Label htmlFor="annotation-text" className="text-left">
+              Texto da Anotação
             </Label>
-            <Input
+            <Textarea
               id="annotation-text"
               value={annotationText}
               onChange={(e) => setAnnotationText(e.target.value)}
-              className="col-span-3"
               placeholder="Digite sua anotação aqui..."
+              rows={5} // Allow more space for long text
             />
           </div>
         </div>
@@ -67,7 +70,7 @@ export function AnnotationDialog({ isOpen, onOpenChange, onConfirm, equipmentNam
               Cancelar
             </Button>
           </DialogClose>
-          <Button type="button" onClick={handleConfirm} disabled={!annotationText.trim()}>
+          <Button type="button" onClick={handleConfirm}>
             Salvar Anotação
           </Button>
         </DialogFooter>
