@@ -2,7 +2,7 @@
 "use client";
 
 import type { Equipment, Annotation } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +18,8 @@ interface InfoPanelProps {
   onDeleteAnnotation: (equipmentId: string) => void;
   onOperationalStateChange: (equipmentId: string, newState: string) => void;
   availableOperationalStatesList: string[];
+  onProductChange: (equipmentId: string, newProduct: string) => void;
+  availableProductsList: string[];
 }
 
 export function InfoPanel({ 
@@ -27,7 +29,9 @@ export function InfoPanel({
   onOpenAnnotationDialog, 
   onDeleteAnnotation,
   onOperationalStateChange,
-  availableOperationalStatesList 
+  availableOperationalStatesList,
+  onProductChange,
+  availableProductsList 
 }: InfoPanelProps) {
   if (!equipment) return null;
 
@@ -50,7 +54,7 @@ export function InfoPanel({
           <XIcon className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="space-y-1.5 pb-3 overflow-y-auto flex-grow">
+      <CardContent className="space-y-3 pb-3 overflow-y-auto flex-grow">
         <h3 className="text-md font-semibold">{equipment.name}</h3>
         <p className="text-sm">
           ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span>
@@ -69,12 +73,31 @@ export function InfoPanel({
             Área: {equipment.area}
           </p>
         )}
-         {equipment.product && (
-          <p className="text-sm flex items-center">
-            <PackageIcon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
-            Produto: {equipment.product}
-          </p>
+        
+        {equipment.product && (
+          <div className="space-y-1 text-sm">
+            <Label htmlFor={`product-select-${equipment.id}`} className="flex items-center text-xs font-normal text-muted-foreground">
+              <PackageIcon className="mr-1.5 h-3.5 w-3.5" />
+              Produto:
+            </Label>
+            <Select
+              value={equipment.product}
+              onValueChange={(newProduct) => onProductChange(equipment.id, newProduct)}
+            >
+              <SelectTrigger id={`product-select-${equipment.id}`} className="h-8 text-xs">
+                <SelectValue placeholder="Select product" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableProductsList.map(prod => (
+                  <SelectItem key={prod} value={prod} className="text-xs">
+                    {prod}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
+
         {equipment.operationalState && (
           <div className="space-y-1 text-sm">
             <Label htmlFor={`op-state-select-${equipment.id}`} className="flex items-center text-xs font-normal text-muted-foreground">
@@ -84,7 +107,7 @@ export function InfoPanel({
             <Select
               value={equipment.operationalState}
               onValueChange={(newState) => onOperationalStateChange(equipment.id, newState)}
-              disabled={equipment.operationalState === "Não aplicável"}
+              disabled={equipment.operationalState === "Não aplicável" && availableOperationalStatesList.filter(s => s !== "Não aplicável").length === 0}
             >
               <SelectTrigger id={`op-state-select-${equipment.id}`} className="h-8 text-xs">
                 <SelectValue placeholder="Select state" />
@@ -139,3 +162,5 @@ export function InfoPanel({
     </Card>
   );
 }
+
+    
