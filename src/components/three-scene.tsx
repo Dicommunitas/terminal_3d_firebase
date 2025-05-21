@@ -57,6 +57,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const hoveredEquipmentIdRef = useRef(hoveredEquipmentId);
   const setHoveredEquipmentIdRef = useRef(setHoveredEquipmentId);
 
+
   useEffect(() => {
     onSelectEquipmentRef.current = onSelectEquipment;
   }, [onSelectEquipment]);
@@ -116,15 +117,26 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         stateColorHex = 0x800080; // Roxo
         break;
       case 'Não aplicável':
-        stateColorHex = new THREE.Color(item.color).getHex();
-        break;
       default:
         stateColorHex = new THREE.Color(item.color).getHex();
         break;
     }
     // console.log(`[ThreeScene createEquipmentMesh] Final color for ${item.id}: #${stateColorHex.toString(16)}`);
     
-    const material = new THREE.MeshStandardMaterial({ color: stateColorHex, metalness: 0.3, roughness: 0.6 });
+    const material = new THREE.MeshStandardMaterial({ 
+        color: stateColorHex, 
+        metalness: 0.3, 
+        roughness: 0.6 
+    });
+
+    if (item.operationalState === 'Não aplicável') {
+        material.transparent = true;
+        material.opacity = 0.75;
+    } else {
+        material.transparent = false;
+        material.opacity = 1.0;
+    }
+
     let geometry: THREE.BufferGeometry;
     let mesh: THREE.Mesh;
 
@@ -159,8 +171,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
     }
     mesh.userData = { id: item.id, type: item.type, originalColor: item.color };
-    mesh.castShadow = false; // Disable shadow casting
-    mesh.receiveShadow = false; // Disable shadow receiving
+    mesh.castShadow = false; 
+    mesh.receiveShadow = false;
     return mesh;
   }, []);
 
@@ -172,7 +184,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     // console.log(`[ThreeScene] Mount dimensions AT START of useEffect: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
     
     sceneRef.current = new THREE.Scene();
-    const skyHorizonColor = 0xA9C1D1; 
+    const skyHorizonColor = 0xA9C1D1; // Light grayish blue
     sceneRef.current.background = new THREE.Color(skyHorizonColor); 
     sceneRef.current.fog = new THREE.Fog(skyHorizonColor, 40, 150); 
     // console.log("[ThreeScene] Scene created");
@@ -185,8 +197,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     // console.log("[ThreeScene] Camera created at:", cameraRef.current.position.clone());
     
     rendererRef.current = new THREE.WebGLRenderer({ antialias: true });
-    // rendererRef.current.shadowMap.enabled = true; // Shadows disabled
-    // rendererRef.current.shadowMap.type = THREE.PCFSoftShadowMap; // Shadows disabled
     currentMount.appendChild(rendererRef.current.domElement);
     // console.log("[ThreeScene] Renderer DOM element appended.");
     
@@ -204,9 +214,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     composerRef.current.addPass(renderPass);
 
     outlinePassRef.current = new OutlinePass(new THREE.Vector2(initialWidth, initialHeight), sceneRef.current, cameraRef.current);
+    // Initial settings (can be overridden dynamically)
     outlinePassRef.current.edgeStrength = 3;
     outlinePassRef.current.edgeGlow = 0.5;
     outlinePassRef.current.edgeThickness = 1;
+    outlinePassRef.current.visibleEdgeColor.set('#000000'); // Default to black, will be changed
     composerRef.current.addPass(outlinePassRef.current);
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
@@ -217,9 +229,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0); 
     directionalLight.position.set(10, 15, 10);
-    directionalLight.castShadow = false; // Disable shadow casting
-    // directionalLight.shadow.mapSize.width = 2048; // Not needed if shadows are off
-    // directionalLight.shadow.mapSize.height = 2048; // Not needed if shadows are off
+    directionalLight.castShadow = false;
     sceneRef.current.add(directionalLight);
     // console.log("[ThreeScene] Lights added");
     
@@ -230,11 +240,18 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     // console.log("[ThreeScene] OrbitControls created, target:", controlsRef.current.target.clone());
     
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
-    const groundMaterial = new THREE.MeshStandardMaterial({ color: 0x495436, side: THREE.DoubleSide, metalness: 0.1, roughness: 0.8 }); 
+    const groundMaterial = new THREE.MeshStandardMaterial({ 
+      color: 0xE6D8B0, // Soft pastel sand color
+      side: THREE.DoubleSide, 
+      metalness: 0.1, 
+      roughness: 0.8,
+      transparent: true,
+      opacity: 0.7 
+    }); 
     groundMeshRef.current = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMeshRef.current.rotation.x = -Math.PI / 2;
     groundMeshRef.current.position.y = 0;
-    groundMeshRef.current.receiveShadow = false; // Disable shadow receiving
+    groundMeshRef.current.receiveShadow = false;
     // console.log("[ThreeScene] Ground plane added");
     
     const delayedResizeTimeoutId = setTimeout(() => {
@@ -340,7 +357,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current || equipmentMeshesRef.current.length === 0) {
-      if (hoveredEquipmentIdRef.current !== null) setHoveredEquipmentIdRef.current(null);
+      if (hoveredEquipmentIdRef.current !== null) {
+        // console.log('[ThreeScene] MouseMove clearing hover, no scene/meshes.');
+        setHoveredEquipmentIdRef.current(null);
+      }
       return;
     }
   
@@ -364,7 +384,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
     
     if (hoveredEquipmentIdRef.current !== foundHoverId) {
-      // console.log('[ThreeScene] Setting hoveredEquipmentId to:', foundHoverId);
+      // console.log('[ThreeScene] MouseMove found:', foundHoverId, 'Currently hovered (ref):', hoveredEquipmentIdRef.current);
       setHoveredEquipmentIdRef.current(foundHoverId);
     }
   }, []); 
@@ -443,6 +463,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   }, [filteredEquipmentData, layers, createEquipmentMesh]);
 
   useEffect(() => {
+    // console.log(`[ThreeScene] Highlighting effect. Selected: ${selectedEquipmentIds.join(',')}, Hovered: ${hoveredEquipmentId}`);
     if (!outlinePassRef.current || !sceneRef.current) return;
   
     const objectsToOutline: THREE.Object3D[] = [];
@@ -473,7 +494,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       outlinePassRef.current.selectedObjects = [];
     }
     outlinePassRef.current.selectedObjects = objectsToOutline;
-  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); 
+  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); // layers and filteredEquipmentData ensure meshesToConsider is up-to-date
 
   useEffect(() => {
     if (!sceneRef.current || !labelRendererRef.current) return;
@@ -553,3 +574,4 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
+
