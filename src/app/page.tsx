@@ -7,13 +7,12 @@ import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
-import { InfoPanel } from '@/components/info-panel'; // Added missing import
-// CommandHistoryPanel is no longer imported as its functionality is moved
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { InfoPanel } from '@/components/info-panel';
+import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { PanelLeft, Undo2Icon, Redo2Icon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -134,58 +133,58 @@ export default function Terminal3DPage() {
   }, [selectedEquipmentId, equipment]);
 
   return (
-    <SidebarProvider defaultOpen={true}>
-      <div className="flex h-screen w-full flex-col bg-background w-full">
-        <div className="flex flex-1 w-full overflow-hidden w-full">
-          <Sidebar collapsible="offcanvas" className="border-r"> {/* Changed collapsible to "offcanvas" */}
-             <div className="flex h-full flex-col">
-                <SidebarHeader className="p-3 flex justify-between items-center border-b">
-                    <div className="flex items-center">
-                        <span className="font-semibold text-lg">Terminal 3D</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                        <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                            <Undo2Icon className="h-5 w-5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                            <Redo2Icon className="h-5 w-5" />
-                        </Button>
-                        {/* Desktop SidebarTrigger removed from here */}
-                    </div>
-                </SidebarHeader>
-                <SidebarContent className="p-0">
-                  <ScrollArea className="h-full">
-                    <div className="p-4 space-y-6 pb-6">
-                      <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
-                      <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
-                    </div>
-                  </ScrollArea>
-                </SidebarContent>
-                 <Separator />
-                <SidebarFooter className="p-4">
-                   <p className="text-xs text-muted-foreground">2025 Terminal 3D</p>
-                </SidebarFooter>
-             </div>
-          </Sidebar>
-          
-          <SidebarInset className="flex-1 relative w-full bg-muted/20 min-w-0 w-full">
-            <div className="absolute top-2 left-2 z-10"> {/* Removed md:hidden to make trigger always visible */}
-                 <SidebarTrigger className="h-10 w-10" /> {/* Using SidebarTrigger directly and sizing it */}
-            </div>
-            <ThreeScene
-              equipment={equipment}
-              layers={layers}
-              selectedEquipmentId={selectedEquipmentId}
-              onSelectEquipment={handleSelectEquipment}
-              cameraState={currentCameraState}
-              onCameraChange={handleCameraChangeFromScene}
-              initialCameraPosition={cameraPresets[0].position}
-              initialCameraLookAt={cameraPresets[0].lookAt} 
-            />
-            <InfoPanel equipment={selectedEquipmentDetails} onClose={() => handleSelectEquipment(null)} />
-          </SidebarInset>
+    <SidebarProvider defaultOpen={false}> {/* Sidebar starts closed for overlay */}
+      {/* Main content area for 3D scene, InfoPanel, and floating trigger */}
+      <div className="h-screen w-full relative bg-muted/20">
+        <div className="absolute top-4 left-4 z-30"> {/* Trigger needs to be above scene & InfoPanel */}
+          <SidebarTrigger className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2" />
         </div>
+
+        <ThreeScene
+          equipment={equipment}
+          layers={layers}
+          selectedEquipmentId={selectedEquipmentId}
+          onSelectEquipment={handleSelectEquipment}
+          cameraState={currentCameraState}
+          onCameraChange={handleCameraChangeFromScene}
+          initialCameraPosition={cameraPresets[0].position}
+          initialCameraLookAt={cameraPresets[0].lookAt} 
+        />
+        {/* InfoPanel's z-index is managed internally (currently z-10) */}
+        <InfoPanel equipment={selectedEquipmentDetails} onClose={() => handleSelectEquipment(null)} />
       </div>
+
+      {/* Sidebar itself. collapsible="offcanvas" makes it fixed & overlay. */}
+      {/* Assign higher z-index to ensure it's on top of InfoPanel and Trigger when open */}
+      <Sidebar collapsible="offcanvas" className="border-r z-40"> 
+        <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+          <SidebarHeader className="p-3 flex justify-between items-center border-b">
+            <div className="flex items-center">
+                <span className="font-semibold text-lg">Terminal 3D</span>
+            </div>
+            <div className="flex items-center space-x-1">
+                <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                    <Undo2Icon className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                    <Redo2Icon className="h-5 w-5" />
+                </Button>
+            </div>
+          </SidebarHeader>
+          <SidebarContent className="p-0">
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-6 pb-6">
+                <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
+                <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
+              </div>
+            </ScrollArea>
+          </SidebarContent>
+          <Separator />
+          <SidebarFooter className="p-4">
+             <p className="text-xs text-muted-foreground">2025 Terminal 3D</p>
+          </SidebarFooter>
+        </div>
+      </Sidebar>
     </SidebarProvider>
   );
 }
@@ -197,6 +196,8 @@ export default function Terminal3DPage() {
     
 
 
+
+    
 
     
 
