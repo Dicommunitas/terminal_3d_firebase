@@ -10,9 +10,11 @@ import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarFooter, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Undo2Icon, Redo2Icon, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeftClose, PanelLeft, SearchIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const initialEquipment: Equipment[] = [
@@ -58,13 +60,23 @@ const cameraPresets: PresetCameraView[] = [
 
 
 export default function Terminal3DPage() {
-  const [equipmentData, setEquipmentData] = useState<Equipment[]>(initialEquipment); // Renamed for clarity if needed in future
+  const [equipmentData, setEquipmentData] = useState<Equipment[]>(initialEquipment);
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
+  const [searchTerm, setSearchTerm] = useState('');
   const { toast } = useToast();
 
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
+
+  const filteredEquipment = useMemo(() => {
+    if (!searchTerm) {
+      return equipmentData;
+    }
+    return equipmentData.filter(equip => 
+      equip.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [equipmentData, searchTerm]);
 
   const handleSelectEquipment = useCallback((equipmentId: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentIds];
@@ -73,34 +85,30 @@ export default function Terminal3DPage() {
     if (isMultiSelectModifierPressed) {
       if (equipmentId) {
         if (oldSelection.includes(equipmentId)) {
-          newSelection = oldSelection.filter(id => id !== equipmentId); // Toggle off
+          newSelection = oldSelection.filter(id => id !== equipmentId);
         } else {
-          newSelection = [...oldSelection, equipmentId]; // Add to selection
+          newSelection = [...oldSelection, equipmentId];
         }
       } else {
-        // Clicked on empty space with modifier, maintain current selection
         newSelection = oldSelection; 
       }
     } else {
       if (equipmentId) {
-        // Single select or re-selecting an item already in a multi-selection
-        // If it's already the only selected item, keep it. Otherwise, make it the only selected item.
         if (oldSelection.includes(equipmentId) && oldSelection.length === 1) {
           newSelection = oldSelection;
         } else {
           newSelection = [equipmentId];
         }
       } else {
-        newSelection = []; // Click on empty space, clear selection
+        newSelection = [];
       }
     }
     
-    // Sort arrays before comparison to ensure order doesn't cause false positives
     const oldSelectionSorted = [...oldSelection].sort();
     const newSelectionSorted = [...newSelection].sort();
 
     if (JSON.stringify(oldSelectionSorted) === JSON.stringify(newSelectionSorted)) {
-        return; // No actual change in selection
+        return;
     }
 
     const command: Command = {
@@ -113,7 +121,7 @@ export default function Terminal3DPage() {
     executeCommand(command);
 
     if (newSelection.length === 1) {
-      const item = equipmentData.find(e => e.id === newSelection[0]);
+      const item = equipmentData.find(e => e.id === newSelection[0]); // Use original equipmentData for toast
       toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected. ${newSelection.length} item(s) total.` });
     } else if (newSelection.length > 1) {
       toast({ title: "Selection Updated", description: `${newSelection.length} items selected.` });
@@ -180,9 +188,8 @@ export default function Terminal3DPage() {
 
   const selectedEquipmentDetails = useMemo(() => {
     if (selectedEquipmentIds.length > 0) {
-      // Display details of the last selected item
       const lastSelectedId = selectedEquipmentIds[selectedEquipmentIds.length - 1];
-      return equipmentData.find(e => e.id === lastSelectedId) || null;
+      return equipmentData.find(e => e.id === lastSelectedId) || null; // Use original equipmentData
     }
     return null;
   }, [selectedEquipmentIds, equipmentData]);
@@ -197,7 +204,7 @@ export default function Terminal3DPage() {
         </div>
 
         <ThreeScene
-          equipment={equipmentData}
+          equipment={filteredEquipment} // Pass filtered equipment to scene
           layers={layers}
           selectedEquipmentIds={selectedEquipmentIds}
           onSelectEquipment={handleSelectEquipment}
@@ -218,7 +225,6 @@ export default function Terminal3DPage() {
               </SidebarTrigger>
               <span className="font-semibold text-lg">Terminal 3D</span>
             </div>
-
             <div className="flex items-center space-x-1">
                 <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <Undo2Icon className="h-5 w-5" />
@@ -231,6 +237,22 @@ export default function Terminal3DPage() {
           <SidebarContent className="p-0">
             <ScrollArea className="h-full">
               <div className="p-4 space-y-6 pb-6">
+                <Card className="shadow-md">
+                  <CardHeader>
+                    <CardTitle className="flex items-center text-lg">
+                      <SearchIcon className="mr-2 h-5 w-5" />
+                      Search Equipment
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Input
+                      type="search"
+                      placeholder="Enter equipment name..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </CardContent>
+                </Card>
                 <LayerManager layers={layers} onToggleLayer={handleToggleLayer} />
                 <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
               </div>
@@ -260,3 +282,6 @@ export default function Terminal3DPage() {
 
     
 
+
+
+    
