@@ -66,7 +66,7 @@ Manter um histórico de comandos executados pelo usuário, permitindo desfazer (
 
 Esta funcionalidade deve abranger interações que não alterem o estado persistente dos equipamentos (e.g., navegação, visibilidade de camadas), excluindo operações como abertura/fechamento de válvulas ou alteração de produto em um tanque.
 
-4. Requisitos Não-Funcionais (RNF)
+4. Requisitos Não-Funcionais (RNF) 
 
 
 RNF001: Desempenho
