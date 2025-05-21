@@ -131,7 +131,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     if (item.operationalState === 'Não aplicável') {
         material.transparent = true;
-        material.opacity = 0.75;
+        material.opacity = 0.5; // Aumentada transparência
     } else {
         material.transparent = false;
         material.opacity = 1.0;
@@ -214,11 +214,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     composerRef.current.addPass(renderPass);
 
     outlinePassRef.current = new OutlinePass(new THREE.Vector2(initialWidth, initialHeight), sceneRef.current, cameraRef.current);
-    // Initial settings (can be overridden dynamically)
     outlinePassRef.current.edgeStrength = 3;
     outlinePassRef.current.edgeGlow = 0.5;
     outlinePassRef.current.edgeThickness = 1;
-    outlinePassRef.current.visibleEdgeColor.set('#000000'); // Default to black, will be changed
+    outlinePassRef.current.visibleEdgeColor.set('#000000'); 
     composerRef.current.addPass(outlinePassRef.current);
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); 
@@ -241,12 +240,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0xE6D8B0, // Soft pastel sand color
+      color: 0xE6D8B0, 
       side: THREE.DoubleSide, 
       metalness: 0.1, 
       roughness: 0.8,
       transparent: true,
-      opacity: 0.7 
+      opacity: 0.4  // Aumentada transparência
     }); 
     groundMeshRef.current = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMeshRef.current.rotation.x = -Math.PI / 2;
@@ -353,12 +352,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       labelRendererRef.current = null;
       // console.log("[ThreeScene] Cleanup FINISHED");
     };
-  }, []); 
+  }, [initialCameraPosition, initialCameraLookAt, handleResize, createEquipmentMesh]); // Adicionado createEquipmentMesh e handleResize
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current || equipmentMeshesRef.current.length === 0) {
       if (hoveredEquipmentIdRef.current !== null) {
-        // console.log('[ThreeScene] MouseMove clearing hover, no scene/meshes.');
         setHoveredEquipmentIdRef.current(null);
       }
       return;
@@ -384,7 +382,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
     
     if (hoveredEquipmentIdRef.current !== foundHoverId) {
-      // console.log('[ThreeScene] MouseMove found:', foundHoverId, 'Currently hovered (ref):', hoveredEquipmentIdRef.current);
       setHoveredEquipmentIdRef.current(foundHoverId);
     }
   }, []); 
@@ -574,4 +571,3 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
-
