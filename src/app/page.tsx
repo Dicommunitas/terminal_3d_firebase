@@ -12,11 +12,11 @@ import { LayerManager } from '@/components/layer-manager';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, PanelLeftClose, Settings2Icon, LocateIcon, PackageIcon, ActivityIcon, SearchIcon, LayersIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, Settings2Icon, LocateIcon, ActivityIcon, SearchIcon, PackageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ColorMode } from '@/app/page';
 
@@ -26,11 +26,11 @@ const initialEquipment: Equipment[] = [
   { tag: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Storage', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
   { tag: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'MTBE', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Operational', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
   { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: '70H', category: 'Lifting', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: '6DH', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'em falha', product: '70H', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
-  { tag: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'não operando', product: '6DH', category: 'Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
-  { tag: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'manutenção', product: '660', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
-  { tag: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'operando', product: '70H', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'não operando', product: '6DH', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'manutenção', product: '70H', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
+  { tag: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'em falha', product: '6DH', category: 'Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
+  { tag: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'operando', product: '660', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { tag: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'manutenção', product: '70H', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
   { tag: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'MTBE', area: 'Área 34', operationalState: 'não operando', product: '660', category: 'Transfer', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
   { tag: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', product: '198', category: 'Transfer', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
   { tag: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', product: '70H', category: 'Control', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
@@ -93,7 +93,7 @@ export default function Terminal3DPage() {
     });
     return ['All', ...Array.from(areas).sort()];
   }, []);
-
+  
   const availableOperationalStates = useMemo(() => {
     const states = new Set<string>();
     initialEquipment.forEach(equip => {
@@ -107,7 +107,7 @@ export default function Terminal3DPage() {
       return a.localeCompare(b);
     })];
   }, []);
-  
+
   const availableProducts = useMemo(() => {
     const products = new Set<string>();
     initialEquipment.forEach(equip => {
@@ -218,33 +218,33 @@ export default function Terminal3DPage() {
   }, [layers, executeCommand]);
 
   const handleSetCameraView = useCallback((systemName: string) => {
-    const oldSelection = [...selectedEquipmentTags];
     const equipmentInSystem = initialEquipment
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
 
     const newSelection = equipmentInSystem;
+    const oldSelection = selectedEquipmentTags; // Store before command potentially changes it
 
     const oldSelectionSorted = [...oldSelection].sort();
     const newSelectionSorted = [...newSelection].sort();
 
     if (JSON.stringify(oldSelectionSorted) !== JSON.stringify(newSelectionSorted)) {
-      const command: Command = {
-        id: `select-system-equipment-${systemName}-${Date.now()}`,
-        type: 'EQUIPMENT_SELECT',
-        description: `Selected all equipment in system ${systemName}.`,
-        execute: () => setSelectedEquipmentTags(newSelection),
-        undo: () => setSelectedEquipmentTags(oldSelection),
-      };
-      executeCommand(command);
-
-      if (newSelection.length > 0) {
-        toast({ title: "System Focused", description: `Selected all ${newSelection.length} equipment in system ${systemName}.` });
-      }
+        const command: Command = {
+            id: `select-system-equipment-${systemName}-${Date.now()}`,
+            type: 'EQUIPMENT_SELECT',
+            description: `Selected all equipment in system ${systemName}.`,
+            execute: () => setSelectedEquipmentTags(newSelection),
+            undo: () => setSelectedEquipmentTags(oldSelection),
+        };
+        executeCommand(command);
+        if (newSelection.length > 0) {
+            toast({ title: "System Focused", description: `Selected all ${newSelection.length} equipment in system ${systemName}.` });
+        }
     }
     
     setTargetSystemToFrame(systemName);
   }, [selectedEquipmentTags, executeCommand, toast]);
+
 
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
     if (currentCameraState &&
@@ -270,7 +270,7 @@ export default function Terminal3DPage() {
 
 
   const selectedEquipmentDetails = useMemo(() => {
-    if (selectedEquipmentTags.length === 1) { // Only show details if exactly one item is selected
+    if (selectedEquipmentTags.length === 1) {
       const tag = selectedEquipmentTags[0];
       return equipmentData.find(e => e.tag === tag) || null;
     }
@@ -278,7 +278,7 @@ export default function Terminal3DPage() {
   }, [selectedEquipmentTags, equipmentData]);
 
   const handleOpenAnnotationDialog = useCallback(() => {
-    if (selectedEquipmentDetails) { // This will be true only if one item is selected
+    if (selectedEquipmentDetails) { 
       const existing = annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag);
       setEditingAnnotation(existing || null);
       setAnnotationTargetEquipment(selectedEquipmentDetails);
@@ -339,7 +339,7 @@ export default function Terminal3DPage() {
 
 
   const equipmentAnnotation = useMemo(() => {
-    if (selectedEquipmentDetails) { // Will be null if more than one selected
+    if (selectedEquipmentDetails) { 
       return annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag) || null;
     }
     return null;
@@ -388,14 +388,14 @@ export default function Terminal3DPage() {
           equipment={filteredEquipment}
           layers={layers}
           annotations={annotations}
-          selectedEquipmentIds={selectedEquipmentTags}
+          selectedEquipmentTags={selectedEquipmentTags}
           onSelectEquipment={handleSelectEquipment}
           cameraState={currentCameraState}
           onCameraChange={handleCameraChangeFromScene}
           initialCameraPosition={defaultInitialCameraPosition}
           initialCameraLookAt={defaultInitialCameraLookAt}
-          hoveredEquipmentId={hoveredEquipmentTag}
-          setHoveredEquipmentId={setHoveredEquipmentTag}
+          hoveredEquipmentTag={hoveredEquipmentTag}
+          setHoveredEquipmentTag={setHoveredEquipmentTag}
           colorMode={colorMode}
           targetSystemToFrame={targetSystemToFrame}
           onSystemFramed={() => setTargetSystemToFrame(null)}
@@ -403,6 +403,7 @@ export default function Terminal3DPage() {
         <InfoPanel
           equipment={selectedEquipmentDetails}
           annotation={equipmentAnnotation}
+          annotations={annotations}
           onClose={() => handleSelectEquipment(null, false)}
           onOpenAnnotationDialog={handleOpenAnnotationDialog}
           onDeleteAnnotation={handleDeleteAnnotation}
