@@ -16,26 +16,26 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, PanelLeftClose, Settings2Icon, LocateIcon, ActivityIcon, PackageIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, PanelLeftClose, Settings2Icon, LocateIcon, PackageIcon, ActivityIcon } from 'lucide-react'; // Added PanelLeftClose, Settings2Icon, LocateIcon, PackageIcon, ActivityIcon
 import { useToast } from '@/hooks/use-toast';
 import type { ColorMode } from '@/app/page';
 
 
 const initialEquipment: Equipment[] = [
-  { tag: 'bldg-01', name: 'Main Office', type: 'Building', category: 'Administrative', area: 'Área 20', operationalState: 'Não aplicável', product: 'Não aplicável', sistema: 'NDD', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
-  { tag: 'bldg-02', name: 'Warehouse A', type: 'Building', category: 'Storage', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', sistema: 'GA', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
-  { tag: 'bldg-03', name: 'Control Room', type: 'Building', category: 'Operational', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', sistema: 'MTBE', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
-  { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', category: 'Lifting', area: 'Área 40', operationalState: 'operando', product: '70H', sistema: 'QAV', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', category: 'Lifting', area: 'Área 50', operationalState: 'manutenção', product: '6DH', sistema: 'LASTRO', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', category: 'Storage', area: 'Área 33', operationalState: 'operando', product: '70H', sistema: 'ODB', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
-  { tag: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', category: 'Storage', area: 'Área 33', operationalState: 'não operando', product: '6DH', sistema: 'ESCUROS', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
-  { tag: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', category: 'Processing', area: 'Área 34', operationalState: 'em falha', product: '660', sistema: 'NDD', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
-  { tag: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', category: 'Transfer', area: 'Área 35', operationalState: 'manutenção', product: '70H', sistema: 'GA', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
-  { tag: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', category: 'Transfer', area: 'Área 34', operationalState: 'não operando', product: '660', sistema: 'MTBE', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
-  { tag: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', category: 'Transfer', area: 'Área 60', operationalState: 'em falha', product: '198', sistema: 'QAV', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
-  { tag: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', category: 'Control', area: 'Área 33', operationalState: 'operando', product: '70H', sistema: 'LASTRO', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { tag: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', category: 'Control', area: 'Área 34', operationalState: 'manutenção', product: '70H', sistema: 'ODB', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { tag: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', category: 'Control', area: 'Área 60', operationalState: 'em falha', product: '198', sistema: 'ESCUROS', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
+  { tag: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'Não aplicável', product: 'Não aplicável', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
+  { tag: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
+  { tag: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'MTBE', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
+  { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: '70H', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
+  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: '6DH', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'em falha', product: '70H', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
+  { tag: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'não operando', product: '6DH', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
+  { tag: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'operando', product: '660', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { tag: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'manutenção', product: '70H', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { tag: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'MTBE', area: 'Área 34', operationalState: 'não operando', product: '660', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
+  { tag: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', product: '198', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
+  { tag: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', product: '70H', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { tag: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ODB', area: 'Área 34', operationalState: 'manutenção', product: '70H', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { tag: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 60', operationalState: 'em falha', product: '198', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 const initialLayers: Layer[] = [
@@ -48,7 +48,6 @@ const initialLayers: Layer[] = [
   { id: 'layer-annotations', name: 'Annotations', equipmentType: 'Annotations', isVisible: true },
 ];
 
-// Initial camera state - can be the first preset or a default overview
 const defaultInitialCameraPosition = { x: 25, y: 20, z: 25 };
 const defaultInitialCameraLookAt = { x: 0, y: 2, z: 0 };
 
@@ -75,7 +74,6 @@ export default function Terminal3DPage() {
 
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
   const [targetSystemToFrame, setTargetSystemToFrame] = useState<string | null>(null);
-
 
   const { toast } = useToast();
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
@@ -127,7 +125,7 @@ export default function Terminal3DPage() {
     if (selectedArea !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.area === selectedArea);
     }
-     if (selectedOperationalState !== 'All') {
+    if (selectedOperationalState !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
     }
 
@@ -160,20 +158,23 @@ export default function Terminal3DPage() {
           newSelection = [...oldSelection, equipmentTag];
         }
       } else {
-        newSelection = oldSelection;
+        newSelection = oldSelection; // No change if clicking empty space with modifier
       }
     } else {
       if (equipmentTag) {
-        if (oldSelection.length === 1 && oldSelection[0] === equipmentTag && oldSelection.includes(equipmentTag) ) {
+        // If the clicked item is already the *only* selected item, deselect it.
+        // Otherwise, select only the clicked item.
+        if (oldSelection.length === 1 && oldSelection[0] === equipmentTag) {
              newSelection = [];
         } else {
             newSelection = [equipmentTag];
         }
       } else {
-        newSelection = [];
+        newSelection = []; // Clicked empty space, clear selection
       }
     }
 
+    // Avoid executing command if selection hasn't actually changed
     const oldSelectionSorted = [...oldSelection].sort();
     const newSelectionSorted = [...newSelection].sort();
 
@@ -220,10 +221,36 @@ export default function Terminal3DPage() {
   }, [layers, executeCommand]);
 
   const handleSetCameraView = useCallback((systemName: string) => {
+    // Select all equipment for the given system
+    const oldSelection = [...selectedEquipmentTags];
+    const equipmentInSystem = initialEquipment
+      .filter(equip => equip.sistema === systemName)
+      .map(equip => equip.tag);
+
+    const newSelection = equipmentInSystem;
+
+    // Avoid executing command if selection hasn't actually changed
+    const oldSelectionSorted = [...oldSelection].sort();
+    const newSelectionSorted = [...newSelection].sort();
+
+    if (JSON.stringify(oldSelectionSorted) !== JSON.stringify(newSelectionSorted)) {
+      const command: Command = {
+        id: `select-system-equipment-${systemName}-${Date.now()}`,
+        type: 'EQUIPMENT_SELECT',
+        description: `Selected all equipment in system ${systemName}.`,
+        execute: () => setSelectedEquipmentTags(newSelection),
+        undo: () => setSelectedEquipmentTags(oldSelection),
+      };
+      executeCommand(command);
+
+      if (newSelection.length > 0) {
+        toast({ title: "System Focused", description: `Selected all ${newSelection.length} equipment in system ${systemName}.` });
+      }
+    }
+    
+    // Set target for camera framing
     setTargetSystemToFrame(systemName);
-    // The actual camera movement and state update will be handled by ThreeScene
-    // and then propagated back via onCameraChange.
-  }, []);
+  }, [selectedEquipmentTags, executeCommand, toast]);
 
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
     if (currentCameraState &&
@@ -393,7 +420,10 @@ export default function Terminal3DPage() {
       <Sidebar collapsible="offcanvas" className="border-r z-40">
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1">
+              <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <Undo2Icon className="h-5 w-5" />
+              </Button>
                <SidebarTrigger 
                 asChild 
                 variant="ghost"
@@ -404,11 +434,6 @@ export default function Terminal3DPage() {
                   Terminal 3D
                 </span>
               </SidebarTrigger>
-            </div>
-             <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <Undo2Icon className="h-5 w-5" />
-              </Button>
               <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Redo2Icon className="h-5 w-5" />
               </Button>
@@ -518,3 +543,5 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+
+    
