@@ -5,15 +5,15 @@
  */
 "use client";
 
-import { useMemo } from 'react';
-import type { Equipment, Annotation, CameraState, Command, Layer } from '@/lib/types'; // Layer foi removido, mas pode ser necessário para ThreeScene
+import { useMemo, useState } from 'react'; // Added useState
+import type { Annotation, ColorMode } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { AnnotationDialog } from '@/components/annotation-dialog';
-import { LayerManager } from '@/components/layer-manager';
-import { ColorModeSelector, type ColorMode } from '@/components/color-mode-selector';
+import { LayerManager as LayerManagerUI } from '@/components/layer-manager'; // Renamed to avoid conflict
+import { ColorModeSelector } from '@/components/color-mode-selector';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,7 +28,7 @@ import { useEquipmentSelectionManager } from '@/hooks/use-equipment-selection-ma
 import { useFilterManager } from '@/hooks/use-filter-manager';
 import { useEquipmentDataManager } from '@/hooks/use-equipment-data-manager';
 import { useCameraManager } from '@/hooks/use-camera-manager';
-import { useLayerManager } from '@/hooks/use-layer-manager'; // Novo hook
+import { useLayerManager } from '@/hooks/use-layer-manager';
 
 /**
  * Componente principal da página Terminal 3D.
@@ -52,7 +52,7 @@ export default function Terminal3DPage() {
     defaultInitialCameraPosition,
     defaultInitialCameraLookAt,
   } = useCameraManager({ executeCommand });
-  
+
   const {
     searchTerm,
     setSearchTerm,
@@ -75,7 +75,7 @@ export default function Terminal3DPage() {
     handleDeleteAnnotation,
     getAnnotationForEquipment,
     setIsAnnotationDialogOpen,
-  } = useAnnotationManager({ equipmentData }); // Pass equipmentData aqui
+  } = useAnnotationManager({ equipmentData });
 
   const {
     selectedEquipmentTags,
@@ -85,15 +85,15 @@ export default function Terminal3DPage() {
     selectTagsBatch,
   } = useEquipmentSelectionManager({ equipmentData, executeCommand });
 
-  const { layers, handleToggleLayer } = useLayerManager({ executeCommand }); // Usando o novo hook
+  const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
 
   const handleFocusAndSelectSystem = (systemName: string) => {
-    handleSetCameraViewForSystem(systemName); // Do useCameraManager
+    handleSetCameraViewForSystem(systemName);
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`); // Do useEquipmentSelectionManager
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
   };
 
   const selectedEquipmentDetails = useMemo(() => {
@@ -110,20 +110,17 @@ export default function Terminal3DPage() {
     }
     return null;
   }, [selectedEquipmentDetails, getAnnotationForEquipment]);
-  
+
   const availableOperationalStatesList = useMemo(() => {
     const states = new Set<string>();
     equipmentData.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
-    // Adiciona "All" e "Não aplicável" se não estiverem já nos dados
     if (!states.has("All")) states.add("All");
-    if (!states.has("Não aplicável")) states.add("Não aplicável");
-
     const sortedStates = Array.from(states).sort((a, b) => {
       if (a === "All") return -1;
       if (b === "All") return 1;
-      if (a === "Não aplicável") return -1; // Para colocar "Não aplicável" antes dos outros se "All" não estiver presente
+      if (a === "Não aplicável") return -1;
       if (b === "Não aplicável") return 1;
       return a.localeCompare(b);
     });
@@ -133,11 +130,11 @@ export default function Terminal3DPage() {
   const availableProductsList = useMemo(() => {
     const products = new Set<string>();
     equipmentData.forEach(equip => {
-      if (equip.product && equip.product !== "Não aplicável") products.add(equip.product);
+      if (equip.product) products.add(equip.product);
     });
     const sortedProducts = Array.from(products).sort();
-    const finalProducts = new Set(['All', 'Não aplicável', ...sortedProducts]); // Adiciona "All"
-    return Array.from(finalProducts).sort((a,b) => { // Garante que "All" e "Não aplicável" fiquem primeiro
+    const finalProducts = new Set(['All', ...sortedProducts]);
+     return Array.from(finalProducts).sort((a,b) => {
       if (a === "All") return -1;
       if (b === "All") return 1;
       if (a === "Não aplicável") return -1;
@@ -145,7 +142,7 @@ export default function Terminal3DPage() {
       return a.localeCompare(b);
     });
   }, [equipmentData]);
-  
+
   const cameraViewSystems = useMemo(() => {
     const sistemas = new Set<string>();
     equipmentData.forEach(equip => {
@@ -153,8 +150,6 @@ export default function Terminal3DPage() {
     });
     return Array.from(sistemas).sort();
   }, [equipmentData]);
-
-  // console.log("[Page] Terminal3DPage rendering", {selectedEquipmentTags, hoveredEquipmentTag});
 
   return (
     <SidebarProvider defaultOpen={false}>
@@ -165,22 +160,22 @@ export default function Terminal3DPage() {
           </SidebarTrigger>
         </div>
 
-        <div className="flex-1 relative min-h-0"> {/* Ensure min-h-0 for flex child */}
+        <div className="flex-1 relative min-h-0">
           <ThreeScene
             equipment={filteredEquipment}
-            layers={layers} // Do useLayerManager
+            layers={layers}
             annotations={annotations}
             selectedEquipmentTags={selectedEquipmentTags}
             onSelectEquipment={handleEquipmentClick}
             hoveredEquipmentTag={hoveredEquipmentTag}
             setHoveredEquipmentTag={handleSetHoveredEquipmentTag}
             cameraState={currentCameraState}
-            onCameraChange={handleCameraChangeFromScene} // Do useCameraManager
-            initialCameraPosition={defaultInitialCameraPosition} // Do useCameraManager
-            initialCameraLookAt={defaultInitialCameraLookAt} // Do useCameraManager
+            onCameraChange={handleCameraChangeFromScene}
+            initialCameraPosition={defaultInitialCameraPosition}
+            initialCameraLookAt={defaultInitialCameraLookAt}
             colorMode={colorMode}
-            targetSystemToFrame={targetSystemToFrame} // Do useCameraManager
-            onSystemFramed={onSystemFramed} // Do useCameraManager
+            targetSystemToFrame={targetSystemToFrame}
+            onSystemFramed={onSystemFramed}
           />
           {selectedEquipmentDetails && (
             <InfoPanel
@@ -190,9 +185,9 @@ export default function Terminal3DPage() {
               onOpenAnnotationDialog={() => handleOpenAnnotationDialog(selectedEquipmentDetails)}
               onDeleteAnnotation={handleDeleteAnnotation}
               onOperationalStateChange={handleOperationalStateChange}
-              availableOperationalStatesList={availableOperationalStatesList.filter(s => s !== 'All')} // Remove "All" para o dropdown do InfoPanel
+              availableOperationalStatesList={availableOperationalStatesList.filter(s => s !== 'All')}
               onProductChange={handleProductChange}
-              availableProductsList={availableProductsList.filter(p => p !== 'All')} // Remove "All" para o dropdown do InfoPanel
+              availableProductsList={availableProductsList.filter(p => p !== 'All')}
             />
           )}
         </div>
@@ -219,22 +214,22 @@ export default function Terminal3DPage() {
                 <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
-            <SidebarTrigger asChild variant="ghost" size="icon" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+             <SidebarTrigger asChild variant="ghost" size="icon" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <PanelLeftClose />
             </SidebarTrigger>
           </SidebarHeader>
           <SidebarContent className="p-0">
             <ScrollArea className="h-full">
-              <div className="p-4 space-y-6 pb-6"> {/* Aumentado space-y */}
+              <div className="p-4 space-y-6 pb-6">
                 <Card className="shadow-md">
-                  <CardContent className="p-3 space-y-3"> {/* Adicionado pt-3 e space-y-3 */}
+                  <CardContent className="p-3 space-y-3">
                     <div className="relative">
                       <Input
                         type="search"
                         placeholder="Buscar por nome, tipo, tag..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-9 pr-9" // Ajustado para pr-9 para dar espaço ao botão X
+                        className="h-9 pr-9"
                       />
                       {searchTerm && (
                         <Button
@@ -290,13 +285,13 @@ export default function Terminal3DPage() {
                   colorMode={colorMode}
                   onColorModeChange={setColorMode}
                 />
-                <LayerManager
-                  layers={layers} // Do useLayerManager
-                  onToggleLayer={handleToggleLayer} // Do useLayerManager
+                <LayerManagerUI
+                  layers={layers}
+                  onToggleLayer={handleToggleLayer}
                 />
                 <CameraControlsPanel
                   systems={cameraViewSystems}
-                  onSetView={handleFocusAndSelectSystem} // Função de orquestração
+                  onSetView={handleFocusAndSelectSystem}
                 />
               </div>
             </ScrollArea>
