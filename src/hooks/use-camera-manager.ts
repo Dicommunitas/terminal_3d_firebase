@@ -13,8 +13,8 @@
 import { useState, useCallback } from 'react';
 import type { CameraState, Command } from '@/lib/types';
 
-const defaultInitialCameraPosition = { x: 25, y: 20, z: 25 };
-const defaultInitialCameraLookAt = { x: 0, y: 2, z: 0 };
+export const defaultInitialCameraPosition = { x: 25, y: 20, z: 25 };
+export const defaultInitialCameraLookAt = { x: 0, y: 2, z: 0 };
 
 /**
  * Props para o hook useCameraManager.
@@ -38,8 +38,9 @@ interface UseCameraManagerReturn {
 
 /**
  * Hook para gerenciar o estado e as interações da câmera.
- * @param executeCommand Função para executar comandos e adicioná-los ao histórico.
- * @returns Um objeto contendo o estado da câmera e funções para interagir com ela.
+ * @param {UseCameraManagerProps} props - Props para o hook.
+ * @param {function} props.executeCommand - Função para executar comandos e adicioná-los ao histórico.
+ * @returns {UseCameraManagerReturn} Um objeto contendo o estado da câmera e funções para interagir com ela.
  */
 export function useCameraManager({ executeCommand }: UseCameraManagerProps): UseCameraManagerReturn {
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>({
@@ -50,38 +51,41 @@ export function useCameraManager({ executeCommand }: UseCameraManagerProps): Use
 
   /**
    * Define o sistema alvo para a câmera enquadrar.
-   * A lógica de seleção de equipamentos associada a este foco permanece em `page.tsx` ou em `useEquipmentSelectionManager`.
-   * @param systemName O nome do sistema para focar.
+   * @param {string} systemName O nome do sistema para focar.
    */
   const handleSetCameraViewForSystem = useCallback((systemName: string) => {
     setTargetSystemToFrame(systemName);
-    // A seleção de equipamentos é tratada separadamente pelo useEquipmentSelectionManager
+    // A seleção de equipamentos associada é tratada em page.tsx ou useEquipmentSelectionManager
   }, []);
 
   /**
    * Manipula as mudanças de câmera provenientes da cena 3D (e.g., órbita do usuário).
    * Registra a mudança no histórico de comandos.
-   * @param newSceneCameraState O novo estado da câmera da cena.
+   * @param {CameraState} newSceneCameraState O novo estado da câmera da cena.
    */
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
-    // Evita disparos repetitivos para o mesmo estado
-    if (currentCameraState &&
-        Math.abs(currentCameraState.position.x - newSceneCameraState.position.x) < 0.01 &&
-        Math.abs(currentCameraState.position.y - newSceneCameraState.position.y) < 0.01 &&
-        Math.abs(currentCameraState.position.z - newSceneCameraState.position.z) < 0.01 &&
-        Math.abs(currentCameraState.lookAt.x - newSceneCameraState.lookAt.x) < 0.01 &&
-        Math.abs(currentCameraState.lookAt.y - newSceneCameraState.lookAt.y) < 0.01 &&
-        Math.abs(currentCameraState.lookAt.z - newSceneCameraState.lookAt.z) < 0.01) {
+    const oldCameraStateSnapshot = currentCameraState ? { 
+      position: { ...currentCameraState.position }, 
+      lookAt: { ...currentCameraState.lookAt } 
+    } : undefined;
+
+    // Evita disparos repetitivos para o mesmo estado (com uma pequena tolerância)
+    if (oldCameraStateSnapshot &&
+        Math.abs(oldCameraStateSnapshot.position.x - newSceneCameraState.position.x) < 0.01 &&
+        Math.abs(oldCameraStateSnapshot.position.y - newSceneCameraState.position.y) < 0.01 &&
+        Math.abs(oldCameraStateSnapshot.position.z - newSceneCameraState.position.z) < 0.01 &&
+        Math.abs(oldCameraStateSnapshot.lookAt.x - newSceneCameraState.lookAt.x) < 0.01 &&
+        Math.abs(oldCameraStateSnapshot.lookAt.y - newSceneCameraState.lookAt.y) < 0.01 &&
+        Math.abs(oldCameraStateSnapshot.lookAt.z - newSceneCameraState.lookAt.z) < 0.01) {
       return;
     }
-
-    const oldCameraState = currentCameraState ? { ...currentCameraState } : undefined;
+    
     const command: Command = {
       id: `orbit-camera-${Date.now()}`,
       type: 'CAMERA_MOVE',
-      description: 'Câmera orbitada pelo usuário',
+      description: 'Câmera movimentada pelo usuário',
       execute: () => setCurrentCameraState(newSceneCameraState),
-      undo: () => setCurrentCameraState(oldCameraState),
+      undo: () => setCurrentCameraState(oldCameraStateSnapshot),
     };
     executeCommand(command);
   }, [currentCameraState, executeCommand]);
