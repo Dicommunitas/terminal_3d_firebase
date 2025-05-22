@@ -24,12 +24,30 @@ import { getEquipmentColor } from '@/core/graphics/color-utils';
 import { processSceneClick, processSceneMouseMove } from '@/core/three/mouse-interaction-manager';
 import { createGeometryForItem } from '@/core/three/equipment-geometry-factory';
 
+/**
+ * Props para o componente ThreeScene.
+ * @interface ThreeSceneProps
+ * @property {Equipment[]} equipment - Lista de equipamentos a serem renderizados.
+ * @property {Layer[]} layers - Lista de camadas para controlar a visibilidade dos tipos de equipamento.
+ * @property {Annotation[]} annotations - Lista de anotações a serem exibidas.
+ * @property {string[]} selectedEquipmentTags - Array de tags dos equipamentos selecionados.
+ * @property {(tag: string | null, isMultiSelect: boolean) => void} onSelectEquipment - Callback para quando um equipamento é selecionado/desselecionado.
+ * @property {string | null} hoveredEquipmentTag - Tag do equipamento atualmente sob o cursor.
+ * @property {(tag: string | null) => void} setHoveredEquipmentTag - Callback para definir o equipamento em hover.
+ * @property {CameraState | undefined} cameraState - Estado da câmera controlado programaticamente.
+ * @property {(cameraState: CameraState) => void} onCameraChange - Callback para quando a câmera é alterada pelo usuário.
+ * @property {{ x: number; y: number; z: number }} initialCameraPosition - Posição inicial da câmera.
+ * @property {{ x: number; y: number; z: number }} initialCameraLookAt - Ponto para o qual a câmera olha inicialmente.
+ * @property {ColorMode} colorMode - Modo de colorização atual dos equipamentos.
+ * @property {string | null} targetSystemToFrame - Nome do sistema para o qual a câmera deve focar.
+ * @property {() => void} onSystemFramed - Callback chamado após a câmera focar em um sistema.
+ */
 interface ThreeSceneProps {
   equipment: Equipment[];
   layers: Layer[];
   annotations: Annotation[];
-  selectedEquipmentTags: string[] | undefined; // Array de tags
-  onSelectEquipment: (equipmentTag: string | null, isMultiSelectModifierPressed: boolean) => void;
+  selectedEquipmentTags: string[] | undefined;
+  onSelectEquipment: (tag: string | null, isMultiSelectModifierPressed: boolean) => void;
   hoveredEquipmentTag: string | null | undefined;
   setHoveredEquipmentTag: (tag: string | null) => void;
   cameraState?: CameraState;
@@ -80,7 +98,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const onSelectEquipmentRef = useRef(onSelectEquipment);
   const onCameraChangeRef = useRef(onCameraChange);
   const setHoveredEquipmentTagCallbackRef = useRef(setHoveredEquipmentTag);
-  const hoveredEquipmentTagRef = useRef(hoveredEquipmentTag);
+  const hoveredEquipmentTagRef = useRef(hoveredEquipmentTag); // Para comparação dentro de callbacks
 
   const [isSceneReady, setIsSceneReady] = useState(false);
 
@@ -137,7 +155,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     if (item.operationalState === 'Não aplicável') {
         material.transparent = true;
-        material.opacity = 0.5;
+        material.opacity = 0.5; // Aumentada a transparência
     } else {
         material.transparent = false;
         material.opacity = 1.0;
@@ -151,8 +169,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
     }
     mesh.userData = { tag: item.tag, type: item.type, sistema: item.sistema }; 
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
+    mesh.castShadow = false; // Sombras desabilitadas
+    mesh.receiveShadow = false; // Sombras desabilitadas
     // console.log(`[ThreeScene createEquipmentMesh] Created mesh for ${item.tag} (type: ${item.type}) with color ${finalColor.getHexString()}, state ${item.operationalState}, opacity ${material.opacity}`);
     return mesh;
   }, [colorMode]);
@@ -172,8 +190,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     // console.log(`[ThreeScene] Mount dimensions AT START of useEffect: ${currentMount.clientWidth}x${currentMount.clientHeight}`);
 
     sceneRef.current = new THREE.Scene();
-    sceneRef.current.background = new THREE.Color(0xA9C1D1); 
-    sceneRef.current.fog = new THREE.Fog(0xA9C1D1, 40, 150); 
+    sceneRef.current.background = new THREE.Color(0xA9C1D1); // Azul acinzentado claro
+    sceneRef.current.fog = new THREE.Fog(0xA9C1D1, 40, 150); // Névoa da mesma cor
     // console.log('[ThreeScene] Scene created');
     
     const initialWidth = Math.max(1, currentMount.clientWidth);
@@ -194,6 +212,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     labelRendererRef.current.domElement.style.pointerEvents = 'none';
     currentMount.appendChild(labelRendererRef.current.domElement);
     
+    // Configuração do EffectComposer e OutlinePass
     composerRef.current = new EffectComposer(rendererRef.current!);
     const renderPass = new RenderPass(sceneRef.current!, cameraRef.current!);
     composerRef.current.addPass(renderPass);
@@ -208,13 +227,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     composerRef.current.addPass(outlinePassRef.current);
     // console.log('[ThreeScene] Composer and OutlinePass configured.');
         
-    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0); // Aumentada
     sceneRef.current.add(ambientLight);
 
-    const hemisphereLight = new THREE.HemisphereLight(0xADD8E6, 0x495436, 0.8); 
+    const hemisphereLight = new THREE.HemisphereLight(0xADD8E6, 0x495436, 0.8); // Luz do céu e do chão
     sceneRef.current.add(hemisphereLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 3.0); // Aumentada
     directionalLight.position.set(10, 15, 10);
     directionalLight.castShadow = false; // Sombras desabilitadas
     sceneRef.current.add(directionalLight);
@@ -225,7 +244,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     controlsRef.current.target.set(initialCameraLookAt.x, initialCameraLookAt.y, initialCameraLookAt.z);
     controlsRef.current.mouseButtons = {
       LEFT: THREE.MOUSE.ROTATE,
-      MIDDLE: THREE.MOUSE.DOLLY,
+      MIDDLE: THREE.MOUSE.DOLLY, // Padrão para zoom com o botão do meio
       RIGHT: THREE.MOUSE.PAN
     };
     controlsRef.current.update();
@@ -233,12 +252,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0xE6D8B0, 
+      color: 0xE6D8B0, // Cor de areia
       side: THREE.DoubleSide,
       metalness: 0.1,
       roughness: 0.8,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.4, // Aumentada a transparência
     });
     groundMeshRef.current = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMeshRef.current.rotation.x = -Math.PI / 2;
@@ -378,17 +397,17 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         mountRef.current,
         cameraRef.current,
         equipmentMeshesRef.current,
-        (tag) => { // Este é o callback que processSceneMouseMove espera
-            // console.log('[ThreeScene handleMouseMove] processSceneMouseMove called back with tag:', tag);
+        (tag) => { 
             if (typeof setHoveredEquipmentTagCallbackRef.current === 'function') {
                 setHoveredEquipmentTagCallbackRef.current(tag);
             } else {
                 // console.error('[ThreeScene] setHoveredEquipmentTagCallbackRef.current is not a function in handleMouseMove wrapper.');
             }
-        }
+        },
+        hoveredEquipmentTagRef.current // Passa o valor atual para comparação interna em processSceneMouseMove
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSceneReady]); // Depende de isSceneReady para garantir que os refs estão prontos
+  }, [isSceneReady]); 
 
   /**
    * Manipula o evento de clique do mouse na cena.
@@ -398,7 +417,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const handleClick = useCallback((event: MouseEvent) => {
     // console.log(`[ThreeScene] handleClick triggered, button: ${event.button}, isSceneReady: ${isSceneReady}`);
     
-    if (event.button !== 0) { 
+    if (event.button !== 0) { // Apenas processa cliques esquerdos para seleção
         // console.log('[ThreeScene] handleClick: Non-left button click, ignoring for selection.');
         return;
     }
@@ -409,7 +428,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
      if (equipmentMeshesRef.current.length === 0) {
         // console.log(`[ThreeScene] handleClick: SKIPPING due to no equipment meshes.`);
-        // Call onSelectEquipment with null to clear selection if clicking empty space with no meshes
         if (typeof onSelectEquipmentRef.current === 'function') {
             onSelectEquipmentRef.current(null, false);
         }
@@ -430,7 +448,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         onSelectEquipmentRef.current
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSceneReady]); // Depende de isSceneReady
+  }, [isSceneReady]); 
 
   /**
    * useEffect para atualizar os meshes dos equipamentos na cena.
@@ -552,8 +570,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
             const pinLabel = new CSS2DObject(pinDiv);
             
             let yOffset = 0;
-            // Use a default size if item.size or item.height is not available
-            const defaultSize = { width: 1, height: 1, depth: 1 }; // Example default size
+            const defaultSize = { width: 1, height: 1, depth: 1 }; 
             const itemSize = equipmentForItem.size || defaultSize;
             const itemHeight = equipmentForItem.height || itemSize.height;
 
@@ -592,7 +609,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (positionChanged || lookAtChanged) {
         // console.log('[ThreeScene] Applying programmatic camera change. Pos changed:', positionChanged, 'LookAt changed:', lookAtChanged);
         const oldControlsEnabled = controls.enabled;
-        controls.enabled = false;
+        controls.enabled = false; // Desabilita controles para evitar conflitos durante a animação programática
         if (positionChanged) camera.position.copy(targetPosition);
         if (lookAtChanged) controls.target.copy(targetLookAt);
         controls.update(); 
@@ -630,7 +647,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     const totalBoundingBox = new THREE.Box3();
     systemMeshes.forEach(mesh => {
       if ((mesh as THREE.Mesh).geometry) { 
-        mesh.updateMatrixWorld(true); // Garante que a matriz do mundo está atualizada para o cálculo da bounding box
+        mesh.updateMatrixWorld(true); 
         const meshBox = new THREE.Box3().setFromObject(mesh);
         totalBoundingBox.union(meshBox);
       }
@@ -649,19 +666,18 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     const maxDim = Math.max(size.x, size.y, size.z);
     const fov = cameraRef.current.fov * (Math.PI / 180);
     let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
-    cameraDistance = cameraDistance * 1.5; // Fator de zoom out
-    cameraDistance = Math.max(cameraDistance, 5); // Distância mínima da câmera
+    cameraDistance = cameraDistance * 1.5; 
+    cameraDistance = Math.max(cameraDistance, 5);
 
     const newCamPos = new THREE.Vector3(
       center.x,
-      center.y + Math.max(size.y * 0.5, maxDim * 0.3), // Tenta posicionar um pouco acima
+      center.y + Math.max(size.y * 0.5, maxDim * 0.3), 
       center.z + cameraDistance 
     );
-     // Se o objeto for "achatado" no eixo Y, ajusta a altura da câmera para uma melhor perspectiva
      if (size.y < maxDim * 0.2) { 
        newCamPos.y = center.y + cameraDistance * 0.5; 
      }
-     newCamPos.y = Math.max(newCamPos.y, center.y + 2); // Garante uma altura mínima para a câmera
+     newCamPos.y = Math.max(newCamPos.y, center.y + 2); 
 
     if (onCameraChangeRef.current) {
       // console.log('[ThreeScene] Calling onCameraChangeRef.current for system focus.');
@@ -679,21 +695,21 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
    * Define quais objetos devem ter contorno e com que estilo (selecionado ou hover).
    */
   useEffect(() => {
-    // console.log(`[ThreeScene OutlinePass] Updating. Selected: ${JSON.stringify(selectedEquipmentTags)}, Hovered: ${hoveredEquipmentTag}, isSceneReady: ${isSceneReady}`);
+    // console.log(`[ThreeScene OutlinePass] Updating. isSceneReady: ${isSceneReady}`);
     if (!isSceneReady || !outlinePassRef.current || !sceneRef.current || !equipmentMeshesRef.current) {
       // console.log('[ThreeScene OutlinePass] SKIPPING: Core refs not ready or scene not ready yet.');
       if (outlinePassRef.current) outlinePassRef.current.selectedObjects = [];
       return;
     }
     
-    // Garante que as props sejam tratadas mesmo se chegarem como undefined inicialmente
+    // console.log(`[ThreeScene OutlinePass] Received Props: selectedTags=${JSON.stringify(selectedEquipmentTags)}, hoveredTag=${hoveredEquipmentTag}`);
     const effectiveSelectedTags = selectedEquipmentTags ?? [];
     const effectiveHoveredTag = hoveredEquipmentTag === undefined ? null : hoveredEquipmentTag;
     // console.log(`[ThreeScene OutlinePass] Effective Values: selected=${JSON.stringify(effectiveSelectedTags)}, hovered=${effectiveHoveredTag}`);
 
     let objectsToOutline: THREE.Object3D[] = [];
     const meshesToConsider = equipmentMeshesRef.current.filter(mesh => mesh.visible);
-    // console.log(`[ThreeScene OutlinePass] Meshes to consider for outline: ${meshesToConsider.map(m => m.userData.tag).join(', ')}`);
+    // if (meshesToConsider.length > 0) console.log(`[ThreeScene OutlinePass] Meshes to consider for outline: ${meshesToConsider.map(m => m.userData.tag).join(', ')}`);
   
     if (Array.isArray(effectiveSelectedTags) && effectiveSelectedTags.length > 0) {
       effectiveSelectedTags.forEach(tag => {
@@ -706,7 +722,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (objectsToOutline.length > 0) {
         outlinePassRef.current.visibleEdgeColor.set('#0000FF'); // Azul para selecionado
         outlinePassRef.current.edgeStrength = 10; 
-        outlinePassRef.current.edgeThickness = 2; 
+        outlinePassRef.current.edgeThickness = 2.0; 
         outlinePassRef.current.edgeGlow = 0.7;
         // console.log(`[ThreeScene OutlinePass] Style: SELECTED. Strength ${outlinePassRef.current.edgeStrength}. Outlining: ${objectsToOutline.map(o => o.userData.tag).join(', ')}`);
       }
@@ -734,7 +750,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
   
     outlinePassRef.current.selectedObjects = objectsToOutline;
-    outlinePassRef.current.pulsePeriod = 0; // Garante que não haja pulsação
+    outlinePassRef.current.pulsePeriod = 0; 
     // console.log(`[ThreeScene OutlinePass] Final selectedObjects for outlinePass: ${objectsToOutline.length > 0 ? objectsToOutline.map(o => o.userData.tag).join(', ') : 'None'}`);
   
   }, [selectedEquipmentTags, hoveredEquipmentTag, equipment, layers, isSceneReady]);
@@ -743,4 +759,3 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
-

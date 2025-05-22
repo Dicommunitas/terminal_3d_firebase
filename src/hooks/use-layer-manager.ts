@@ -1,18 +1,29 @@
 
 /**
  * @fileOverview Custom hook para gerenciar o estado das camadas (layers) e a lógica para alternar sua visibilidade.
- * Inclui integração com o sistema de histórico de comandos.
+ * Integra-se com o sistema de histórico de comandos para permitir undo/redo das alterações de visibilidade.
  */
 "use client";
 
 import { useState, useCallback } from 'react';
 import type { Layer, Command } from '@/lib/types';
-import { initialLayers } from '@/core/data/initial-data'; // Certifique-se que initialLayers está exportado
+import { initialLayers } from '@/core/data/initial-data';
 
+/**
+ * Props para o hook useLayerManager.
+ * @interface UseLayerManagerProps
+ * @property {(command: Command) => void} executeCommand - Função para executar comandos e adicioná-los ao histórico.
+ */
 interface UseLayerManagerProps {
   executeCommand: (command: Command) => void;
 }
 
+/**
+ * Retorno do hook useLayerManager.
+ * @interface UseLayerManagerReturn
+ * @property {Layer[]} layers - A lista atual de camadas e seus estados de visibilidade.
+ * @property {(layerId: string) => void} handleToggleLayer - Alterna a visibilidade de uma camada específica.
+ */
 interface UseLayerManagerReturn {
   layers: Layer[];
   handleToggleLayer: (layerId: string) => void;
@@ -21,7 +32,6 @@ interface UseLayerManagerReturn {
 /**
  * Hook para gerenciar o estado das camadas e sua visibilidade.
  * @param {UseLayerManagerProps} props - Props para o hook.
- * @param {function} props.executeCommand - Função para executar comandos e adicioná-los ao histórico.
  * @returns {UseLayerManagerReturn} Um objeto contendo o estado das camadas e a função para alternar sua visibilidade.
  */
 export function useLayerManager({ executeCommand }: UseLayerManagerProps): UseLayerManagerReturn {
@@ -36,8 +46,7 @@ export function useLayerManager({ executeCommand }: UseLayerManagerProps): UseLa
     const layerIndex = layers.findIndex(l => l.id === layerId);
     if (layerIndex === -1) return;
 
-    // Criar cópias para o estado antigo e novo para o comando
-    const oldLayersState = layers.map(l => ({ ...l })); // Snapshot do estado anterior
+    const oldLayersState = layers.map(l => ({ ...l })); 
     const newLayersState = layers.map(l =>
       l.id === layerId ? { ...l, isVisible: !l.isVisible } : { ...l }
     );

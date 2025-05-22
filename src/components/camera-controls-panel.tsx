@@ -1,22 +1,36 @@
 
+/**
+ * @fileoverview Componente de painel para controles de câmera, especificamente para focar em sistemas.
+ */
 "use client";
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VideoIcon } from 'lucide-react';
 
+/**
+ * Props para o componente CameraControlsPanel.
+ * @interface CameraControlsPanelProps
+ * @property {string[]} systems - Lista de nomes dos sistemas disponíveis para foco.
+ * @property {(systemName: string) => void} onSetView - Callback chamado quando um sistema é selecionado para foco.
+ */
 interface CameraControlsPanelProps {
-  systems: string[]; // Changed from PresetCameraView[]
-  onSetView: (systemName: string) => void; // Changed from (view: PresetCameraView)
+  systems: string[];
+  onSetView: (systemName: string) => void;
 }
 
+/**
+ * Renderiza um painel com botões para focar a câmera em sistemas específicos.
+ * @param {CameraControlsPanelProps} props As props do componente.
+ * @returns {JSX.Element} O componente CameraControlsPanel.
+ */
 export function CameraControlsPanel({ systems, onSetView }: CameraControlsPanelProps) {
   return (
     <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center text-lg">
           <VideoIcon className="mr-2 h-5 w-5" />
-          Focus on System
+          Focar no Sistema
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-2">
@@ -33,7 +47,7 @@ export function CameraControlsPanel({ systems, onSetView }: CameraControlsPanelP
         ))}
         {systems.length === 0 && (
           <p className="col-span-2 text-sm text-muted-foreground text-center">
-            No systems available to focus on.
+            Nenhum sistema disponível para focar.
           </p>
         )}
       </CardContent>

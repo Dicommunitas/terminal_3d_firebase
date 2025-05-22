@@ -16,11 +16,26 @@ import { useState, useCallback } from 'react';
 import type { Command, Equipment } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
+/**
+ * Props para o hook useEquipmentSelectionManager.
+ * @interface UseEquipmentSelectionManagerProps
+ * @property {Equipment[]} equipmentData - Lista completa de equipamentos, usada para buscar nomes para toasts.
+ * @property {(command: Command) => void} executeCommand - Função para executar comandos e adicioná-los ao histórico.
+ */
 interface UseEquipmentSelectionManagerProps {
   equipmentData: Equipment[];
   executeCommand: (command: Command) => void;
 }
 
+/**
+ * Retorno do hook useEquipmentSelectionManager.
+ * @interface UseEquipmentSelectionManagerReturn
+ * @property {string[]} selectedEquipmentTags - Array das tags dos equipamentos atualmente selecionados.
+ * @property {string | null} hoveredEquipmentTag - Tag do equipamento atualmente sob o cursor, ou null.
+ * @property {(tag: string | null, isMultiSelectModifierPressed: boolean) => void} handleEquipmentClick - Manipula o clique em um equipamento para seleção.
+ * @property {(tag: string | null) => void} handleSetHoveredEquipmentTag - Define o equipamento sob o cursor.
+ * @property {(tagsToSelect: string[], operationDescription?: string) => void} selectTagsBatch - Seleciona um lote de equipamentos programaticamente.
+ */
 interface UseEquipmentSelectionManagerReturn {
   selectedEquipmentTags: string[];
   hoveredEquipmentTag: string | null;
@@ -29,6 +44,11 @@ interface UseEquipmentSelectionManagerReturn {
   selectTagsBatch: (tagsToSelect: string[], operationDescription?: string) => void;
 }
 
+/**
+ * Hook para gerenciar a seleção e o estado de hover dos equipamentos.
+ * @param {UseEquipmentSelectionManagerProps} props As props do hook.
+ * @returns {UseEquipmentSelectionManagerReturn} O estado da seleção e as funções para manipulá-la.
+ */
 export function useEquipmentSelectionManager({
   equipmentData,
   executeCommand,
@@ -39,37 +59,39 @@ export function useEquipmentSelectionManager({
 
   /**
    * Manipula o clique em um equipamento na cena 3D para seleção.
-   * @param equipmentTag A tag do equipamento clicado, ou null se o clique foi em espaço vazio.
-   * @param isMultiSelectModifierPressed True se Ctrl/Cmd foi pressionado durante o clique.
+   * Gerencia seleção única, múltipla (com Ctrl/Cmd) e deseleção.
+   * @param {string | null} tag - A tag do equipamento clicado, ou null se o clique foi em espaço vazio.
+   * @param {boolean} isMultiSelectModifierPressed - True se Ctrl/Cmd foi pressionado durante o clique.
    */
-  const handleEquipmentClick = useCallback((equipmentTag: string | null, isMultiSelectModifierPressed: boolean) => {
+  const handleEquipmentClick = useCallback((tag: string | null, isMultiSelectModifierPressed: boolean) => {
     const oldSelection = [...selectedEquipmentTags];
     let newSelection: string[];
     let toastMessage = "";
+    const equipmentName = tag ? (equipmentData.find(e => e.tag === tag)?.name || tag) : '';
 
     if (isMultiSelectModifierPressed) {
-      if (equipmentTag) {
-        if (oldSelection.includes(equipmentTag)) {
-          newSelection = oldSelection.filter(tag => tag !== equipmentTag);
-          toastMessage = `Equipamento ${equipmentData.find(e => e.tag === equipmentTag)?.name || equipmentTag} removido da seleção.`;
+      if (tag) {
+        if (oldSelection.includes(tag)) {
+          newSelection = oldSelection.filter(t => t !== tag);
+          toastMessage = `Equipamento ${equipmentName} removido da seleção.`;
         } else {
-          newSelection = [...oldSelection, equipmentTag];
-          toastMessage = `Equipamento ${equipmentData.find(e => e.tag === equipmentTag)?.name || equipmentTag} adicionado à seleção. ${newSelection.length} itens selecionados.`;
+          newSelection = [...oldSelection, tag];
+          toastMessage = `Equipamento ${equipmentName} adicionado à seleção. ${newSelection.length} itens selecionados.`;
         }
       } else {
-        newSelection = oldSelection; // Nenhuma mudança se Ctrl+clique no vazio
+        newSelection = oldSelection; 
       }
     } else {
-      if (equipmentTag) {
-        if (oldSelection.length === 1 && oldSelection[0] === equipmentTag) {
-          newSelection = []; // Deseleciona se clicar no mesmo item já selecionado
+      if (tag) {
+        if (oldSelection.length === 1 && oldSelection[0] === tag) {
+          newSelection = []; 
           toastMessage = "Seleção limpa.";
         } else {
-          newSelection = [equipmentTag]; // Seleção única
-          toastMessage = `${equipmentData.find(e => e.tag === equipmentTag)?.name || 'Equipamento'} selecionado.`;
+          newSelection = [tag];
+          toastMessage = `${equipmentName} selecionado.`;
         }
       } else {
-        newSelection = []; // Limpa seleção se clicar no vazio
+        newSelection = []; 
         if (oldSelection.length > 0) {
           toastMessage = "Seleção limpa.";
         }
@@ -80,14 +102,8 @@ export function useEquipmentSelectionManager({
     const newSelectionSorted = [...newSelection].sort();
 
     if (JSON.stringify(oldSelectionSorted) === JSON.stringify(newSelectionSorted) && !toastMessage) {
-      // Se a seleção não mudou e não há mensagem específica, não faz nada.
-      // Isso pode acontecer se ctrl+clique no vazio não mudar a seleção.
-      // Se a seleção realmente não mudou, podemos apenas atualizar o estado local, se necessário.
-      // No entanto, para manter a consistência com o command pattern, geralmente queremos um comando
-      // se a intenção era mudar, mesmo que o resultado seja o mesmo.
-      // Mas para cliques que não resultam em mudança de estado nem mensagem, podemos pular o comando.
-      if (newSelection.length === oldSelection.length) { // Verificação simples
-         setSelectedEquipmentTags(newSelection); // Atualiza o estado local se necessário
+      if (newSelection.length === oldSelection.length) {
+         setSelectedEquipmentTags(newSelection); 
          return;
       }
     }
@@ -111,7 +127,6 @@ export function useEquipmentSelectionManager({
       },
       undo: () => {
         setSelectedEquipmentTags(oldSelection);
-        // Poderia ter um toast para undo/redo também, mas mantendo simples por agora.
         toast({ title: "Seleção Desfeita", description: `${oldSelection.length} itens restaurados na seleção.`});
       },
     };
@@ -121,7 +136,7 @@ export function useEquipmentSelectionManager({
 
   /**
    * Define diretamente a tag do equipamento sob o cursor.
-   * @param tag A tag do equipamento, ou null.
+   * @param {string | null} tag A tag do equipamento, ou null.
    */
   const handleSetHoveredEquipmentTag = useCallback((tag: string | null) => {
     setHoveredEquipmentTag(tag);
@@ -130,18 +145,14 @@ export function useEquipmentSelectionManager({
   /**
    * Seleciona programaticamente um conjunto de tags de equipamento.
    * Usado, por exemplo, ao focar em um sistema.
-   * @param tagsToSelect Array de tags de equipamento a serem selecionadas.
-   * @param operationDescription Descrição opcional para o comando no histórico.
+   * @param {string[]} tagsToSelect - Array de tags de equipamento a serem selecionadas.
+   * @param {string} [operationDescription] - Descrição opcional para o comando no histórico.
    */
   const selectTagsBatch = useCallback((tagsToSelect: string[], operationDescription?: string) => {
     const oldSelection = [...selectedEquipmentTags];
-    const newSelection = [...tagsToSelect].sort(); // Garante uma ordem consistente para comparação
+    const newSelection = [...tagsToSelect].sort(); 
 
     if (JSON.stringify(oldSelection.sort()) === JSON.stringify(newSelection)) {
-      // Se a seleção não mudou, não executa o comando.
-      // Pode ser útil atualizar o estado local se houver alguma dessincronização, mas
-      // a ideia é que o comando só seja executado se houver uma mudança real.
-      // setSelectedEquipmentTags(newSelection); // Opcional: Forçar atualização se necessário
       return;
     }
 

@@ -1,18 +1,20 @@
 
 /**
  * @fileoverview Componente principal da página da aplicação Terminal 3D.
- * Orquestra os diversos hooks de gerenciamento de estado e renderiza a UI.
+ * Orquestra os diversos hooks de gerenciamento de estado (dados de equipamentos,
+ * seleção, filtros, câmera, camadas, anotações, histórico de comandos) e renderiza
+ * a interface do usuário, incluindo a cena 3D e a sidebar de controles.
  */
 "use client";
 
-import { useMemo, useState } from 'react'; // Added useState
-import type { Annotation, ColorMode } from '@/lib/types';
+import { useMemo, useState } from 'react';
+import type { Annotation, ColorMode } from '@/lib/types'; // ColorMode é usado aqui
 import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { AnnotationDialog } from '@/components/annotation-dialog';
-import { LayerManager as LayerManagerUI } from '@/components/layer-manager'; // Renamed to avoid conflict
+import { LayerManager as LayerManagerUI } from '@/components/layer-manager';
 import { ColorModeSelector } from '@/components/color-mode-selector';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
@@ -32,7 +34,9 @@ import { useLayerManager } from '@/hooks/use-layer-manager';
 
 /**
  * Componente principal da página Terminal 3D.
- * @returns {JSX.Element} O componente da página.
+ * Este componente integra todos os hooks de gerenciamento de estado e renderiza
+ * a UI principal da aplicação.
+ * @returns {JSX.Element} O componente da página Terminal 3D.
  */
 export default function Terminal3DPage() {
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
@@ -88,14 +92,22 @@ export default function Terminal3DPage() {
   const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
 
+  /**
+   * Foca a câmera em um sistema específico e seleciona todos os equipamentos desse sistema.
+   * @param {string} systemName - O nome do sistema para focar e selecionar.
+   */
   const handleFocusAndSelectSystem = (systemName: string) => {
-    handleSetCameraViewForSystem(systemName);
+    handleSetCameraViewForSystem(systemName); // Do useCameraManager
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`); // Do useEquipmentSelectionManager
   };
 
+  /**
+   * Detalhes do equipamento selecionado. Mostra detalhes apenas se um único equipamento estiver selecionado.
+   * @type {Equipment | null}
+   */
   const selectedEquipmentDetails = useMemo(() => {
     if (selectedEquipmentTags.length === 1) {
       const tag = selectedEquipmentTags[0];
@@ -104,6 +116,10 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentTags, equipmentData]);
 
+  /**
+   * Anotação para o equipamento atualmente selecionado.
+   * @type {Annotation | null}
+   */
   const equipmentAnnotation = useMemo(() => {
     if (selectedEquipmentDetails) {
       return getAnnotationForEquipment(selectedEquipmentDetails.tag);
@@ -111,12 +127,17 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentDetails, getAnnotationForEquipment]);
 
+  /**
+   * Lista de estados operacionais únicos disponíveis, incluindo "All".
+   * Usado para popular o dropdown de alteração de estado no InfoPanel.
+   * @type {string[]}
+   */
   const availableOperationalStatesList = useMemo(() => {
     const states = new Set<string>();
     equipmentData.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
-    if (!states.has("All")) states.add("All");
+    if (!states.has("All")) states.add("All"); // Usado internamente pelo filtro, InfoPanel remove 'All'
     const sortedStates = Array.from(states).sort((a, b) => {
       if (a === "All") return -1;
       if (b === "All") return 1;
@@ -127,13 +148,18 @@ export default function Terminal3DPage() {
     return sortedStates;
   }, [equipmentData]);
 
+  /**
+   * Lista de produtos únicos disponíveis, incluindo "All".
+   * Usado para popular o dropdown de alteração de produto no InfoPanel.
+   * @type {string[]}
+   */
   const availableProductsList = useMemo(() => {
     const products = new Set<string>();
     equipmentData.forEach(equip => {
       if (equip.product) products.add(equip.product);
     });
     const sortedProducts = Array.from(products).sort();
-    const finalProducts = new Set(['All', ...sortedProducts]);
+    const finalProducts = new Set(['All', ...sortedProducts]); // Usado internamente pelo filtro, InfoPanel remove 'All'
      return Array.from(finalProducts).sort((a,b) => {
       if (a === "All") return -1;
       if (b === "All") return 1;
@@ -143,6 +169,10 @@ export default function Terminal3DPage() {
     });
   }, [equipmentData]);
 
+  /**
+   * Lista de sistemas únicos para os quais existem vistas de câmera.
+   * @type {string[]}
+   */
   const cameraViewSystems = useMemo(() => {
     const sistemas = new Set<string>();
     equipmentData.forEach(equip => {
@@ -154,12 +184,14 @@ export default function Terminal3DPage() {
   return (
     <SidebarProvider defaultOpen={false}>
       <div className="h-screen w-full flex flex-col">
+        {/* Botão para abrir a sidebar em telas menores ou quando fechada */}
         <div className="absolute top-4 left-4 z-30">
           <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
             <PanelLeft />
           </SidebarTrigger>
         </div>
 
+        {/* Contêiner principal para a cena 3D e o InfoPanel */}
         <div className="flex-1 relative min-h-0">
           <ThreeScene
             equipment={filteredEquipment}
@@ -181,7 +213,7 @@ export default function Terminal3DPage() {
             <InfoPanel
               equipment={selectedEquipmentDetails}
               annotation={equipmentAnnotation}
-              onClose={() => handleEquipmentClick(null, false)}
+              onClose={() => handleEquipmentClick(null, false)} // Limpa a seleção
               onOpenAnnotationDialog={() => handleOpenAnnotationDialog(selectedEquipmentDetails)}
               onDeleteAnnotation={handleDeleteAnnotation}
               onOperationalStateChange={handleOperationalStateChange}
@@ -193,6 +225,7 @@ export default function Terminal3DPage() {
         </div>
       </div>
 
+      {/* Sidebar */}
       <Sidebar collapsible="offcanvas" className="border-r z-40">
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
@@ -221,6 +254,7 @@ export default function Terminal3DPage() {
           <SidebarContent className="p-0">
             <ScrollArea className="h-full">
               <div className="p-4 space-y-6 pb-6">
+                {/* Card de Filtros */}
                 <Card className="shadow-md">
                   <CardContent className="p-3 space-y-3">
                     <div className="relative">
@@ -281,14 +315,20 @@ export default function Terminal3DPage() {
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Seletor de Modo de Coloração */}
                 <ColorModeSelector
                   colorMode={colorMode}
                   onColorModeChange={setColorMode}
                 />
+
+                {/* Gerenciador de Camadas de Visibilidade */}
                 <LayerManagerUI
                   layers={layers}
                   onToggleLayer={handleToggleLayer}
                 />
+
+                {/* Painel de Controles da Câmera (Focus on System) */}
                 <CameraControlsPanel
                   systems={cameraViewSystems}
                   onSetView={handleFocusAndSelectSystem}
@@ -298,6 +338,8 @@ export default function Terminal3DPage() {
           </SidebarContent>
         </div>
       </Sidebar>
+
+      {/* Diálogo de Anotação */}
       <AnnotationDialog
         isOpen={isAnnotationDialogOpen}
         onOpenChange={setIsAnnotationDialogOpen}

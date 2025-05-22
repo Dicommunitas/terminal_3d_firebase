@@ -1,4 +1,8 @@
 
+/**
+ * @fileoverview Componente para exibir o painel de informações detalhadas de um equipamento selecionado.
+ * Permite visualizar atributos, alterar estado operacional, produto e gerenciar anotações.
+ */
 "use client";
 
 import type { Equipment, Annotation } from '@/lib/types';
@@ -10,18 +14,36 @@ import { Label } from "@/components/ui/label";
 import { XIcon, InfoIcon, TagIcon, LocateIcon, ActivityIcon, FileTextIcon, Settings2Icon, MessageSquarePlusIcon, Edit3Icon, Trash2Icon, CalendarDays, PackageIcon } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
+/**
+ * Props para o componente InfoPanel.
+ * @interface InfoPanelProps
+ * @property {Equipment | null} equipment - O equipamento selecionado para exibir detalhes.
+ * @property {Annotation | null} annotation - A anotação associada ao equipamento selecionado.
+ * @property {() => void} onClose - Callback para fechar o painel de informações.
+ * @property {() => void} onOpenAnnotationDialog - Callback para abrir o diálogo de anotação.
+ * @property {(equipmentTag: string) => void} onDeleteAnnotation - Callback para excluir a anotação do equipamento.
+ * @property {(equipmentTag: string, newState: string) => void} onOperationalStateChange - Callback para alterar o estado operacional.
+ * @property {string[]} availableOperationalStatesList - Lista de estados operacionais disponíveis para seleção.
+ * @property {(equipmentTag: string, newProduct: string) => void} onProductChange - Callback para alterar o produto.
+ * @property {string[]} availableProductsList - Lista de produtos disponíveis para seleção.
+ */
 interface InfoPanelProps {
   equipment: Equipment | null;
   annotation: Annotation | null;
   onClose: () => void;
   onOpenAnnotationDialog: () => void;
-  onDeleteAnnotation: (equipmentTag: string) => void; // Changed from equipmentId to equipmentTag
-  onOperationalStateChange: (equipmentTag: string, newState: string) => void; // Changed from equipmentId to equipmentTag
+  onDeleteAnnotation: (equipmentTag: string) => void;
+  onOperationalStateChange: (equipmentTag: string, newState: string) => void;
   availableOperationalStatesList: string[];
-  onProductChange: (equipmentTag: string, newProduct: string) => void; // Changed from equipmentId to equipmentTag
+  onProductChange: (equipmentTag: string, newProduct: string) => void;
   availableProductsList: string[];
 }
 
+/**
+ * Renderiza um painel flutuante com informações detalhadas sobre o equipamento selecionado.
+ * @param {InfoPanelProps} props As props do componente.
+ * @returns {JSX.Element | null} O componente InfoPanel ou null se nenhum equipamento estiver selecionado.
+ */
 export function InfoPanel({ 
   equipment, 
   annotation, 
@@ -37,7 +59,7 @@ export function InfoPanel({
 
   const handleDeleteClick = () => {
     if (equipment) {
-      onDeleteAnnotation(equipment.tag); // Changed from id to tag
+      onDeleteAnnotation(equipment.tag);
     }
   };
   
@@ -57,7 +79,7 @@ export function InfoPanel({
       <CardContent className="space-y-3 pb-3 overflow-y-auto flex-grow">
         <h3 className="text-md font-semibold">{equipment.name}</h3>
         <p className="text-sm">
-          TAG: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.tag}</span> {/* Changed from ID to TAG and equipment.id to equipment.tag */}
+          TAG: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.tag}</span>
         </p>
         <p className="text-sm">Tipo: {equipment.type}</p>
         
@@ -76,16 +98,16 @@ export function InfoPanel({
         
         {equipment.product && (
           <div className="space-y-1 text-sm">
-            <Label htmlFor={`product-select-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground"> {/* Changed from id to tag */}
+            <Label htmlFor={`product-select-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground">
               <PackageIcon className="mr-1.5 h-3.5 w-3.5" />
               Produto:
             </Label>
             <Select
               value={equipment.product}
-              onValueChange={(newProduct) => onProductChange(equipment.tag, newProduct)} // Changed from id to tag
+              onValueChange={(newProduct) => onProductChange(equipment.tag, newProduct)}
             >
-              <SelectTrigger id={`product-select-${equipment.tag}`} className="h-8 text-xs"> {/* Changed from id to tag */}
-                <SelectValue placeholder="Select product" />
+              <SelectTrigger id={`product-select-${equipment.tag}`} className="h-8 text-xs">
+                <SelectValue placeholder="Selecionar produto" />
               </SelectTrigger>
               <SelectContent>
                 {availableProductsList.map(prod => (
@@ -100,17 +122,17 @@ export function InfoPanel({
 
         {equipment.operationalState && (
            <div className="space-y-1 text-sm">
-            <Label htmlFor={`op-state-select-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground"> {/* Changed from id to tag */}
+            <Label htmlFor={`op-state-select-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground">
               <ActivityIcon className="mr-1.5 h-3.5 w-3.5" />
               Estado Operacional:
             </Label>
             <Select
               value={equipment.operationalState}
-              onValueChange={(newState) => onOperationalStateChange(equipment.tag, newState)} // Changed from id to tag
+              onValueChange={(newState) => onOperationalStateChange(equipment.tag, newState)}
               disabled={equipment.operationalState === "Não aplicável" && availableOperationalStatesList.filter(s => s !== "Não aplicável").length === 0}
             >
-              <SelectTrigger id={`op-state-select-${equipment.tag}`} className="h-8 text-xs"> {/* Changed from id to tag */}
-                <SelectValue placeholder="Select state" />
+              <SelectTrigger id={`op-state-select-${equipment.tag}`} className="h-8 text-xs">
+                <SelectValue placeholder="Selecionar estado" />
               </SelectTrigger>
               <SelectContent>
                 {availableOperationalStatesList.map(state => (

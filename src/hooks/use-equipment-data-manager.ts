@@ -3,9 +3,10 @@
  * @fileOverview Custom hook para gerenciar os dados dos equipamentos e suas modificações diretas.
  *
  * Responsabilidades:
- * - Manter o estado da lista de equipamentos (`equipmentData`).
+ * - Manter o estado da lista de equipamentos (`equipmentData`), inicializada com dados padrão.
  * - Fornecer funções para modificar o estado operacional e o produto de um equipamento.
  * - Utilizar toasts para fornecer feedback sobre as modificações.
+ * - Essas modificações diretas nos dados não são gerenciadas pelo histórico de comandos.
  */
 "use client";
 
@@ -16,6 +17,10 @@ import { useToast } from '@/hooks/use-toast';
 
 /**
  * Retorno do hook useEquipmentDataManager.
+ * @interface UseEquipmentDataManagerReturn
+ * @property {Equipment[]} equipmentData - A lista atual de todos os equipamentos.
+ * @property {(equipmentTag: string, newState: string) => void} handleOperationalStateChange - Modifica o estado operacional de um equipamento.
+ * @property {(equipmentTag: string, newProduct: string) => void} handleProductChange - Modifica o produto de um equipamento.
  */
 interface UseEquipmentDataManagerReturn {
   equipmentData: Equipment[];
@@ -33,7 +38,7 @@ export function useEquipmentDataManager(): UseEquipmentDataManagerReturn {
 
   /**
    * Manipula a alteração do estado operacional de um equipamento.
-   * @param {string} equipmentTag - A tag do equipamento.
+   * @param {string} equipmentTag - A tag do equipamento a ser modificado.
    * @param {string} newState - O novo estado operacional.
    */
   const handleOperationalStateChange = useCallback((equipmentTag: string, newState: string) => {
@@ -44,11 +49,11 @@ export function useEquipmentDataManager(): UseEquipmentDataManagerReturn {
     );
     const equip = equipmentData.find(e => e.tag === equipmentTag);
     toast({ title: "Estado Atualizado", description: `Estado de ${equip?.name || 'Equipamento'} alterado para ${newState}.` });
-  }, [equipmentData, toast]);
+  }, [equipmentData, toast]); // equipmentData como dependência para buscar o nome corretamente para o toast
 
   /**
    * Manipula a alteração do produto de um equipamento.
-   * @param {string} equipmentTag - A tag do equipamento.
+   * @param {string} equipmentTag - A tag do equipamento a ser modificado.
    * @param {string} newProduct - O novo produto.
    */
   const handleProductChange = useCallback((equipmentTag: string, newProduct: string) => {
@@ -59,7 +64,7 @@ export function useEquipmentDataManager(): UseEquipmentDataManagerReturn {
     );
     const equip = equipmentData.find(e => e.tag === equipmentTag);
     toast({ title: "Produto Atualizado", description: `Produto de ${equip?.name || 'Equipamento'} alterado para ${newProduct}.` });
-  }, [equipmentData, toast]);
+  }, [equipmentData, toast]); // equipmentData como dependência para buscar o nome corretamente para o toast
 
   return {
     equipmentData,

@@ -1,8 +1,11 @@
+
 /**
  * @fileOverview Fábrica para criar geometrias de equipamentos para a cena Three.js.
  *
  * Responsável por encapsular a lógica de criação de diferentes tipos de
  * THREE.BufferGeometry com base no tipo de equipamento fornecido.
+ * Isso promove o Single Responsibility Principle, isolando a lógica de criação
+ * de geometrias do componente ThreeScene.
  */
 import * as THREE from 'three';
 import type { Equipment } from '@/lib/types';
@@ -11,6 +14,7 @@ import type { Equipment } from '@/lib/types';
  * Cria e retorna uma THREE.BufferGeometry apropriada para o tipo de equipamento.
  * @param {Equipment} item - O objeto de equipamento contendo tipo e dimensões.
  * @returns {THREE.BufferGeometry} A geometria criada.
+ * @throws {Error} Se um tipo de equipamento desconhecido for fornecido e não houver geometria padrão.
  */
 export function createGeometryForItem(item: Equipment): THREE.BufferGeometry {
   let geometry: THREE.BufferGeometry;
@@ -34,6 +38,7 @@ export function createGeometryForItem(item: Equipment): THREE.BufferGeometry {
       break;
     default:
       // Geometria padrão para tipos desconhecidos ou não especificados
+      // Isso pode ser um cubo ou esfera pequenos para indicar um item não mapeado.
       console.warn(`[GeometryFactory] Tipo de equipamento desconhecido: ${item.type}. Usando esfera padrão.`);
       geometry = new THREE.SphereGeometry(1, 16, 16);
       break;

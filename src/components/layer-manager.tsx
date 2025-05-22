@@ -11,10 +11,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import type { Layer } from '@/lib/types';
 
-// ColorMode type definition, can be moved to types.ts if shared more broadly
-export type ColorMode = 'Produto' | 'Estado Operacional' | 'Equipamento';
-
-
+/**
+ * Props para o componente LayerManager.
+ * @interface LayerManagerProps
+ * @property {Layer[]} layers - A lista de camadas disponíveis.
+ * @property {(layerId: string) => void} onToggleLayer - Callback para quando a visibilidade de uma camada é alternada.
+ */
 interface LayerManagerProps {
   layers: Layer[];
   onToggleLayer: (layerId: string) => void;
@@ -31,17 +33,17 @@ export function LayerManager({ layers, onToggleLayer }: LayerManagerProps) {
       <CardHeader>
         <CardTitle className="flex items-center text-lg">
           <LayersIcon className="mr-2 h-5 w-5" />
-          Layer Visibility
+          Controle de Camadas
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 pt-2 p-3"> {/* Adjusted padding */}
+      <CardContent className="space-y-2 pt-2 p-3">
         {layers.map(layer => (
           <div key={layer.id} className="flex items-center space-x-2">
             <Checkbox
               id={`layer-${layer.id}`}
               checked={layer.isVisible}
               onCheckedChange={() => onToggleLayer(layer.id)}
-              aria-label={`Toggle visibility of ${layer.name} layer`}
+              aria-label={`Alternar visibilidade da camada ${layer.name}`}
             />
             <Label htmlFor={`layer-${layer.id}`} className="text-sm font-normal cursor-pointer">
               {layer.name}
