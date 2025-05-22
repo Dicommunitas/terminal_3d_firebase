@@ -1,20 +1,19 @@
 
 /**
  * @fileoverview Componente principal da página da aplicação Terminal 3D.
- *
- * Responsável por orquestrar os diversos gerenciadores de estado (hooks)
- * e renderizar a interface do usuário, incluindo a sidebar e a cena 3D.
+ * Orquestra os diversos hooks de gerenciamento de estado e renderiza a UI.
  */
 "use client";
 
-import { useMemo, useState, useCallback } from 'react';
-import type { Layer, Command, Annotation, Equipment } from '@/lib/types'; // Equipment importado
+import { useMemo, useState } from 'react';
+import type { Annotation, Equipment, CameraState, Command } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
-import ThreeScene from '@/components/three-scene'; // Default import
+import ThreeScene from '@/components/three-scene';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { AnnotationDialog } from '@/components/annotation-dialog';
-import { LayerManager, type ColorMode } from '@/components/layer-manager';
+import { LayerManager, type ColorMode } from '@/components/layer-manager'; // ColorMode is now defined/exported here
+import { ColorModeSelector } from '@/components/color-mode-selector';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,15 +21,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, Settings2Icon, LocateIcon, LayersIcon, PanelLeftClose } from 'lucide-react';
-import { initialLayers } from '@/core/data/initial-data';
+import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, Settings2Icon, LocateIcon, PanelLeftClose } from 'lucide-react';
+
 import { useAnnotationManager } from '@/hooks/use-annotation-manager';
 import { useEquipmentSelectionManager } from '@/hooks/use-equipment-selection-manager';
 import { useFilterManager } from '@/hooks/use-filter-manager';
 import { useEquipmentDataManager } from '@/hooks/use-equipment-data-manager';
 import { useCameraManager } from '@/hooks/use-camera-manager';
+import { useLayerManager } from '@/hooks/use-layer-manager';
 
-
+/**
+ * Componente principal da página Terminal 3D.
+ * @returns {JSX.Element} O componente da página.
+ */
 export default function Terminal3DPage() {
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
@@ -43,7 +46,7 @@ export default function Terminal3DPage() {
   const {
     currentCameraState,
     targetSystemToFrame,
-    handleSetCameraViewForSystem: handleFocusOnSystem, // Renomeado para clareza
+    handleSetCameraViewForSystem,
     handleCameraChangeFromScene,
     onSystemFramed,
     defaultInitialCameraPosition,
@@ -82,42 +85,16 @@ export default function Terminal3DPage() {
     selectTagsBatch,
   } = useEquipmentSelectionManager({ equipmentData, executeCommand });
 
-  const [layers, setLayers] = useState<Layer[]>(initialLayers);
+  const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
 
-  /**
-   * Manipula a alternância de visibilidade de uma camada.
-   * Esta operação é registrada no histórico de comandos.
-   * @param layerId O ID da camada a ser alternada.
-   */
-  const handleToggleLayer = useCallback((layerId: string) => {
-    const layerIndex = layers.findIndex(l => l.id === layerId);
-    if (layerIndex === -1) return;
-
-    const oldLayers = [...layers];
-    const newLayers = oldLayers.map(l => l.id === layerId ? { ...l, isVisible: !l.isVisible } : l);
-
-    const command: Command = {
-      id: `toggle-layer-${layerId}-${Date.now()}`,
-      type: 'LAYER_VISIBILITY',
-      description: `Alternada visibilidade da camada ${oldLayers[layerIndex].name}`,
-      execute: () => setLayers(newLayers),
-      undo: () => setLayers(oldLayers),
-    };
-    executeCommand(command);
-  }, [layers, executeCommand]);
-
-  /**
-   * Combina o foco no sistema (câmera) com a seleção dos equipamentos desse sistema.
-   */
-  const handleFocusAndSelectSystem = useCallback((systemName: string) => {
-    handleFocusOnSystem(systemName); // Foca a câmera
+  const handleFocusAndSelectSystem = (systemName: string) => {
+    handleSetCameraViewForSystem(systemName);
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`); // Seleciona os equipamentos
-  }, [handleFocusOnSystem, equipmentData, selectTagsBatch]);
-
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
+  };
 
   const selectedEquipmentDetails = useMemo(() => {
     if (selectedEquipmentTags.length === 1) {
@@ -134,14 +111,13 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentDetails, getAnnotationForEquipment]);
   
-  // Usado pelo InfoPanel para popular seus dropdowns
   const availableOperationalStatesList = useMemo(() => {
     const states = new Set<string>();
     equipmentData.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
     const sortedStates = Array.from(states).filter(s => s !== 'Não aplicável' && s !== 'All').sort();
-    return ['Não aplicável', ...sortedStates]; // "All" não é relevante para o dropdown do InfoPanel
+    return ['Não aplicável', ...sortedStates];
   }, [equipmentData]);
 
   const availableProductsList = useMemo(() => {
@@ -150,11 +126,10 @@ export default function Terminal3DPage() {
       if (equip.product && equip.product !== "Não aplicável") products.add(equip.product);
     });
     const sortedProducts = Array.from(products).sort();
-    const finalProducts = new Set(['Não aplicável', ...sortedProducts]);  // "All" não é relevante para o dropdown do InfoPanel
+    const finalProducts = new Set(['Não aplicável', ...sortedProducts]);
     return Array.from(finalProducts);
   }, [equipmentData]);
   
-  // Usado pelo CameraControlsPanel
   const cameraViewSystems = useMemo(() => {
     const sistemas = new Set<string>();
     equipmentData.forEach(equip => {
@@ -166,16 +141,14 @@ export default function Terminal3DPage() {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <div className="h-screen w-full flex flex-col"> {/* Main screen container */}
-        {/* Top-left trigger for the sidebar, visible on all screen sizes */}
+      <div className="h-screen w-full flex flex-col">
         <div className="absolute top-4 left-4 z-30">
           <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
             <PanelLeft />
           </SidebarTrigger>
         </div>
 
-        {/* Main content area including 3D scene and InfoPanel */}
-        <div className="flex-1 relative min-h-0"> {/* Ensures this div takes remaining space and allows absolute positioning for children */}
+        <div className="flex-1 relative min-h-0">
           <ThreeScene
             equipment={filteredEquipment}
             layers={layers}
@@ -212,8 +185,8 @@ export default function Terminal3DPage() {
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-1">
-               <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                  <Undo2Icon className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Desfazer" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <Undo2Icon className="h-5 w-5" />
               </Button>
               <SidebarTrigger
                 asChild
@@ -225,12 +198,11 @@ export default function Terminal3DPage() {
                   Terminal 3D
                 </span>
               </SidebarTrigger>
-               <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                  <Redo2Icon className="h-5 w-5" />
+              <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Refazer" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
-             {/* Botão de fechar a sidebar movido e estilizado */}
-             <SidebarTrigger asChild variant="ghost" size="icon" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+            <SidebarTrigger asChild variant="ghost" size="icon" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <PanelLeftClose />
             </SidebarTrigger>
           </SidebarHeader>
@@ -297,11 +269,13 @@ export default function Terminal3DPage() {
                     </div>
                   </CardContent>
                 </Card>
+                <ColorModeSelector
+                  colorMode={colorMode}
+                  onColorModeChange={setColorMode}
+                />
                 <LayerManager
                   layers={layers}
                   onToggleLayer={handleToggleLayer}
-                  colorMode={colorMode}
-                  onColorModeChange={setColorMode}
                 />
                 <CameraControlsPanel
                   systems={cameraViewSystems}
