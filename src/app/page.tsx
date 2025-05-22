@@ -12,13 +12,13 @@ import { LayerManager } from '@/components/layer-manager';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, Settings2Icon, LocateIcon, ActivityIcon, SearchIcon, PackageIcon } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, Settings2Icon, LocateIcon, ActivityIcon, SearchIcon, PackageIcon, PanelLeftClose } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import type { ColorMode } from '@/app/page';
+// import type { ColorMode } from '@/app/page'; // Removed as ColorMode is defined at the bottom
 
 
 const initialEquipment: Equipment[] = [
@@ -26,8 +26,8 @@ const initialEquipment: Equipment[] = [
   { tag: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Storage', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
   { tag: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'MTBE', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Operational', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
   { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: '70H', category: 'Lifting', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'não operando', product: '6DH', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'manutenção', product: '70H', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
+  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: '6DH', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'não operando', product: '70H', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
   { tag: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'em falha', product: '6DH', category: 'Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
   { tag: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'operando', product: '660', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
   { tag: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'manutenção', product: '70H', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
@@ -64,7 +64,7 @@ export default function Terminal3DPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
-  const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All');
+  // const [selectedOperationalState, setSelectedOperationalState] = useState<string>('All');
 
 
   const [annotations, setAnnotations] = useState<Annotation[]>([]);
@@ -125,9 +125,9 @@ export default function Terminal3DPage() {
     if (selectedArea !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.area === selectedArea);
     }
-    if (selectedOperationalState !== 'All') {
-      itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
-    }
+    // if (selectedOperationalState !== 'All') {
+    //   itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
+    // }
 
     if (searchTerm.trim()) {
       const searchTermsArray = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
@@ -144,9 +144,10 @@ export default function Terminal3DPage() {
       });
     }
     return itemsToFilter;
-  }, [equipmentData, searchTerm, selectedSistema, selectedArea, selectedOperationalState]);
+  }, [equipmentData, searchTerm, selectedSistema, selectedArea]);
 
   const handleSelectEquipment = useCallback((equipmentTag: string | null, isMultiSelectModifierPressed: boolean) => {
+    console.log("[Page] handleSelectEquipment called. Tag:", equipmentTag, "MultiSelect:", isMultiSelectModifierPressed);
     const oldSelection = [...selectedEquipmentTags];
     let newSelection: string[];
 
@@ -176,15 +177,24 @@ export default function Terminal3DPage() {
     const newSelectionSorted = [...newSelection].sort();
 
     if (JSON.stringify(oldSelectionSorted) === JSON.stringify(newSelectionSorted)) {
-        return;
+      console.log("[Page] handleSelectEquipment: selection unchanged.");
+      return;
     }
+    console.log("[Page] handleSelectEquipment: oldSelection:", oldSelection, "newSelection:", newSelection);
+
 
     const command: Command = {
       id: `select-equipment-${Date.now()}`,
       type: 'EQUIPMENT_SELECT',
       description: `Update equipment selection. ${newSelection.length} item(s) selected.`,
-      execute: () => setSelectedEquipmentTags(newSelection),
-      undo: () => setSelectedEquipmentTags(oldSelection),
+      execute: () => {
+        console.log("[Page] Command EXECUTE: setting selectedEquipmentTags to:", newSelection);
+        setSelectedEquipmentTags(newSelection);
+      },
+      undo: () => {
+        console.log("[Page] Command UNDO: setting selectedEquipmentTags to:", oldSelection);
+        setSelectedEquipmentTags(oldSelection);
+      },
     };
     executeCommand(command);
 
@@ -198,6 +208,11 @@ export default function Terminal3DPage() {
     }
 
   }, [selectedEquipmentTags, executeCommand, toast, equipmentData]);
+
+  const handleSetHoveredEquipmentTag = useCallback((tag: string | null) => {
+    console.log("[Page] handleSetHoveredEquipmentTag called with tag:", tag);
+    setHoveredEquipmentTag(tag);
+  }, []);
 
 
   const handleToggleLayer = useCallback((layerId: string) => {
@@ -223,7 +238,7 @@ export default function Terminal3DPage() {
       .map(equip => equip.tag);
 
     const newSelection = equipmentInSystem;
-    const oldSelection = selectedEquipmentTags; // Store before command potentially changes it
+    const oldSelection = selectedEquipmentTags; 
 
     const oldSelectionSorted = [...oldSelection].sort();
     const newSelectionSorted = [...newSelection].sort();
@@ -390,12 +405,12 @@ export default function Terminal3DPage() {
           annotations={annotations}
           selectedEquipmentTags={selectedEquipmentTags}
           onSelectEquipment={handleSelectEquipment}
+          hoveredEquipmentTag={hoveredEquipmentTag}
+          setHoveredEquipmentTag={handleSetHoveredEquipmentTag}
           cameraState={currentCameraState}
           onCameraChange={handleCameraChangeFromScene}
           initialCameraPosition={defaultInitialCameraPosition}
           initialCameraLookAt={defaultInitialCameraLookAt}
-          hoveredEquipmentTag={hoveredEquipmentTag}
-          setHoveredEquipmentTag={setHoveredEquipmentTag}
           colorMode={colorMode}
           targetSystemToFrame={targetSystemToFrame}
           onSystemFramed={() => setTargetSystemToFrame(null)}
@@ -403,12 +418,11 @@ export default function Terminal3DPage() {
         <InfoPanel
           equipment={selectedEquipmentDetails}
           annotation={equipmentAnnotation}
-          annotations={annotations}
           onClose={() => handleSelectEquipment(null, false)}
           onOpenAnnotationDialog={handleOpenAnnotationDialog}
           onDeleteAnnotation={handleDeleteAnnotation}
           onOperationalStateChange={handleOperationalStateChange}
-          availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All')}
+          availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All' && s !== 'Não aplicável')}
           onProductChange={handleProductChange}
           availableProductsList={availableProducts.filter(p => p !== 'All')}
         />
@@ -417,7 +431,10 @@ export default function Terminal3DPage() {
       <Sidebar collapsible="offcanvas" className="border-r z-40">
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
-            <div className="flex items-center space-x-1">
+             <div className="flex items-center space-x-1">
+                <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                    <Undo2Icon className="h-5 w-5" />
+                </Button>
                 <SidebarTrigger 
                   asChild 
                   variant="ghost"
@@ -428,14 +445,9 @@ export default function Terminal3DPage() {
                     Terminal 3D
                   </span>
                 </SidebarTrigger>
-            </div>
-             <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <Undo2Icon className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <Redo2Icon className="h-5 w-5" />
-              </Button>
+                 <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                    <Redo2Icon className="h-5 w-5" />
+                </Button>
             </div>
           </SidebarHeader>
           <SidebarContent className="p-0">
@@ -499,24 +511,6 @@ export default function Terminal3DPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                     <div className="space-y-1">
-                      <Label htmlFor="op-state-filter" className="text-xs text-muted-foreground flex items-center">
-                        <ActivityIcon className="mr-1.5 h-3.5 w-3.5" />
-                        Filter by Operational State
-                      </Label>
-                      <Select value={selectedOperationalState} onValueChange={setSelectedOperationalState}>
-                        <SelectTrigger id="op-state-filter" className="h-9">
-                          <SelectValue placeholder="Select state" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableOperationalStates.map(state => (
-                            <SelectItem key={state} value={state}>
-                              {state}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
                   </CardContent>
                 </Card>
                 <LayerManager
@@ -544,5 +538,5 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
-
+export type ColorMode = 'Produto' | 'Estado Operacional' | 'Equipamento';
     
