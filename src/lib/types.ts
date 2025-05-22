@@ -1,12 +1,12 @@
 
 export interface Equipment {
-  id: string;
+  tag: string; // Alterado de id para tag
   name: string;
   type: 'Building' | 'Crane' | 'Tank' | 'Terrain' | 'Pipe' | 'Valve';
   sistema?: string;
   area?: string;
   operationalState?: string;
-  product?: string; // Added product attribute
+  product?: string;
   position: { x: number; y: number; z: number };
   rotation?: { x: number; y: number; z: number };
   size?: { width: number; height: number; depth: number };
@@ -43,7 +43,7 @@ export interface PresetCameraView {
 }
 
 export interface Annotation {
-  equipmentId: string;
+  equipmentTag: string; // Alterado de equipmentId para equipmentTag
   text: string;
   createdAt: string;
 }

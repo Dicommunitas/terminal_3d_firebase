@@ -9,20 +9,20 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
 import type { Equipment, Layer, CameraState, Annotation } from '@/lib/types';
-import type { ColorMode } from '@/app/page'; // Assuming ColorMode is exported from page.tsx
+import type { ColorMode } from '@/app/page';
 
 interface ThreeSceneProps {
   equipment: Equipment[];
   layers: Layer[];
   annotations: Annotation[];
-  selectedEquipmentIds: string[];
-  onSelectEquipment: (equipmentId: string | null, isMultiSelectModifierPressed: boolean) => void;
+  selectedEquipmentIds: string[]; // Contains tags
+  onSelectEquipment: (equipmentTag: string | null, isMultiSelectModifierPressed: boolean) => void;
   cameraState?: CameraState;
   onCameraChange?: (cameraState: CameraState) => void;
   initialCameraPosition: { x: number; y: number; z: number };
   initialCameraLookAt: { x: number; y: number; z: number };
-  hoveredEquipmentId: string | null;
-  setHoveredEquipmentId: (id: string | null) => void;
+  hoveredEquipmentId: string | null; // Contains tag
+  setHoveredEquipmentId: (tag: string | null) => void;
   colorMode: ColorMode;
 }
 
@@ -41,13 +41,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   equipment: filteredEquipmentData,
   layers,
   annotations,
-  selectedEquipmentIds,
+  selectedEquipmentIds, // Now contains tags
   onSelectEquipment,
   cameraState: programmaticCameraState,
   onCameraChange,
   initialCameraPosition,
   initialCameraLookAt,
-  hoveredEquipmentId,
+  hoveredEquipmentId, // Now contains tag
   setHoveredEquipmentId,
   colorMode,
 }) => {
@@ -112,7 +112,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
   const createEquipmentMesh = useCallback((item: Equipment, currentGlobalColorMode: ColorMode): THREE.Object3D => {
     let finalColor = new THREE.Color();
-    let stateColor = new THREE.Color(item.color); // Default to item's base color
+    let stateColor = new THREE.Color(item.color); 
 
     switch (currentGlobalColorMode) {
       case 'Produto':
@@ -121,7 +121,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
           const val2 = getCharNumericValue(item.product.charAt(1));
           const val3 = getCharNumericValue(item.product.charAt(2));
 
-          const r_norm = val1 / 35.0; // Normalize 0-35 to 0.0-1.0
+          const r_norm = val1 / 35.0; 
           const g_norm = val2 / 35.0;
           const b_norm = val3 / 35.0;
           
@@ -132,10 +132,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         break;
       case 'Estado Operacional':
         switch (item.operationalState) {
-          case 'operando': stateColor.setHex(0xFF0000); break; // Red
-          case 'não operando': stateColor.setHex(0x00FF00); break; // Green
-          case 'manutenção': stateColor.setHex(0xFFFF00); break; // Yellow
-          case 'em falha': stateColor.setHex(0xDA70D6); break; // Orchid (Light Purple/Pink)
+          case 'operando': stateColor.setHex(0xFF0000); break; 
+          case 'não operando': stateColor.setHex(0x00FF00); break; 
+          case 'manutenção': stateColor.setHex(0xFFFF00); break; 
+          case 'em falha': stateColor.setHex(0xDA70D6); break; 
           case 'Não aplicável':
           default: stateColor.set(item.color); break;
         }
@@ -194,7 +194,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (item.rotation) {
       mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
     }
-    mesh.userData = { id: item.id, type: item.type };
+    mesh.userData = { tag: item.tag, type: item.type }; // Changed from id to tag
     mesh.castShadow = false; 
     mesh.receiveShadow = false;
     return mesh;
@@ -253,12 +253,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     
     const groundGeometry = new THREE.PlaneGeometry(100, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({ 
-      color: 0xE6D8B0, // Sand color
+      color: 0xE6D8B0, 
       side: THREE.DoubleSide, 
       metalness: 0.1, 
       roughness: 0.8,
       transparent: true,
-      opacity: 0.4 // Increased transparency
+      opacity: 0.4 
     }); 
     groundMeshRef.current = new THREE.Mesh(groundGeometry, groundMaterial);
     groundMeshRef.current.rotation.x = -Math.PI / 2;
@@ -371,12 +371,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
       rendererRef.current?.dispose();
       if (composerRef.current) {
-        // composerRef.current.dispose(); // EffectComposer doesn't have a dispose method directly
-        // Instead, dispose individual passes and clear the composer
         composerRef.current.passes.forEach(pass => {
           if (pass.dispose) pass.dispose();
         });
-        composerRef.current.renderer.dispose(); // Dispose the renderer via composer
+        composerRef.current.renderer.dispose(); 
         composerRef.current.passes = [];
       }
 
@@ -403,20 +401,20 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     raycasterRef.current.setFromCamera(mouseRef.current, cameraRef.current);
     const intersects = raycasterRef.current.intersectObjects(equipmentMeshesRef.current, true);
   
-    let foundHoverId: string | null = null;
+    let foundHoverTag: string | null = null;
     if (intersects.length > 0) {
       let hoveredObjectCandidate = intersects[0].object;
-      while (hoveredObjectCandidate.parent && !hoveredObjectCandidate.userData.id) {
+      while (hoveredObjectCandidate.parent && !hoveredObjectCandidate.userData.tag) { // Changed from id to tag
         if (hoveredObjectCandidate.parent instanceof THREE.Scene) break;
         hoveredObjectCandidate = hoveredObjectCandidate.parent;
       }
-      if (hoveredObjectCandidate.userData.id) {
-        foundHoverId = hoveredObjectCandidate.userData.id;
+      if (hoveredObjectCandidate.userData.tag) { // Changed from id to tag
+        foundHoverTag = hoveredObjectCandidate.userData.tag; // Changed from id to tag
       }
     }
     
-    if (hoveredEquipmentIdRef.current !== foundHoverId) {
-      setHoveredEquipmentIdRef.current(foundHoverId);
+    if (hoveredEquipmentIdRef.current !== foundHoverTag) {
+      setHoveredEquipmentIdRef.current(foundHoverTag);
     }
   }, []); 
 
@@ -435,12 +433,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     if (intersects.length > 0) {
       let selectedObject = intersects[0].object;
-      while (selectedObject.parent && !selectedObject.userData.id) {
+      while (selectedObject.parent && !selectedObject.userData.tag) { // Changed from id to tag
         if (selectedObject.parent instanceof THREE.Scene) break; 
         selectedObject = selectedObject.parent;
       }
-      if (selectedObject.userData.id) {
-        onSelectEquipmentRef.current(selectedObject.userData.id, isMultiSelectModifierPressed);
+      if (selectedObject.userData.tag) { // Changed from id to tag
+        onSelectEquipmentRef.current(selectedObject.userData.tag, isMultiSelectModifierPressed); // Changed from id to tag
       } else {
         onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); 
       }
@@ -452,11 +450,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   useEffect(() => {
     if (!sceneRef.current) return;
     
-    const currentEquipmentIds = new Set(filteredEquipmentData.map(e => e.id));
-    const existingMeshIds = new Set(equipmentMeshesRef.current.map(mesh => mesh.userData.id));
+    const currentEquipmentTags = new Set(filteredEquipmentData.map(e => e.tag)); // Changed from id to tag
+    const existingMeshTags = new Set(equipmentMeshesRef.current.map(mesh => mesh.userData.tag)); // Changed from id to tag
 
     equipmentMeshesRef.current = equipmentMeshesRef.current.filter(mesh => {
-        if (!currentEquipmentIds.has(mesh.userData.id)) {
+        if (!currentEquipmentTags.has(mesh.userData.tag)) { // Changed from id to tag
             sceneRef.current?.remove(mesh);
             if (mesh instanceof THREE.Mesh) {
                 if (mesh.geometry) mesh.geometry.dispose();
@@ -472,7 +470,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     });
     
     filteredEquipmentData.forEach(item => {
-        const existingMesh = equipmentMeshesRef.current.find(mesh => mesh.userData.id === item.id);
+        const existingMesh = equipmentMeshesRef.current.find(mesh => mesh.userData.tag === item.tag); // Changed from id to tag
         const layer = layers.find(l => l.equipmentType === item.type);
         const isVisibleByLayer = layer?.isVisible ?? true;
 
@@ -519,29 +517,29 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     const meshesToConsider = equipmentMeshesRef.current.filter(mesh => mesh.visible); 
   
     if (selectedEquipmentIds.length > 0) {
-      selectedEquipmentIds.forEach(id => {
-        const selectedMesh = meshesToConsider.find(mesh => mesh.userData.id === id);
+      selectedEquipmentIds.forEach(tag => { // Changed from id to tag
+        const selectedMesh = meshesToConsider.find(mesh => mesh.userData.tag === tag); // Changed from id to tag
         if (selectedMesh) {
           objectsToOutline.push(selectedMesh);
         }
       });
-      outlinePassRef.current.visibleEdgeColor.set(0x0000FF); // Strong blue for selected
+      outlinePassRef.current.visibleEdgeColor.set(0x0000FF); 
       outlinePassRef.current.edgeStrength = 5; 
       outlinePassRef.current.edgeThickness = 1.5; 
       outlinePassRef.current.edgeGlow = 0.7; 
     } else if (hoveredEquipmentId) {
-      const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.id === hoveredEquipmentId);
+      const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.tag === hoveredEquipmentId); // Changed from id to tag
       if (hoveredMesh) {
         objectsToOutline.push(hoveredMesh);
       }
-      outlinePassRef.current.visibleEdgeColor.set(0x87CEFA); // Light blue for hover
+      outlinePassRef.current.visibleEdgeColor.set(0x87CEFA); 
       outlinePassRef.current.edgeStrength = 4; 
       outlinePassRef.current.edgeThickness = 1; 
       outlinePassRef.current.edgeGlow = 0.5; 
     }
     
     outlinePassRef.current.selectedObjects = objectsToOutline;
-  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); // Dependency on filteredEquipmentData/layers to re-evaluate if meshes change
+  }, [selectedEquipmentIds, hoveredEquipmentId, filteredEquipmentData, layers]); 
 
   useEffect(() => {
     if (!sceneRef.current || !labelRendererRef.current) return;
@@ -563,7 +561,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   
     if (areAnnotationsVisible) {
         annotations.forEach(anno => {
-            const equipmentForItem = filteredEquipmentData.find(e => e.id === anno.equipmentId);
+            const equipmentForItem = filteredEquipmentData.find(e => e.tag === anno.equipmentTag); // Changed from id to tag
             if (equipmentForItem) {
                 const pinDiv = document.createElement('div');
                 pinDiv.innerHTML = `
@@ -620,4 +618,3 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 };
 
 export default ThreeScene;
-

@@ -15,10 +15,10 @@ interface InfoPanelProps {
   annotation: Annotation | null;
   onClose: () => void;
   onOpenAnnotationDialog: () => void;
-  onDeleteAnnotation: (equipmentId: string) => void;
-  onOperationalStateChange: (equipmentId: string, newState: string) => void;
+  onDeleteAnnotation: (equipmentTag: string) => void; // Changed from equipmentId to equipmentTag
+  onOperationalStateChange: (equipmentTag: string, newState: string) => void; // Changed from equipmentId to equipmentTag
   availableOperationalStatesList: string[];
-  onProductChange: (equipmentId: string, newProduct: string) => void;
+  onProductChange: (equipmentTag: string, newProduct: string) => void; // Changed from equipmentId to equipmentTag
   availableProductsList: string[];
 }
 
@@ -37,7 +37,7 @@ export function InfoPanel({
 
   const handleDeleteClick = () => {
     if (equipment) {
-      onDeleteAnnotation(equipment.id);
+      onDeleteAnnotation(equipment.tag); // Changed from id to tag
     }
   };
   
@@ -57,7 +57,7 @@ export function InfoPanel({
       <CardContent className="space-y-3 pb-3 overflow-y-auto flex-grow">
         <h3 className="text-md font-semibold">{equipment.name}</h3>
         <p className="text-sm">
-          ID: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.id}</span>
+          TAG: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.tag}</span> {/* Changed from ID to TAG and equipment.id to equipment.tag */}
         </p>
         <p className="text-sm">Tipo: {equipment.type}</p>
         
@@ -76,15 +76,15 @@ export function InfoPanel({
         
         {equipment.product && (
           <div className="space-y-1 text-sm">
-            <Label htmlFor={`product-select-${equipment.id}`} className="flex items-center text-xs font-normal text-muted-foreground">
+            <Label htmlFor={`product-select-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground"> {/* Changed from id to tag */}
               <PackageIcon className="mr-1.5 h-3.5 w-3.5" />
               Produto:
             </Label>
             <Select
               value={equipment.product}
-              onValueChange={(newProduct) => onProductChange(equipment.id, newProduct)}
+              onValueChange={(newProduct) => onProductChange(equipment.tag, newProduct)} // Changed from id to tag
             >
-              <SelectTrigger id={`product-select-${equipment.id}`} className="h-8 text-xs">
+              <SelectTrigger id={`product-select-${equipment.tag}`} className="h-8 text-xs"> {/* Changed from id to tag */}
                 <SelectValue placeholder="Select product" />
               </SelectTrigger>
               <SelectContent>
@@ -99,17 +99,17 @@ export function InfoPanel({
         )}
 
         {equipment.operationalState && (
-          <div className="space-y-1 text-sm">
-            <Label htmlFor={`op-state-select-${equipment.id}`} className="flex items-center text-xs font-normal text-muted-foreground">
+           <div className="space-y-1 text-sm">
+            <Label htmlFor={`op-state-select-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground"> {/* Changed from id to tag */}
               <ActivityIcon className="mr-1.5 h-3.5 w-3.5" />
               Estado Operacional:
             </Label>
             <Select
               value={equipment.operationalState}
-              onValueChange={(newState) => onOperationalStateChange(equipment.id, newState)}
+              onValueChange={(newState) => onOperationalStateChange(equipment.tag, newState)} // Changed from id to tag
               disabled={equipment.operationalState === "Não aplicável" && availableOperationalStatesList.filter(s => s !== "Não aplicável").length === 0}
             >
-              <SelectTrigger id={`op-state-select-${equipment.id}`} className="h-8 text-xs">
+              <SelectTrigger id={`op-state-select-${equipment.tag}`} className="h-8 text-xs"> {/* Changed from id to tag */}
                 <SelectValue placeholder="Select state" />
               </SelectTrigger>
               <SelectContent>
@@ -162,5 +162,3 @@ export function InfoPanel({
     </Card>
   );
 }
-
-    
