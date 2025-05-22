@@ -1,4 +1,17 @@
 
+/**
+ * @fileoverview Custom hook para gerenciar as anotações dos equipamentos.
+ *
+ * Este hook encapsula a lógica para:
+ * - Manter a lista de anotações.
+ * - Controlar a abertura/fechamento do diálogo de anotação.
+ * - Rastrear o equipamento alvo para anotação e a anotação sendo editada.
+ * - Manipular a abertura do diálogo para adicionar ou editar uma anotação.
+ * - Salvar (adicionar ou atualizar) uma anotação.
+ * - Excluir uma anotação.
+ * - Obter a anotação para um equipamento específico.
+ * - Exibir notificações (toasts) relacionadas às operações de anotação.
+ */
 "use client";
 
 import { useState, useCallback } from 'react';
@@ -17,6 +30,11 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
   const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(null);
   const { toast } = useToast();
 
+  /**
+   * Abre o diálogo de anotação para um equipamento específico.
+   * Se o equipamento já possui uma anotação, preenche o diálogo para edição.
+   * @param equipment O equipamento para o qual a anotação será gerenciada.
+   */
   const handleOpenAnnotationDialog = useCallback((equipment: Equipment | null) => {
     if (equipment) {
       const existing = annotations.find(a => a.equipmentTag === equipment.tag);
@@ -24,10 +42,14 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
       setAnnotationTargetEquipment(equipment);
       setIsAnnotationDialogOpen(true);
     } else {
-      toast({ title: "No Equipment Selected", description: "Please select an equipment to manage its annotation.", variant: "destructive" });
+      toast({ title: "Nenhum Equipamento Selecionado", description: "Por favor, selecione um equipamento para gerenciar sua anotação.", variant: "destructive" });
     }
   }, [annotations, toast]);
 
+  /**
+   * Salva uma anotação (nova ou existente).
+   * @param text O texto da anotação a ser salvo.
+   */
   const handleSaveAnnotation = useCallback((text: string) => {
     if (!annotationTargetEquipment) return;
 
@@ -39,25 +61,25 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
       let toastDescription: string;
 
       if (existingAnnotationIndex > -1) {
-        // Editing existing annotation
+        // Editando anotação existente
         newAnnotationsList = [...prevAnnotations];
         newAnnotationsList[existingAnnotationIndex] = {
           ...newAnnotationsList[existingAnnotationIndex],
           text: text,
-          createdAt: new Date().toISOString(), // Update timestamp on edit
+          createdAt: new Date().toISOString(), // Atualiza timestamp na edição
         };
-        toastDescription = `Annotation for ${equipmentName} updated.`;
+        toastDescription = `Anotação para ${equipmentName} atualizada.`;
       } else {
-        // Adding new annotation
+        // Adicionando nova anotação
         const newAnnotation: Annotation = {
           equipmentTag: annotationTargetEquipment.tag,
           text,
           createdAt: new Date().toISOString(),
         };
         newAnnotationsList = [...prevAnnotations, newAnnotation];
-        toastDescription = `Annotation for ${equipmentName} added.`;
+        toastDescription = `Anotação para ${equipmentName} adicionada.`;
       }
-      toast({ title: "Annotation Saved", description: toastDescription });
+      toast({ title: "Anotação Salva", description: toastDescription });
       return newAnnotationsList;
     });
 
@@ -66,6 +88,10 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
     setAnnotationTargetEquipment(null);
   }, [annotationTargetEquipment, toast]);
 
+  /**
+   * Exclui a anotação de um equipamento específico.
+   * @param equipmentTag A tag do equipamento cuja anotação será excluída.
+   */
   const handleDeleteAnnotation = useCallback((equipmentTag: string) => {
     const equipment = equipmentData.find(e => e.tag === equipmentTag);
     if (!equipment) return;
@@ -73,14 +99,12 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
     setAnnotations(prevAnnotations => {
       const newAnnotationsList = prevAnnotations.filter(a => a.equipmentTag !== equipmentTag);
       if (prevAnnotations.length === newAnnotationsList.length) {
-        // This case should ideally not be reached if the delete button is only shown when an annotation exists.
-        toast({ title: "No Annotation", description: `No annotation found for ${equipment.name} to delete.`, variant: "destructive" });
+        toast({ title: "Nenhuma Anotação", description: `Nenhuma anotação encontrada para ${equipment.name} para excluir.`, variant: "destructive" });
         return prevAnnotations;
       }
-      toast({ title: "Annotation Deleted", description: `Annotation for ${equipment.name} has been deleted.` });
+      toast({ title: "Anotação Excluída", description: `Anotação para ${equipment.name} foi excluída.` });
       return newAnnotationsList;
     });
-    // Close dialog if it was open for the deleted annotation
     if (annotationTargetEquipment?.tag === equipmentTag) {
         setIsAnnotationDialogOpen(false);
         setEditingAnnotation(null);
@@ -88,6 +112,11 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
     }
   }, [toast, equipmentData, annotationTargetEquipment]);
 
+  /**
+   * Obtém a anotação para um equipamento específico.
+   * @param equipmentTag A tag do equipamento.
+   * @returns A anotação, ou null se não existir.
+   */
   const getAnnotationForEquipment = useCallback((equipmentTag: string | null): Annotation | null => {
     if (!equipmentTag) return null;
     return annotations.find(a => a.equipmentTag === equipmentTag) || null;
@@ -95,7 +124,7 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
 
   return {
     annotations,
-    setAnnotations, // Exposing setAnnotations might be needed if undo/redo for annotations is re-introduced
+    setAnnotations, 
     isAnnotationDialogOpen,
     annotationTargetEquipment,
     editingAnnotation,
@@ -103,6 +132,6 @@ export function useAnnotationManager({ initialAnnotations = [], equipmentData }:
     handleSaveAnnotation,
     handleDeleteAnnotation,
     getAnnotationForEquipment,
-    setIsAnnotationDialogOpen, // Expose to allow closing dialog from parent if needed
+    setIsAnnotationDialogOpen,
   };
 }

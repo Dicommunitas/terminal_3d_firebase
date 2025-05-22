@@ -1,14 +1,21 @@
 
+/**
+ * @fileoverview Componente principal da página da aplicação Terminal 3D.
+ *
+ * Responsável por gerenciar o estado geral da aplicação, incluindo dados dos equipamentos,
+ * filtros, seleções, anotações, modo de cor, estado da câmera e interações do usuário.
+ * Orquestra a comunicação entre a sidebar de controles e a cena 3D.
+ */
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Equipment, Layer, Command, CameraState } from '@/lib/types';
+import type { Equipment, Layer, Command, CameraState, Annotation } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
-import ThreeScene from '@/components/three-scene'; // Default import
+import ThreeScene from '@/components/three-scene';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { AnnotationDialog } from '@/components/annotation-dialog';
-import { LayerManager, type ColorMode } from '@/components/layer-manager';
+import { LayerManager, type ColorMode } from '@/components/layer-manager'; // LayerManager agora é seletor de cor
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { initialEquipment, initialLayers } from '@/core/data/initial-data';
 import { getFilteredEquipment, type EquipmentFilterCriteria } from '@/core/logic/equipment-filter';
 import { useAnnotationManager } from '@/hooks/use-annotation-manager';
+import { useEquipmentSelectionManager } from '@/hooks/use-equipment-selection-manager';
 
 
 const defaultInitialCameraPosition = { x: 25, y: 20, z: 25 };
@@ -29,12 +37,11 @@ const defaultInitialCameraLookAt = { x: 0, y: 2, z: 0 };
 export default function Terminal3DPage() {
   const [equipmentData, setEquipmentData] = useState<Equipment[]>(initialEquipment);
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
-  const [selectedEquipmentTags, setSelectedEquipmentTags] = useState<string[]>([]);
+
   const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>({
     position: defaultInitialCameraPosition,
     lookAt: defaultInitialCameraLookAt,
   });
-  const [hoveredEquipmentTag, setHoveredEquipmentTag] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
@@ -52,16 +59,20 @@ export default function Terminal3DPage() {
     setIsAnnotationDialogOpen,
   } = useAnnotationManager({ initialAnnotations: [], equipmentData });
 
+  const { toast } = useToast();
+  const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
+
+  const {
+    selectedEquipmentTags,
+    hoveredEquipmentTag,
+    handleEquipmentClick,
+    handleSetHoveredEquipmentTag,
+    selectTagsBatch,
+  } = useEquipmentSelectionManager({ equipmentData, executeCommand });
 
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
   const [targetSystemToFrame, setTargetSystemToFrame] = useState<string | null>(null);
 
-  const { toast } = useToast();
-  const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
-
-  const handleSetHoveredEquipmentTag = useCallback((tag: string | null) => {
-    setHoveredEquipmentTag(tag);
-  }, []);
 
   const availableSistemas = useMemo(() => {
     const sistemas = new Set<string>();
@@ -84,7 +95,6 @@ export default function Terminal3DPage() {
     initialEquipment.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
-    // Ensure specific order if needed, or just sort alphabetically after "All" and "Não aplicável"
     const sortedStates = Array.from(states).filter(s => s !== 'Não aplicável' && s !== 'All').sort();
     return ['All', 'Não aplicável', ...sortedStates];
   }, []);
@@ -108,65 +118,11 @@ export default function Terminal3DPage() {
     return getFilteredEquipment(equipmentData, criteria);
   }, [equipmentData, searchTerm, selectedSistema, selectedArea]);
 
-  const handleSelectEquipment = useCallback((equipmentTag: string | null, isMultiSelectModifierPressed: boolean) => {
-    const oldSelection = [...selectedEquipmentTags];
-    let newSelection: string[];
-
-    if (isMultiSelectModifierPressed) {
-      if (equipmentTag) {
-        if (oldSelection.includes(equipmentTag)) {
-          newSelection = oldSelection.filter(tag => tag !== equipmentTag);
-        } else {
-          newSelection = [...oldSelection, equipmentTag];
-        }
-      } else {
-        newSelection = oldSelection; 
-      }
-    } else {
-      if (equipmentTag) {
-        if (oldSelection.length === 1 && oldSelection[0] === equipmentTag) {
-             newSelection = []; 
-        } else {
-            newSelection = [equipmentTag]; 
-        }
-      } else {
-        newSelection = []; 
-      }
-    }
-
-    const oldSelectionSorted = [...oldSelection].sort();
-    const newSelectionSorted = [...newSelection].sort();
-
-    if (JSON.stringify(oldSelectionSorted) === JSON.stringify(newSelectionSorted)) {
-      setSelectedEquipmentTags(newSelection); 
-      return;
-    }
-
-    const command: Command = {
-      id: `select-equipment-${Date.now()}`,
-      type: 'EQUIPMENT_SELECT',
-      description: `Update equipment selection. ${newSelection.length} item(s) selected.`,
-      execute: () => {
-        setSelectedEquipmentTags(newSelection);
-      },
-      undo: () => {
-        setSelectedEquipmentTags(oldSelection);
-      },
-    };
-    executeCommand(command);
-
-    if (newSelection.length === 1) {
-      const item = equipmentData.find(e => e.tag === newSelection[0]);
-      toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected.` });
-    } else if (newSelection.length > 1) {
-      toast({ title: "Selection Updated", description: `${newSelection.length} items selected.` });
-    } else if (oldSelection.length > 0 && newSelection.length === 0) {
-      toast({ title: "Selection Cleared" });
-    }
-
-  }, [selectedEquipmentTags, executeCommand, toast, equipmentData]);
-
-
+  /**
+   * Manipula a alternância de visibilidade de uma camada.
+   * Esta operação é registrada no histórico de comandos.
+   * @param layerId O ID da camada a ser alternada.
+   */
   const handleToggleLayer = useCallback((layerId: string) => {
     const layerIndex = layers.findIndex(l => l.id === layerId);
     if (layerIndex === -1) return;
@@ -177,46 +133,33 @@ export default function Terminal3DPage() {
     const command: Command = {
       id: `toggle-layer-${layerId}-${Date.now()}`,
       type: 'LAYER_VISIBILITY',
-      description: `Toggle layer ${oldLayers[layerIndex].name}`,
+      description: `Alternada visibilidade da camada ${oldLayers[layerIndex].name}`,
       execute: () => setLayers(newLayers),
       undo: () => setLayers(oldLayers),
     };
     executeCommand(command);
   }, [layers, executeCommand]);
 
+  /**
+   * Define a visão da câmera para focar em um sistema específico.
+   * Também seleciona todos os equipamentos pertencentes a esse sistema.
+   * @param systemName O nome do sistema para focar.
+   */
   const handleSetCameraView = useCallback((systemName: string) => {
     const equipmentInSystem = initialEquipment
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-
-    const newSelection = equipmentInSystem;
-    const oldSelection = selectedEquipmentTags; 
-
-    const oldSelectionSorted = [...oldSelection].sort();
-    const newSelectionSorted = [...newSelection].sort();
-
-    if (JSON.stringify(oldSelectionSorted) !== JSON.stringify(newSelectionSorted)) {
-        const command: Command = {
-            id: `select-system-equipment-${systemName}-${Date.now()}`,
-            type: 'EQUIPMENT_SELECT',
-            description: `Selected all equipment in system ${systemName}.`,
-            execute: () => {
-              setSelectedEquipmentTags(newSelection);
-            },
-            undo: () => {
-              setSelectedEquipmentTags(oldSelection);
-            },
-        };
-        executeCommand(command);
-        if (newSelection.length > 0) {
-            toast({ title: "System Focused", description: `Selected all ${newSelection.length} equipment in system ${systemName}.` });
-        }
-    }
     
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
     setTargetSystemToFrame(systemName);
-  }, [selectedEquipmentTags, executeCommand, toast]);
+  }, [initialEquipment, selectTagsBatch]);
 
 
+  /**
+   * Manipula as mudanças de câmera provenientes da cena 3D (e.g., órbita do usuário).
+   * Registra a mudança no histórico de comandos.
+   * @param newSceneCameraState O novo estado da câmera da cena.
+   */
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
     if (currentCameraState &&
         Math.abs(currentCameraState.position.x - newSceneCameraState.position.x) < 0.01 &&
@@ -232,7 +175,7 @@ export default function Terminal3DPage() {
     const command: Command = {
         id: `orbit-camera-${Date.now()}`,
         type: 'CAMERA_MOVE',
-        description: 'Orbit camera',
+        description: 'Câmera orbitada pelo usuário',
         execute: () => setCurrentCameraState(newSceneCameraState),
         undo: () => setCurrentCameraState(oldCameraState),
     };
@@ -255,6 +198,12 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentDetails, getAnnotationForEquipment]);
 
+  /**
+   * Manipula a alteração do estado operacional de um equipamento.
+   * Esta alteração é direta e não passa pelo histórico de comandos.
+   * @param equipmentTag A tag do equipamento.
+   * @param newState O novo estado operacional.
+   */
   const handleOperationalStateChange = useCallback((equipmentTag: string, newState: string) => {
     setEquipmentData(prevData =>
       prevData.map(equip =>
@@ -262,9 +211,15 @@ export default function Terminal3DPage() {
       )
     );
     const equip = equipmentData.find(e => e.tag === equipmentTag);
-    toast({ title: "State Updated", description: `${equip?.name || 'Equipment'} state changed to ${newState}.`});
+    toast({ title: "Estado Atualizado", description: `Estado de ${equip?.name || 'Equipamento'} alterado para ${newState}.`});
   }, [equipmentData, toast]);
 
+  /**
+   * Manipula a alteração do produto de um equipamento.
+   * Esta alteração é direta e não passa pelo histórico de comandos.
+   * @param equipmentTag A tag do equipamento.
+   * @param newProduct O novo produto.
+   */
   const handleProductChange = useCallback((equipmentTag: string, newProduct: string) => {
     setEquipmentData(prevData =>
       prevData.map(equip =>
@@ -272,7 +227,7 @@ export default function Terminal3DPage() {
       )
     );
     const equip = equipmentData.find(e => e.tag === equipmentTag);
-    toast({ title: "Product Updated", description: `${equip?.name || 'Equipment'} product changed to ${newProduct}.`});
+    toast({ title: "Produto Atualizado", description: `Produto de ${equip?.name || 'Equipamento'} alterado para ${newProduct}.`});
   }, [equipmentData, toast]);
 
 
@@ -299,7 +254,7 @@ export default function Terminal3DPage() {
           layers={layers}
           annotations={annotations}
           selectedEquipmentTags={selectedEquipmentTags}
-          onSelectEquipment={handleSelectEquipment}
+          onSelectEquipment={handleEquipmentClick}
           hoveredEquipmentTag={hoveredEquipmentTag}
           setHoveredEquipmentTag={handleSetHoveredEquipmentTag}
           cameraState={currentCameraState}
@@ -314,7 +269,7 @@ export default function Terminal3DPage() {
           <InfoPanel
             equipment={selectedEquipmentDetails}
             annotation={equipmentAnnotation}
-            onClose={() => handleSelectEquipment(null, false)}
+            onClose={() => handleEquipmentClick(null, false)} // Limpa a seleção
             onOpenAnnotationDialog={() => handleOpenAnnotationDialog(selectedEquipmentDetails)}
             onDeleteAnnotation={handleDeleteAnnotation}
             onOperationalStateChange={handleOperationalStateChange}
@@ -328,7 +283,7 @@ export default function Terminal3DPage() {
       <Sidebar collapsible="offcanvas" className="border-r z-40">
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
-             <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-1">
                 <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                     <Undo2Icon className="h-5 w-5" />
                 </Button>
@@ -355,7 +310,7 @@ export default function Terminal3DPage() {
                     <div className="relative">
                       <Input
                         type="search"
-                        placeholder="Search name, type, tag..."
+                        placeholder="Buscar nome, tipo, tag..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="h-9 pr-9"
@@ -366,7 +321,7 @@ export default function Terminal3DPage() {
                           size="icon"
                           onClick={() => setSearchTerm('')}
                           className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0 h-6 w-6 text-muted-foreground hover:text-foreground"
-                          aria-label="Clear search"
+                          aria-label="Limpar busca"
                         >
                           <XIcon className="h-4 w-4" />
                         </Button>
@@ -375,11 +330,11 @@ export default function Terminal3DPage() {
                     <div className="space-y-1">
                       <Label htmlFor="sistema-filter" className="text-xs text-muted-foreground flex items-center">
                         <Settings2Icon className="mr-1.5 h-3.5 w-3.5" />
-                        Filter by Sistema
+                        Filtrar por Sistema
                       </Label>
                       <Select value={selectedSistema} onValueChange={setSelectedSistema}>
                         <SelectTrigger id="sistema-filter" className="h-9">
-                          <SelectValue placeholder="Select sistema" />
+                          <SelectValue placeholder="Selecionar sistema" />
                         </SelectTrigger>
                         <SelectContent>
                           {availableSistemas.map(sistema => (
@@ -393,11 +348,11 @@ export default function Terminal3DPage() {
                     <div className="space-y-1">
                       <Label htmlFor="area-filter" className="text-xs text-muted-foreground flex items-center">
                         <LocateIcon className="mr-1.5 h-3.5 w-3.5" />
-                        Filter by Area
+                        Filtrar por Área
                       </Label>
                       <Select value={selectedArea} onValueChange={setSelectedArea}>
                         <SelectTrigger id="area-filter" className="h-9">
-                          <SelectValue placeholder="Select area" />
+                          <SelectValue placeholder="Selecionar área" />
                         </SelectTrigger>
                         <SelectContent>
                           {availableAreas.map(area => (
@@ -435,4 +390,3 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
-
