@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Equipment, Layer, Command, CameraState, Annotation } from '@/lib/types';
+import type { Equipment, Layer, Command, CameraState } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
-import ThreeScene from '@/components/three-scene';
+import ThreeScene from '@/components/three-scene'; // Default import
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { AnnotationDialog } from '@/components/annotation-dialog';
@@ -16,10 +16,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, Settings2Icon, LocateIcon, SearchIcon, LayersIcon, PanelLeftClose } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, Settings2Icon, LocateIcon, LayersIcon, PanelLeftClose } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { initialEquipment, initialLayers } from '@/core/data/initial-data';
 import { getFilteredEquipment, type EquipmentFilterCriteria } from '@/core/logic/equipment-filter';
+import { useAnnotationManager } from '@/hooks/use-annotation-manager';
 
 
 const defaultInitialCameraPosition = { x: 25, y: 20, z: 25 };
@@ -39,10 +40,18 @@ export default function Terminal3DPage() {
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
   const [selectedArea, setSelectedArea] = useState<string>('All');
   
-  const [annotations, setAnnotations] = useState<Annotation[]>([]);
-  const [isAnnotationDialogOpen, setIsAnnotationDialogOpen] = useState(false);
-  const [annotationTargetEquipment, setAnnotationTargetEquipment] = useState<Equipment | null>(null);
-  const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(null);
+  const { 
+    annotations,
+    isAnnotationDialogOpen,
+    annotationTargetEquipment,
+    editingAnnotation,
+    handleOpenAnnotationDialog,
+    handleSaveAnnotation,
+    handleDeleteAnnotation,
+    getAnnotationForEquipment,
+    setIsAnnotationDialogOpen,
+  } = useAnnotationManager({ initialAnnotations: [], equipmentData });
+
 
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
   const [targetSystemToFrame, setTargetSystemToFrame] = useState<string | null>(null);
@@ -51,7 +60,6 @@ export default function Terminal3DPage() {
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
   const handleSetHoveredEquipmentTag = useCallback((tag: string | null) => {
-    // console.log('[Page] handleSetHoveredEquipmentTag CALLED with tag:', tag);
     setHoveredEquipmentTag(tag);
   }, []);
 
@@ -76,6 +84,7 @@ export default function Terminal3DPage() {
     initialEquipment.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
+    // Ensure specific order if needed, or just sort alphabetically after "All" and "Não aplicável"
     const sortedStates = Array.from(states).filter(s => s !== 'Não aplicável' && s !== 'All').sort();
     return ['All', 'Não aplicável', ...sortedStates];
   }, []);
@@ -239,73 +248,12 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentTags, equipmentData]);
 
-  const handleOpenAnnotationDialog = useCallback(() => {
-    if (selectedEquipmentDetails) { 
-      const existing = annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag);
-      setEditingAnnotation(existing || null);
-      setAnnotationTargetEquipment(selectedEquipmentDetails);
-      setIsAnnotationDialogOpen(true);
-    } else {
-      toast({ title: "No Single Equipment Selected", description: "Please select a single equipment to manage its annotation.", variant: "destructive" });
-    }
-  }, [selectedEquipmentDetails, annotations, toast]);
-
-  const handleSaveAnnotation = useCallback((text: string) => {
-    if (!annotationTargetEquipment) return;
-
-    setAnnotations(prevAnnotations => {
-        const existingAnnotation = prevAnnotations.find(a => a.equipmentTag === annotationTargetEquipment.tag);
-        let newAnnotationsList: Annotation[];
-        let toastDescription: string;
-
-        if (existingAnnotation) {
-          newAnnotationsList = prevAnnotations.map(anno =>
-            anno.equipmentTag === annotationTargetEquipment.tag
-              ? { ...anno, text: text, createdAt: new Date().toISOString() }
-              : anno
-          );
-          toastDescription = `Annotation for ${annotationTargetEquipment.name} updated.`;
-        } else {
-          const newAnnotation: Annotation = {
-            equipmentTag: annotationTargetEquipment.tag,
-            text,
-            createdAt: new Date().toISOString(),
-          };
-          newAnnotationsList = [...prevAnnotations, newAnnotation];
-          toastDescription = `Annotation for ${annotationTargetEquipment.name} added.`;
-        }
-        toast({ title: "Annotation Saved", description: toastDescription });
-        return newAnnotationsList;
-    });
-    
-    setIsAnnotationDialogOpen(false);
-    setEditingAnnotation(null);
-    setAnnotationTargetEquipment(null);
-
-  }, [annotationTargetEquipment, toast]);
-
-  const handleDeleteAnnotation = useCallback((equipmentTag: string) => {
-    const equipment = equipmentData.find(e => e.tag === equipmentTag);
-    if (!equipment) return;
-
-    setAnnotations(prevAnnotations => {
-        const newAnnotationsList = prevAnnotations.filter(a => a.equipmentTag !== equipmentTag);
-        if (prevAnnotations.length === newAnnotationsList.length) {
-          toast({ title: "No Annotation", description: `No annotation found for ${equipment.name} to delete.`, variant: "destructive" });
-          return prevAnnotations;
-        }
-        toast({ title: "Annotation Deleted", description: `Annotation for ${equipment.name} has been deleted.` });
-        return newAnnotationsList;
-    });
-  }, [toast, equipmentData]);
-
-
   const equipmentAnnotation = useMemo(() => {
     if (selectedEquipmentDetails) { 
-      return annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag) || null;
+      return getAnnotationForEquipment(selectedEquipmentDetails.tag);
     }
     return null;
-  }, [selectedEquipmentDetails, annotations]);
+  }, [selectedEquipmentDetails, getAnnotationForEquipment]);
 
   const handleOperationalStateChange = useCallback((equipmentTag: string, newState: string) => {
     setEquipmentData(prevData =>
@@ -367,7 +315,7 @@ export default function Terminal3DPage() {
             equipment={selectedEquipmentDetails}
             annotation={equipmentAnnotation}
             onClose={() => handleSelectEquipment(null, false)}
-            onOpenAnnotationDialog={handleOpenAnnotationDialog}
+            onOpenAnnotationDialog={() => handleOpenAnnotationDialog(selectedEquipmentDetails)}
             onDeleteAnnotation={handleDeleteAnnotation}
             onOperationalStateChange={handleOperationalStateChange}
             availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All' && s !== 'Não aplicável')}
@@ -487,3 +435,4 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+
