@@ -1,36 +1,41 @@
+
 "use client";
 
-import type { PresetCameraView } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { VideoIcon } from 'lucide-react';
 
 interface CameraControlsPanelProps {
-  presets: PresetCameraView[];
-  onSetView: (view: PresetCameraView) => void;
+  systems: string[]; // Changed from PresetCameraView[]
+  onSetView: (systemName: string) => void; // Changed from (view: PresetCameraView)
 }
 
-export function CameraControlsPanel({ presets, onSetView }: CameraControlsPanelProps) {
+export function CameraControlsPanel({ systems, onSetView }: CameraControlsPanelProps) {
   return (
     <Card className="shadow-md">
       <CardHeader>
         <CardTitle className="flex items-center text-lg">
           <VideoIcon className="mr-2 h-5 w-5" />
-          Camera Views
+          Focus on System
         </CardTitle>
       </CardHeader>
       <CardContent className="grid grid-cols-2 gap-2">
-        {presets.map((preset) => (
+        {systems.map((systemName) => (
           <Button
-            key={preset.name}
+            key={systemName}
             variant="outline"
             size="sm"
-            onClick={() => onSetView(preset)}
+            onClick={() => onSetView(systemName)}
             className="w-full"
           >
-            {preset.name}
+            {systemName}
           </Button>
         ))}
+        {systems.length === 0 && (
+          <p className="col-span-2 text-sm text-muted-foreground text-center">
+            No systems available to focus on.
+          </p>
+        )}
       </CardContent>
     </Card>
   );

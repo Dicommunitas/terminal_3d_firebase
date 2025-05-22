@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
@@ -15,41 +15,45 @@ interface ThreeSceneProps {
   equipment: Equipment[];
   layers: Layer[];
   annotations: Annotation[];
-  selectedEquipmentIds: string[]; // Contains tags
+  selectedEquipmentIds: string[];
   onSelectEquipment: (equipmentTag: string | null, isMultiSelectModifierPressed: boolean) => void;
   cameraState?: CameraState;
   onCameraChange?: (cameraState: CameraState) => void;
   initialCameraPosition: { x: number; y: number; z: number };
   initialCameraLookAt: { x: number; y: number; z: number };
-  hoveredEquipmentId: string | null; // Contains tag
+  hoveredEquipmentId: string | null;
   setHoveredEquipmentId: (tag: string | null) => void;
   colorMode: ColorMode;
+  targetSystemToFrame: string | null;
+  onSystemFramed: () => void;
 }
 
-// Helper function to get numeric value for product color generation
 function getCharNumericValue(char: string): number {
-  const charCode = char.toUpperCase().charCodeAt(0);
+  const upperChar = char.toUpperCase();
+  const charCode = upperChar.charCodeAt(0);
   if (charCode >= '0'.charCodeAt(0) && charCode <= '9'.charCodeAt(0)) {
     return charCode - '0'.charCodeAt(0); // 0-9
   } else if (charCode >= 'A'.charCodeAt(0) && charCode <= 'Z'.charCodeAt(0)) {
     return charCode - 'A'.charCodeAt(0) + 10; // 10-35 for A-Z
   }
-  return 0; // Default for unexpected characters
+  return 0; 
 }
 
 const ThreeScene: React.FC<ThreeSceneProps> = ({
   equipment: filteredEquipmentData,
   layers,
   annotations,
-  selectedEquipmentIds, // Now contains tags
+  selectedEquipmentIds,
   onSelectEquipment,
   cameraState: programmaticCameraState,
   onCameraChange,
   initialCameraPosition,
   initialCameraLookAt,
-  hoveredEquipmentId, // Now contains tag
+  hoveredEquipmentId,
   setHoveredEquipmentId,
   colorMode,
+  targetSystemToFrame,
+  onSystemFramed,
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -71,7 +75,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const hoveredEquipmentIdRef = useRef(hoveredEquipmentId);
   const setHoveredEquipmentIdRef = useRef(setHoveredEquipmentId);
   const lastProcessedCameraStateRef = useRef<CameraState | null>(null);
-
 
   useEffect(() => {
     onSelectEquipmentRef.current = onSelectEquipment;
@@ -109,7 +112,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
   }, []);
 
-
   const createEquipmentMesh = useCallback((item: Equipment, currentGlobalColorMode: ColorMode): THREE.Object3D => {
     let finalColor = new THREE.Color();
     let stateColor = new THREE.Color(item.color); 
@@ -120,12 +122,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
           const val1 = getCharNumericValue(item.product.charAt(0));
           const val2 = getCharNumericValue(item.product.charAt(1));
           const val3 = getCharNumericValue(item.product.charAt(2));
-
-          const r_norm = val1 / 35.0; 
-          const g_norm = val2 / 35.0;
-          const b_norm = val3 / 35.0;
-          
-          finalColor.setRGB(r_norm, g_norm, b_norm);
+          finalColor.setRGB(val1 / 35.0, val2 / 35.0, val3 / 35.0);
         } else {
           finalColor.set(item.color); 
         }
@@ -194,7 +191,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (item.rotation) {
       mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
     }
-    mesh.userData = { tag: item.tag, type: item.type }; // Changed from id to tag
+    mesh.userData = { tag: item.tag, type: item.type, sistema: item.sistema }; // Added sistema to userData
     mesh.castShadow = false; 
     mesh.receiveShadow = false;
     return mesh;
@@ -384,7 +381,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
       labelRendererRef.current = null;
     };
-  }, [initialCameraPosition, initialCameraLookAt, handleResize]); 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); 
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current || equipmentMeshesRef.current.length === 0) {
@@ -404,12 +402,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     let foundHoverTag: string | null = null;
     if (intersects.length > 0) {
       let hoveredObjectCandidate = intersects[0].object;
-      while (hoveredObjectCandidate.parent && !hoveredObjectCandidate.userData.tag) { // Changed from id to tag
+      while (hoveredObjectCandidate.parent && !hoveredObjectCandidate.userData.tag) {
         if (hoveredObjectCandidate.parent instanceof THREE.Scene) break;
         hoveredObjectCandidate = hoveredObjectCandidate.parent;
       }
-      if (hoveredObjectCandidate.userData.tag) { // Changed from id to tag
-        foundHoverTag = hoveredObjectCandidate.userData.tag; // Changed from id to tag
+      if (hoveredObjectCandidate.userData.tag) {
+        foundHoverTag = hoveredObjectCandidate.userData.tag;
       }
     }
     
@@ -433,12 +431,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     if (intersects.length > 0) {
       let selectedObject = intersects[0].object;
-      while (selectedObject.parent && !selectedObject.userData.tag) { // Changed from id to tag
+      while (selectedObject.parent && !selectedObject.userData.tag) {
         if (selectedObject.parent instanceof THREE.Scene) break; 
         selectedObject = selectedObject.parent;
       }
-      if (selectedObject.userData.tag) { // Changed from id to tag
-        onSelectEquipmentRef.current(selectedObject.userData.tag, isMultiSelectModifierPressed); // Changed from id to tag
+      if (selectedObject.userData.tag) {
+        onSelectEquipmentRef.current(selectedObject.userData.tag, isMultiSelectModifierPressed);
       } else {
         onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); 
       }
@@ -450,11 +448,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   useEffect(() => {
     if (!sceneRef.current) return;
     
-    const currentEquipmentTags = new Set(filteredEquipmentData.map(e => e.tag)); // Changed from id to tag
-    const existingMeshTags = new Set(equipmentMeshesRef.current.map(mesh => mesh.userData.tag)); // Changed from id to tag
+    const currentEquipmentTags = new Set(filteredEquipmentData.map(e => e.tag));
+    const existingMeshTags = new Set(equipmentMeshesRef.current.map(mesh => mesh.userData.tag));
 
     equipmentMeshesRef.current = equipmentMeshesRef.current.filter(mesh => {
-        if (!currentEquipmentTags.has(mesh.userData.tag)) { // Changed from id to tag
+        if (!currentEquipmentTags.has(mesh.userData.tag)) {
             sceneRef.current?.remove(mesh);
             if (mesh instanceof THREE.Mesh) {
                 if (mesh.geometry) mesh.geometry.dispose();
@@ -470,21 +468,20 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     });
     
     filteredEquipmentData.forEach(item => {
-        const existingMesh = equipmentMeshesRef.current.find(mesh => mesh.userData.tag === item.tag); // Changed from id to tag
+        const existingMesh = equipmentMeshesRef.current.find(mesh => mesh.userData.tag === item.tag);
         const layer = layers.find(l => l.equipmentType === item.type);
         const isVisibleByLayer = layer?.isVisible ?? true;
 
         if (existingMesh) {
             existingMesh.visible = isVisibleByLayer;
-            if (isVisibleByLayer) {
-                const newMaterial = createEquipmentMesh(item, colorMode).material;
-                if (existingMesh instanceof THREE.Mesh && newMaterial instanceof THREE.Material) {
-                    const oldMat = existingMesh.material as THREE.MeshStandardMaterial;
-                    const newMat = newMaterial as THREE.MeshStandardMaterial;
-                    if (!oldMat.color.equals(newMat.color) || oldMat.opacity !== newMat.opacity || oldMat.transparent !== newMat.transparent) {
-                        oldMat.color.copy(newMat.color);
-                        oldMat.opacity = newMat.opacity;
-                        oldMat.transparent = newMat.transparent;
+            if (isVisibleByLayer && existingMesh instanceof THREE.Mesh) {
+                const newMaterial = createEquipmentMesh(item, colorMode).material as THREE.MeshStandardMaterial;
+                const oldMat = existingMesh.material as THREE.MeshStandardMaterial;
+                if (oldMat && newMaterial) { // Check if materials exist
+                    if (!oldMat.color.equals(newMaterial.color) || oldMat.opacity !== newMaterial.opacity || oldMat.transparent !== newMaterial.transparent) {
+                        oldMat.color.copy(newMaterial.color);
+                        oldMat.opacity = newMaterial.opacity;
+                        oldMat.transparent = newMaterial.transparent;
                         oldMat.needsUpdate = true;
                     }
                 }
@@ -517,8 +514,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     const meshesToConsider = equipmentMeshesRef.current.filter(mesh => mesh.visible); 
   
     if (selectedEquipmentIds.length > 0) {
-      selectedEquipmentIds.forEach(tag => { // Changed from id to tag
-        const selectedMesh = meshesToConsider.find(mesh => mesh.userData.tag === tag); // Changed from id to tag
+      selectedEquipmentIds.forEach(tag => {
+        const selectedMesh = meshesToConsider.find(mesh => mesh.userData.tag === tag);
         if (selectedMesh) {
           objectsToOutline.push(selectedMesh);
         }
@@ -528,7 +525,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       outlinePassRef.current.edgeThickness = 1.5; 
       outlinePassRef.current.edgeGlow = 0.7; 
     } else if (hoveredEquipmentId) {
-      const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.tag === hoveredEquipmentId); // Changed from id to tag
+      const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.tag === hoveredEquipmentId);
       if (hoveredMesh) {
         objectsToOutline.push(hoveredMesh);
       }
@@ -561,7 +558,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   
     if (areAnnotationsVisible) {
         annotations.forEach(anno => {
-            const equipmentForItem = filteredEquipmentData.find(e => e.tag === anno.equipmentTag); // Changed from id to tag
+            const equipmentForItem = filteredEquipmentData.find(e => e.tag === anno.equipmentTag);
             if (equipmentForItem) {
                 const pinDiv = document.createElement('div');
                 pinDiv.innerHTML = `
@@ -613,6 +610,74 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
     }
   }, [programmaticCameraState]);
+
+  useEffect(() => {
+    if (!targetSystemToFrame || !sceneRef.current || !cameraRef.current || !controlsRef.current || equipmentMeshesRef.current.length === 0) {
+      if (targetSystemToFrame) onSystemFramed(); // Reset if we can't process
+      return;
+    }
+
+    const systemMeshes = equipmentMeshesRef.current.filter(
+      (mesh) => mesh.userData.sistema === targetSystemToFrame && mesh.visible // Consider only visible meshes
+    );
+
+    if (systemMeshes.length === 0) {
+      console.warn(`[ThreeScene] No visible meshes found for system: ${targetSystemToFrame}`);
+      onSystemFramed(); 
+      return;
+    }
+
+    const totalBoundingBox = new THREE.Box3();
+    systemMeshes.forEach(mesh => {
+      // Ensure mesh is a Mesh and has geometry before getting bounding box
+      if (mesh instanceof THREE.Mesh && mesh.geometry) {
+        mesh.updateMatrixWorld(true); // Ensure world matrix is up-to-date
+        const meshBox = new THREE.Box3().setFromObject(mesh);
+        totalBoundingBox.union(meshBox);
+      }
+    });
+
+    if (totalBoundingBox.isEmpty()) {
+      console.warn(`[ThreeScene] Bounding box is empty for system: ${targetSystemToFrame} after checking meshes.`);
+      onSystemFramed();
+      return;
+    }
+
+    const center = new THREE.Vector3();
+    totalBoundingBox.getCenter(center);
+
+    const size = new THREE.Vector3();
+    totalBoundingBox.getSize(size);
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = cameraRef.current.fov * (Math.PI / 180);
+    let cameraDistance = maxDim / (2 * Math.tan(fov / 2));
+    cameraDistance = cameraDistance * 1.5; // Zoom out factor for padding
+
+    // Position camera looking towards the center from a slight diagonal offset
+    const newCamPos = new THREE.Vector3(
+      center.x,
+      center.y + Math.max(size.y * 0.5, maxDim * 0.3), // Elevate slightly
+      center.z + cameraDistance 
+    );
+    
+    // If the objects are very flat (e.g. only on XZ plane), adjust Y further
+    if (size.y < maxDim * 0.2) {
+        newCamPos.y = center.y + cameraDistance * 0.5; // Higher viewpoint for flat layouts
+    }
+
+
+    if (onCameraChangeRef.current) {
+      onCameraChangeRef.current({
+        position: newCamPos,
+        lookAt: center,
+      });
+    }
+    
+    onSystemFramed(); // Signal that framing is done
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetSystemToFrame, onSystemFramed, equipmentMeshesRef.current]); // Add equipmentMeshesRef.current to deps if it's being updated
 
   return <div ref={mountRef} className="w-full h-full" />;
 };

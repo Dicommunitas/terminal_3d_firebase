@@ -2,13 +2,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import type { Equipment, Layer, Command, CameraState, PresetCameraView, Annotation } from '@/lib/types';
+import type { Equipment, Layer, Command, CameraState, Annotation } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
-import { LayerManager } from '@/components/layer-manager';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
 import { InfoPanel } from '@/components/info-panel';
 import { AnnotationDialog } from '@/components/annotation-dialog';
+import { LayerManager } from '@/components/layer-manager';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,25 +16,26 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Undo2Icon, Redo2Icon, PanelLeft, Settings2Icon, LocateIcon, ActivityIcon, XIcon, LayersIcon, VideoIcon, SearchIcon, PackageIcon, PanelLeftClose } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, XIcon, PanelLeftClose, Settings2Icon, LocateIcon, ActivityIcon, PackageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import type { ColorMode } from '@/app/page';
 
+
 const initialEquipment: Equipment[] = [
-  { tag: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Administrative', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
-  { tag: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Storage', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
-  { tag: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'MTBE', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', category: 'Operational', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
-  { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: '70H', category: 'Lifting', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: '6DH', category: 'Lifting', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
-  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'em falha', product: '70H', category: 'Storage', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
-  { tag: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', sistema: 'ESCUROS', area: 'Área 33', operationalState: 'não operando', product: '6DH', category: 'Storage', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
-  { tag: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', sistema: 'NDD', area: 'Área 34', operationalState: 'operando', product: '660', category: 'Processing', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
-  { tag: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', sistema: 'GA', area: 'Área 35', operationalState: 'manutenção', product: '70H', category: 'Transfer', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
-  { tag: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', sistema: 'MTBE', area: 'Área 34', operationalState: 'não operando', product: '660', category: 'Transfer', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
-  { tag: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', sistema: 'QAV', area: 'Área 60', operationalState: 'em falha', product: '198', category: 'Transfer', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
-  { tag: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', sistema: 'LASTRO', area: 'Área 33', operationalState: 'operando', product: '70H', category: 'Control', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
-  { tag: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', sistema: 'ODB', area: 'Área 34', operationalState: 'manutenção', product: '70H', category: 'Control', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
-  { tag: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', sistema: 'ESCUROS', area: 'Área 60', operationalState: 'em falha', product: '198', category: 'Control', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
+  { tag: 'bldg-01', name: 'Main Office', type: 'Building', category: 'Administrative', area: 'Área 20', operationalState: 'Não aplicável', product: 'Não aplicável', sistema: 'NDD', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
+  { tag: 'bldg-02', name: 'Warehouse A', type: 'Building', category: 'Storage', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', sistema: 'GA', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
+  { tag: 'bldg-03', name: 'Control Room', type: 'Building', category: 'Operational', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', sistema: 'MTBE', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
+  { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', category: 'Lifting', area: 'Área 40', operationalState: 'operando', product: '70H', sistema: 'QAV', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
+  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', category: 'Lifting', area: 'Área 50', operationalState: 'manutenção', product: '6DH', sistema: 'LASTRO', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', category: 'Storage', area: 'Área 33', operationalState: 'operando', product: '70H', sistema: 'ODB', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank.' },
+  { tag: 'tank-02', name: 'Storage Tank Beta', type: 'Tank', category: 'Storage', area: 'Área 33', operationalState: 'não operando', product: '6DH', sistema: 'ESCUROS', position: { x: -2, y: 2, z: 12 }, radius: 2.5, height: 4, color: '#4DD0E1', details: 'Auxiliary liquid storage.' },
+  { tag: 'tank-03', name: 'Process Tank Gamma', type: 'Tank', category: 'Processing', area: 'Área 34', operationalState: 'em falha', product: '660', sistema: 'NDD', position: { x: 5, y: 3, z: 10 }, radius: 2, height: 6, color: '#4DB6AC', details: 'Processing tank.' },
+  { tag: 'pipe-01', name: 'Main Feed Pipe', type: 'Pipe', category: 'Transfer', area: 'Área 35', operationalState: 'manutenção', product: '70H', sistema: 'GA', position: { x: -5, y: 1, z: 5 }, radius: 0.3, height: 10, color: '#B0BEC5', details: 'Connects Tank Alpha to Process Area.', rotation: { x: 0, y: 0, z: Math.PI / 2 } },
+  { tag: 'pipe-02', name: 'Process Output Pipe', type: 'Pipe', category: 'Transfer', area: 'Área 34', operationalState: 'não operando', product: '660', sistema: 'MTBE', position: { x: 0, y: 2.5, z: 9 }, radius: 0.2, height: 8, color: '#90A4AE', details: 'Carries product from Process Tank Gamma.', rotation: { x: Math.PI / 2, y: 0, z: 0 } },
+  { tag: 'pipe-03', name: 'Vertical Riser', type: 'Pipe', category: 'Transfer', area: 'Área 60', operationalState: 'em falha', product: '198', sistema: 'QAV', position: { x: 8, y: 3.5, z: 8 }, radius: 0.25, height: 7, color: '#B0BEC5', details: 'Vertical pipe section.' },
+  { tag: 'valve-01', name: 'Tank Alpha Outlet Valve', type: 'Valve', category: 'Control', area: 'Área 33', operationalState: 'operando', product: '70H', sistema: 'LASTRO', position: { x: -8, y: 0.5, z: 8.8 }, radius: 0.4, color: '#EF5350', details: 'Controls flow from Tank Alpha.' },
+  { tag: 'valve-02', name: 'Process Inlet Valve', type: 'Valve', category: 'Control', area: 'Área 34', operationalState: 'manutenção', product: '70H', sistema: 'ODB', position: { x: -1, y: 2.5, z: 5 }, radius: 0.3, color: '#F44336', details: 'Controls input to Process Tank Gamma.' },
+  { tag: 'valve-03', name: 'Safety Bypass Valve', type: 'Valve', category: 'Control', area: 'Área 60', operationalState: 'em falha', product: '198', sistema: 'ESCUROS', position: { x: 8, y: 0.5, z: 4.5 }, radius: 0.3, color: '#E57373', details: 'Emergency bypass valve.' },
 ];
 
 const initialLayers: Layer[] = [
@@ -47,19 +48,19 @@ const initialLayers: Layer[] = [
   { id: 'layer-annotations', name: 'Annotations', equipmentType: 'Annotations', isVisible: true },
 ];
 
-const cameraPresets: PresetCameraView[] = [
-  { name: 'Overview', position: { x: 25, y: 20, z: 25 }, lookAt: { x: 0, y: 2, z: 0 } },
-  { name: 'Crane Area', position: { x: 0, y: 8, z: 15 }, lookAt: { x: 0, y: 5, z: 5 } },
-  { name: 'Tank Farm', position: { x: -5, y: 10, z: 20 }, lookAt: { x: -5, y: 2, z: 10 } },
-  { name: 'Piping Detail', position: { x: -2, y: 5, z: 8 }, lookAt: { x: -2, y: 2, z: 0 } },
-];
+// Initial camera state - can be the first preset or a default overview
+const defaultInitialCameraPosition = { x: 25, y: 20, z: 25 };
+const defaultInitialCameraLookAt = { x: 0, y: 2, z: 0 };
 
 export default function Terminal3DPage() {
   const [equipmentData, setEquipmentData] = useState<Equipment[]>(initialEquipment);
   const [layers, setLayers] = useState<Layer[]>(initialLayers);
-  const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]); // Stores tags
-  const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>(cameraPresets[0]);
-  const [hoveredEquipmentId, setHoveredEquipmentId] = useState<string | null>(null); // Stores tag
+  const [selectedEquipmentTags, setSelectedEquipmentTags] = useState<string[]>([]);
+  const [currentCameraState, setCurrentCameraState] = useState<CameraState | undefined>({
+    position: defaultInitialCameraPosition,
+    lookAt: defaultInitialCameraLookAt,
+  });
+  const [hoveredEquipmentTag, setHoveredEquipmentTag] = useState<string | null>(null);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSistema, setSelectedSistema] = useState<string>('All');
@@ -73,6 +74,8 @@ export default function Terminal3DPage() {
   const [editingAnnotation, setEditingAnnotation] = useState<Annotation | null>(null);
 
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
+  const [targetSystemToFrame, setTargetSystemToFrame] = useState<string | null>(null);
+
 
   const { toast } = useToast();
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
@@ -115,7 +118,6 @@ export default function Terminal3DPage() {
     return ['All', "Não aplicável", ...Array.from(products).sort()];
   }, []);
 
-
   const filteredEquipment = useMemo(() => {
     let itemsToFilter = equipmentData;
 
@@ -125,21 +127,21 @@ export default function Terminal3DPage() {
     if (selectedArea !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.area === selectedArea);
     }
-    if (selectedOperationalState !== 'All') {
+     if (selectedOperationalState !== 'All') {
       itemsToFilter = itemsToFilter.filter(equip => equip.operationalState === selectedOperationalState);
     }
 
     if (searchTerm.trim()) {
-      const searchTerms = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
+      const searchTermsArray = searchTerm.toLowerCase().split(' ').filter(term => term.length > 0);
       itemsToFilter = itemsToFilter.filter(equip => {
         const name = equip.name.toLowerCase();
         const type = equip.type.toLowerCase();
-        const tag = equip.tag.toLowerCase(); // Changed from id to tag
+        const tag = equip.tag.toLowerCase();
 
-        return searchTerms.every(term =>
+        return searchTermsArray.every(term =>
           name.includes(term) ||
           type.includes(term) ||
-          tag.includes(term) // Changed from id to tag
+          tag.includes(term)
         );
       });
     }
@@ -147,7 +149,7 @@ export default function Terminal3DPage() {
   }, [equipmentData, searchTerm, selectedSistema, selectedArea, selectedOperationalState]);
 
   const handleSelectEquipment = useCallback((equipmentTag: string | null, isMultiSelectModifierPressed: boolean) => {
-    const oldSelection = [...selectedEquipmentIds];
+    const oldSelection = [...selectedEquipmentTags];
     let newSelection: string[];
 
     if (isMultiSelectModifierPressed) {
@@ -183,13 +185,13 @@ export default function Terminal3DPage() {
       id: `select-equipment-${Date.now()}`,
       type: 'EQUIPMENT_SELECT',
       description: `Update equipment selection. ${newSelection.length} item(s) selected.`,
-      execute: () => setSelectedEquipmentIds(newSelection),
-      undo: () => setSelectedEquipmentIds(oldSelection),
+      execute: () => setSelectedEquipmentTags(newSelection),
+      undo: () => setSelectedEquipmentTags(oldSelection),
     };
     executeCommand(command);
 
     if (newSelection.length === 1) {
-      const item = equipmentData.find(e => e.tag === newSelection[0]); // Changed from id to tag
+      const item = equipmentData.find(e => e.tag === newSelection[0]);
       toast({ title: "Selected", description: `${item?.name || 'Equipment'} selected. ${newSelection.length} item(s) total.` });
     } else if (newSelection.length > 1) {
       toast({ title: "Selection Updated", description: `${newSelection.length} items selected.` });
@@ -197,7 +199,7 @@ export default function Terminal3DPage() {
       toast({ title: "Selection Cleared" });
     }
 
-  }, [selectedEquipmentIds, executeCommand, toast, equipmentData]);
+  }, [selectedEquipmentTags, executeCommand, toast, equipmentData]);
 
 
   const handleToggleLayer = useCallback((layerId: string) => {
@@ -217,19 +219,11 @@ export default function Terminal3DPage() {
     executeCommand(command);
   }, [layers, executeCommand]);
 
-  const handleSetCameraView = useCallback((view: PresetCameraView) => {
-    const oldCameraState = currentCameraState ? { ...currentCameraState } : undefined;
-    const newCameraState = { position: view.position, lookAt: view.lookAt };
-
-    const command: Command = {
-      id: `set-camera-view-${view.name}-${Date.now()}`,
-      type: 'CAMERA_MOVE',
-      description: `Set camera to ${view.name}`,
-      execute: () => setCurrentCameraState(newCameraState),
-      undo: () => setCurrentCameraState(oldCameraState),
-    };
-    executeCommand(command);
-  }, [currentCameraState, executeCommand]);
+  const handleSetCameraView = useCallback((systemName: string) => {
+    setTargetSystemToFrame(systemName);
+    // The actual camera movement and state update will be handled by ThreeScene
+    // and then propagated back via onCameraChange.
+  }, []);
 
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
     if (currentCameraState &&
@@ -255,16 +249,16 @@ export default function Terminal3DPage() {
 
 
   const selectedEquipmentDetails = useMemo(() => {
-    if (selectedEquipmentIds.length > 0) {
-      const lastSelectedId = selectedEquipmentIds[selectedEquipmentIds.length - 1];
-      return equipmentData.find(e => e.tag === lastSelectedId) || null; // Changed from id to tag
+    if (selectedEquipmentTags.length > 0) {
+      const lastSelectedTag = selectedEquipmentTags[selectedEquipmentTags.length - 1];
+      return equipmentData.find(e => e.tag === lastSelectedTag) || null;
     }
     return null;
-  }, [selectedEquipmentIds, equipmentData]);
+  }, [selectedEquipmentTags, equipmentData]);
 
   const handleOpenAnnotationDialog = useCallback(() => {
     if (selectedEquipmentDetails) {
-      const existing = annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag); // Changed from equipmentId to equipmentTag
+      const existing = annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag);
       setEditingAnnotation(existing || null);
       setAnnotationTargetEquipment(selectedEquipmentDetails);
       setIsAnnotationDialogOpen(true);
@@ -276,20 +270,20 @@ export default function Terminal3DPage() {
   const handleSaveAnnotation = useCallback((text: string) => {
     if (!annotationTargetEquipment) return;
 
-    const existingAnnotation = annotations.find(a => a.equipmentTag === annotationTargetEquipment.tag); // Changed from equipmentId to equipmentTag
+    const existingAnnotation = annotations.find(a => a.equipmentTag === annotationTargetEquipment.tag);
     let newAnnotations: Annotation[];
     let toastDescription: string;
 
     if (existingAnnotation) {
       newAnnotations = annotations.map(anno =>
-        anno.equipmentTag === annotationTargetEquipment.tag // Changed from equipmentId to equipmentTag
+        anno.equipmentTag === annotationTargetEquipment.tag
           ? { ...anno, text: text, createdAt: new Date().toISOString() }
           : anno
       );
       toastDescription = `Annotation for ${annotationTargetEquipment.name} updated.`;
     } else {
       const newAnnotation: Annotation = {
-        equipmentTag: annotationTargetEquipment.tag, // Changed from equipmentId to equipmentTag
+        equipmentTag: annotationTargetEquipment.tag,
         text,
         createdAt: new Date().toISOString(),
       };
@@ -305,11 +299,11 @@ export default function Terminal3DPage() {
 
   }, [annotationTargetEquipment, annotations, toast]);
 
-  const handleDeleteAnnotation = useCallback((equipmentTag: string) => { // Changed parameter name
-    const equipment = equipmentData.find(e => e.tag === equipmentTag); // Changed from id to tag
+  const handleDeleteAnnotation = useCallback((equipmentTag: string) => {
+    const equipment = equipmentData.find(e => e.tag === equipmentTag);
     if (!equipment) return;
 
-    const newAnnotations = annotations.filter(a => a.equipmentTag !== equipmentTag); // Changed from equipmentId to equipmentTag
+    const newAnnotations = annotations.filter(a => a.equipmentTag !== equipmentTag);
 
     if (annotations.length === newAnnotations.length) {
       toast({ title: "No Annotation", description: `No annotation found for ${equipment.name} to delete.`, variant: "destructive" });
@@ -323,30 +317,39 @@ export default function Terminal3DPage() {
 
   const equipmentAnnotation = useMemo(() => {
     if (selectedEquipmentDetails) {
-      return annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag) || null; // Changed from equipmentId to equipmentTag
+      return annotations.find(a => a.equipmentTag === selectedEquipmentDetails.tag) || null;
     }
     return null;
   }, [selectedEquipmentDetails, annotations]);
 
-  const handleOperationalStateChange = useCallback((equipmentTag: string, newState: string) => { // Changed parameter name
+  const handleOperationalStateChange = useCallback((equipmentTag: string, newState: string) => {
     setEquipmentData(prevData =>
       prevData.map(equip =>
-        equip.tag === equipmentTag ? { ...equip, operationalState: newState } : equip // Changed from id to tag
+        equip.tag === equipmentTag ? { ...equip, operationalState: newState } : equip
       )
     );
-    const equip = equipmentData.find(e => e.tag === equipmentTag); // Changed from id to tag
+    const equip = equipmentData.find(e => e.tag === equipmentTag);
     toast({ title: "State Updated", description: `${equip?.name || 'Equipment'} state changed to ${newState}.`});
   }, [equipmentData, toast]);
 
-  const handleProductChange = useCallback((equipmentTag: string, newProduct: string) => { // Changed parameter name
+  const handleProductChange = useCallback((equipmentTag: string, newProduct: string) => {
     setEquipmentData(prevData =>
       prevData.map(equip =>
-        equip.tag === equipmentTag ? { ...equip, product: newProduct } : equip // Changed from id to tag
+        equip.tag === equipmentTag ? { ...equip, product: newProduct } : equip
       )
     );
-    const equip = equipmentData.find(e => e.tag === equipmentTag); // Changed from id to tag
+    const equip = equipmentData.find(e => e.tag === equipmentTag);
     toast({ title: "Product Updated", description: `${equip?.name || 'Equipment'} product changed to ${newProduct}.`});
   }, [equipmentData, toast]);
+
+
+  const cameraViewSystems = useMemo(() => {
+    const sistemas = new Set<string>();
+    initialEquipment.forEach(equip => {
+      if (equip.sistema) sistemas.add(equip.sistema);
+    });
+    return Array.from(sistemas).sort();
+  }, []);
 
 
   return (
@@ -362,38 +365,36 @@ export default function Terminal3DPage() {
           equipment={filteredEquipment}
           layers={layers}
           annotations={annotations}
-          selectedEquipmentIds={selectedEquipmentIds} // Now contains tags
-          onSelectEquipment={handleSelectEquipment} // Callback expects tag
+          selectedEquipmentIds={selectedEquipmentTags}
+          onSelectEquipment={handleSelectEquipment}
           cameraState={currentCameraState}
           onCameraChange={handleCameraChangeFromScene}
-          initialCameraPosition={cameraPresets[0].position}
-          initialCameraLookAt={cameraPresets[0].lookAt}
-          hoveredEquipmentId={hoveredEquipmentId} // Now contains tag
-          setHoveredEquipmentId={setHoveredEquipmentId} // Callback expects tag
+          initialCameraPosition={defaultInitialCameraPosition}
+          initialCameraLookAt={defaultInitialCameraLookAt}
+          hoveredEquipmentId={hoveredEquipmentTag}
+          setHoveredEquipmentId={setHoveredEquipmentTag}
           colorMode={colorMode}
+          targetSystemToFrame={targetSystemToFrame}
+          onSystemFramed={() => setTargetSystemToFrame(null)}
         />
         <InfoPanel
           equipment={selectedEquipmentDetails}
           annotation={equipmentAnnotation}
           onClose={() => handleSelectEquipment(null, false)}
           onOpenAnnotationDialog={handleOpenAnnotationDialog}
-          onDeleteAnnotation={handleDeleteAnnotation} // Callback expects tag
-          onOperationalStateChange={handleOperationalStateChange} // Callback expects tag
+          onDeleteAnnotation={handleDeleteAnnotation}
+          onOperationalStateChange={handleOperationalStateChange}
           availableOperationalStatesList={availableOperationalStates.filter(s => s !== 'All')}
-          onProductChange={handleProductChange} // Callback expects tag
+          onProductChange={handleProductChange}
           availableProductsList={availableProducts.filter(p => p !== 'All')}
         />
       </div>
 
       <Sidebar collapsible="offcanvas" className="border-r z-40">
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-           <SidebarHeader className="p-3 flex justify-between items-center border-b">
+          <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <Undo2Icon className="h-5 w-5" />
-              </Button>
-              
-              <SidebarTrigger 
+               <SidebarTrigger 
                 asChild 
                 variant="ghost"
                 size="default" 
@@ -403,7 +404,11 @@ export default function Terminal3DPage() {
                   Terminal 3D
                 </span>
               </SidebarTrigger>
-
+            </div>
+             <div className="flex items-center space-x-1">
+              <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Undo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <Undo2Icon className="h-5 w-5" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={redo} disabled={!canRedo} aria-label="Redo" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Redo2Icon className="h-5 w-5" />
               </Button>
@@ -417,7 +422,7 @@ export default function Terminal3DPage() {
                     <div className="relative">
                       <Input
                         type="search"
-                        placeholder="Search name, type, tag..." // Updated placeholder
+                        placeholder="Search name, type, tag..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="h-9 pr-9"
@@ -470,7 +475,7 @@ export default function Terminal3DPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-1">
+                     <div className="space-y-1">
                       <Label htmlFor="op-state-filter" className="text-xs text-muted-foreground flex items-center">
                         <ActivityIcon className="mr-1.5 h-3.5 w-3.5" />
                         Filter by Operational State
@@ -491,12 +496,13 @@ export default function Terminal3DPage() {
                   </CardContent>
                 </Card>
                 <LayerManager
-                  layers={layers}
-                  onToggleLayer={handleToggleLayer}
                   colorMode={colorMode}
                   onColorModeChange={setColorMode}
                 />
-                <CameraControlsPanel presets={cameraPresets} onSetView={handleSetCameraView} />
+                <CameraControlsPanel 
+                  systems={cameraViewSystems} 
+                  onSetView={handleSetCameraView} 
+                />
               </div>
             </ScrollArea>
           </SidebarContent>
@@ -512,4 +518,3 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
-
