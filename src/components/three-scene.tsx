@@ -73,13 +73,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   const onSelectEquipmentRef = useRef(onSelectEquipment);
   const onCameraChangeRef = useRef(onCameraChange);
   
-  const hoveredEquipmentTagRef = useRef<string | null>(hoveredEquipmentTag);
+  const hoveredEquipmentTagRef = useRef(hoveredEquipmentTag);
   const setHoveredEquipmentTagCallbackRef = useRef(setHoveredEquipmentTag);
 
   const lastProcessedCameraStateRef = useRef<CameraState | null>(null);
   const [isSceneReady, setIsSceneReady] = useState(false);
 
-  // Update refs for callbacks to avoid stale closures
   useEffect(() => {
     onSelectEquipmentRef.current = onSelectEquipment;
   }, [onSelectEquipment]);
@@ -142,11 +141,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
             break;
         case 'Estado Operacional':
             switch (item.operationalState) {
-                case 'operando': stateColor.setHex(0xFF0000); break; // Red
-                case 'não operando': stateColor.setHex(0x00FF00); break; // Green
-                case 'manutenção': stateColor.setHex(0xFFFF00); break; // Yellow
-                case 'em falha': stateColor.setHex(0xDA70D6); break; // Orchid
-                case 'Não aplicável': // Fall-through for default
+                case 'operando': stateColor.setHex(0xFF0000); break; // Vermelho
+                case 'não operando': stateColor.setHex(0x00FF00); break; // Verde
+                case 'manutenção': stateColor.setHex(0xFFFF00); break; // Amarelo
+                case 'em falha': stateColor.setHex(0xDA70D6); break; // Roxo Orchid (quase rosa)
+                case 'Não aplicável': 
                 default:
                     stateColor.copy(baseColor); 
                     break;
@@ -233,10 +232,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     
     rendererRef.current = new THREE.WebGLRenderer({ antialias: true });
     rendererRef.current.setPixelRatio(window.devicePixelRatio);
+    rendererRef.current.setSize(initialWidth, initialHeight); // Set size before appending
     currentMount.appendChild(rendererRef.current.domElement);
     // console.log('[ThreeScene] Renderer DOM element appended.');
         
     labelRendererRef.current = new CSS2DRenderer();
+    labelRendererRef.current.setSize(initialWidth, initialHeight); // Set size before appending
     labelRendererRef.current.domElement.style.position = 'absolute';
     labelRendererRef.current.domElement.style.top = '0px';
     labelRendererRef.current.domElement.style.pointerEvents = 'none';
@@ -248,17 +249,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     composerRef.current.addPass(renderPass);
 
     outlinePassRef.current = new OutlinePass(new THREE.Vector2(initialWidth, initialHeight), sceneRef.current!, cameraRef.current!);
-    outlinePassRef.current.edgeStrength = 3;
+    outlinePassRef.current.edgeStrength = 0; // Start with no outline
     outlinePassRef.current.edgeGlow = 0.0; 
-    outlinePassRef.current.edgeThickness = 1;
-    outlinePassRef.current.visibleEdgeColor.set('#ffffff'); 
+    outlinePassRef.current.edgeThickness = 0;
+    outlinePassRef.current.visibleEdgeColor.set('#ffffff'); // Default, will be overridden
     outlinePassRef.current.hiddenEdgeColor.set('#190a05');
     outlinePassRef.current.pulsePeriod = 0; 
     composerRef.current.addPass(outlinePassRef.current);
-    
-    // Initial resize after everything is appended
-    handleResize();
-    // console.log('[ThreeScene] Attempting initial resize. Mount dimensions BEFORE first handleResize:', currentMount.clientWidth + 'x' + currentMount.clientHeight);
     
     const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
     sceneRef.current.add(ambientLight);
@@ -297,6 +294,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     groundMeshRef.current.position.y = 0;
     groundMeshRef.current.receiveShadow = false;
     // console.log('[ThreeScene] Ground plane added');
+    
+    // Initial resize after everything is appended and sized
+    // console.log('[ThreeScene] Attempting initial resize. Mount dimensions BEFORE first handleResize:', currentMount.clientWidth + 'x' + currentMount.clientHeight);
+    handleResize();
     
     const delayedResizeTimeoutId = setTimeout(() => {
       // console.log('[ThreeScene] Attempting DELAYED resize. Mount dimensions BEFORE delayed handleResize:', currentMount.clientWidth + 'x' + currentMount.clientHeight);
@@ -395,13 +396,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
       setIsSceneReady(false);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); 
+  }, [initialCameraPosition, initialCameraLookAt, handleResize]); 
 
   const handleMouseMove = useCallback((event: MouseEvent) => {
     if (!mountRef.current || !cameraRef.current || !sceneRef.current || !equipmentMeshesRef.current || equipmentMeshesRef.current.length === 0) {
       if (hoveredEquipmentTagRef.current !== null) {
-        if (typeof setHoveredEquipmentTagCallbackRef.current === 'function') {
+         if (typeof setHoveredEquipmentTagCallbackRef.current === 'function') {
           setHoveredEquipmentTagCallbackRef.current(null);
         } else {
            // console.error('[ThreeScene] setHoveredEquipmentTagCallbackRef.current is not a function during mouse move (clearing hover).');
@@ -427,9 +427,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         foundHoverTag = hoveredObjectCandidate.userData.tag as string;
       }
     }
-
+    
     if (hoveredEquipmentTagRef.current !== foundHoverTag) {
-      // Use the ref that holds the callback function
       if (typeof setHoveredEquipmentTagCallbackRef.current === 'function') {
         setHoveredEquipmentTagCallbackRef.current(foundHoverTag);
       } else {
@@ -438,7 +437,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         // console.error('[ThreeScene] setHoveredEquipmentTagCallbackRef.current is not a function during mouse move update.');
       }
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); 
 
   const handleClick = useCallback((event: MouseEvent) => {
@@ -471,7 +469,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     } else {
         onSelectEquipmentRef.current(null, isMultiSelectModifierPressed); 
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update equipment meshes
@@ -549,85 +546,85 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
   // useEffect for OutlinePass
   useEffect(() => {
-    if (!outlinePassRef.current || !sceneRef.current || !equipmentMeshesRef.current || !isSceneReady) {
-      // console.log('[ThreeScene OutlinePass] Core refs or scene not ready. Skipping update.');
+    // Ensure core refs are ready
+    if (!outlinePassRef.current || !sceneRef.current || !equipmentMeshesRef.current) {
+      console.log('[ThreeScene OutlinePass] SKIPPING: Core refs not ready.');
+      return;
+    }
+    // Also wait for isSceneReady, which implies Three.js main setup is done.
+    if (!isSceneReady) {
+      console.log('[ThreeScene OutlinePass] SKIPPING: Scene not ready yet.');
       return;
     }
 
-    // Default props if they are undefined on first run
-    const effectiveSelectedTags = selectedEquipmentTags ?? [];
-    const effectiveHoveredTag = hoveredEquipmentTag === undefined ? null : hoveredEquipmentTag;
+    const propsReceivedSelected = selectedEquipmentTags;
+    const propsReceivedHovered = hoveredEquipmentTag;
 
-    // console.log(`[ThreeScene OutlinePass] Updating. EffectiveSelected: ${JSON.stringify(effectiveSelectedTags)}, EffectiveHovered: ${effectiveHoveredTag}`);
+    const effectiveSelectedTags = propsReceivedSelected ?? [];
+    const effectiveHoveredTag = propsReceivedHovered === undefined ? null : propsReceivedHovered;
+
+    console.log(`[ThreeScene OutlinePass] Received Props: selectedTags=${JSON.stringify(propsReceivedSelected)}, hoveredTag=${propsReceivedHovered}`);
+    console.log(`[ThreeScene OutlinePass] Effective Values: selected=${JSON.stringify(effectiveSelectedTags)}, hovered=${effectiveHoveredTag}`);
 
     const objectsToOutline: THREE.Object3D[] = [];
+
     const meshesToConsider = equipmentMeshesRef.current.filter(mesh => {
-        const isStillInEquipmentList = equipment.some(e => e.tag === mesh.userData.tag);
-        const layer = layers.find(l => l.equipmentType === mesh.userData.type);
-        const isVisibleByLayer = layer?.isVisible ?? true;
-        return isStillInEquipmentList && isVisibleByLayer;
+      const isStillInEquipmentList = equipment.some(e => e.tag === mesh.userData.tag);
+      const layer = layers.find(l => l.equipmentType === mesh.userData.type);
+      const isVisibleByLayer = layer?.isVisible ?? true;
+      return isStillInEquipmentList && isVisibleByLayer;
     });
-    // console.log(`[ThreeScene OutlinePass] Meshes to consider for outline: ${meshesToConsider.map(m => m.userData.tag).join(', ')}`);
+    console.log(`[ThreeScene OutlinePass] Meshes to consider for outline: ${meshesToConsider.map(m => m.userData.tag).join(', ') || 'None'}`);
+
 
     if (Array.isArray(effectiveSelectedTags) && effectiveSelectedTags.length > 0) {
       effectiveSelectedTags.forEach(tag => {
-        const selectedMesh = meshesToConsider.find(mesh => mesh.userData.tag === tag);
-        if (selectedMesh) {
-          objectsToOutline.push(selectedMesh);
-          // console.log(`[ThreeScene OutlinePass] Added to outline (selected): ${tag}`);
+        const mesh = meshesToConsider.find(m => m.userData.tag === tag);
+        if (mesh) {
+          objectsToOutline.push(mesh);
+          console.log(`[ThreeScene OutlinePass] Adding selected mesh to outline: ${tag}`);
         } else {
-          // console.log(`[ThreeScene OutlinePass] Could not find mesh for selected tag: ${tag}`);
+          console.log(`[ThreeScene OutlinePass] Selected mesh NOT FOUND or not in meshesToConsider: ${tag}`);
         }
       });
       if (objectsToOutline.length > 0) {
-        outlinePassRef.current.visibleEdgeColor.set('#0000FF'); // Strong Blue for selected
-        outlinePassRef.current.edgeStrength = 6; 
-        outlinePassRef.current.edgeThickness = 1.5; 
-        outlinePassRef.current.edgeGlow = 0.5;    
-        // console.log(`[ThreeScene OutlinePass] Applied SELECTED style. Objects: ${objectsToOutline.map(o => o.userData.tag).join(', ')}`);
+        outlinePassRef.current.visibleEdgeColor.set('#0000FF'); // Strong Blue
+        outlinePassRef.current.edgeStrength = 6;
+        outlinePassRef.current.edgeThickness = 1.5;
+        outlinePassRef.current.edgeGlow = 0.5;
+        console.log(`[ThreeScene OutlinePass] Style: SELECTED. Outlining: ${objectsToOutline.map(o => o.userData.tag).join(', ')}`);
+      } else { // No selected meshes found or visible enough to be outlined
+        outlinePassRef.current.edgeStrength = 0; // Turn off outline if no selected meshes are actually added
+        console.log('[ThreeScene OutlinePass] Style: SELECTED (but no meshes added to outline). Turning off strength.');
       }
     } else if (effectiveHoveredTag) {
-      const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.tag === effectiveHoveredTag);
-      if (hoveredMesh) {
-        objectsToOutline.push(hoveredMesh);
-        // console.log(`[ThreeScene OutlinePass] Added to outline (hovered): ${effectiveHoveredTag}`);
-        outlinePassRef.current.visibleEdgeColor.set('#87CEFA'); // Light Sky Blue for hovered
-        outlinePassRef.current.edgeStrength = 4; 
+      const mesh = meshesToConsider.find(m => m.userData.tag === effectiveHoveredTag);
+      if (mesh) {
+        objectsToOutline.push(mesh);
+        console.log(`[ThreeScene OutlinePass] Adding hovered mesh to outline: ${effectiveHoveredTag}`);
+        outlinePassRef.current.visibleEdgeColor.set('#87CEFA'); // Light Sky Blue
+        outlinePassRef.current.edgeStrength = 4;
         outlinePassRef.current.edgeThickness = 1.2;
-        outlinePassRef.current.edgeGlow = 0.3; 
-        // console.log(`[ThreeScene OutlinePass] Applied HOVER style. Object tag: ${effectiveHoveredTag}`);
-      } else {
-        // console.log(`[ThreeScene OutlinePass] Could not find mesh for hovered tag: ${effectiveHoveredTag}`);
+        outlinePassRef.current.edgeGlow = 0.3;
+        console.log(`[ThreeScene OutlinePass] Style: HOVERED. Outlining: ${objectsToOutline.map(o => o.userData.tag).join(', ')}`);
+      } else { // No hovered mesh found or visible
+        outlinePassRef.current.edgeStrength = 0;
+        console.log(`[ThreeScene OutlinePass] Style: HOVERED (but mesh ${effectiveHoveredTag} not found/visible). Turning off strength.`);
       }
-    }
-    
-    // If no objects were added to outline (either from selection or hover),
-    // or if we explicitly want to clear the outline.
-    if (objectsToOutline.length === 0) {
-        if (outlinePassRef.current.edgeStrength !== 0) { // Only update if it's not already 0
-            outlinePassRef.current.edgeStrength = 0; 
-            outlinePassRef.current.edgeGlow = 0;
-            outlinePassRef.current.edgeThickness = 0;
-            // console.log('[ThreeScene OutlinePass] No objects to outline, strength set to 0.');
-        }
     } else {
-        // Ensure strength is set if it was previously 0 but now we have objects
-        if (outlinePassRef.current.edgeStrength === 0) {
-            if (Array.isArray(effectiveSelectedTags) && effectiveSelectedTags.length > 0) {
-                outlinePassRef.current.edgeStrength = 6;
-                outlinePassRef.current.edgeThickness = 1.5; 
-                outlinePassRef.current.edgeGlow = 0.5;
-            } else if (effectiveHoveredTag) {
-                outlinePassRef.current.edgeStrength = 4;
-                outlinePassRef.current.edgeThickness = 1.2;
-                outlinePassRef.current.edgeGlow = 0.3; 
-            }
-        }
+      // No selection or hover
+      outlinePassRef.current.edgeStrength = 0;
+      console.log('[ThreeScene OutlinePass] Style: NONE.');
     }
     
+    if (outlinePassRef.current.edgeStrength === 0) {
+        outlinePassRef.current.edgeGlow = 0;
+        outlinePassRef.current.edgeThickness = 0;
+    }
+
     outlinePassRef.current.selectedObjects = objectsToOutline;
-    // console.log(`[ThreeScene OutlinePass] Final selectedObjects for outlinePass: ${objectsToOutline.map(o => o.userData.tag).join(', ')}`);
-    outlinePassRef.current.pulsePeriod = 0; // Explicitly keep pulse off
+    outlinePassRef.current.pulsePeriod = 0;
+    console.log(`[ThreeScene OutlinePass] Final selectedObjects for outlinePass: ${objectsToOutline.map(o => o.userData.tag).join(', ') || 'None'}`);
 
   }, [selectedEquipmentTags, hoveredEquipmentTag, equipment, layers, isSceneReady]);
 
@@ -765,11 +762,12 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       });
     }
     onSystemFramed(); 
-  }, [targetSystemToFrame, onSystemFramed, equipment, layers, isSceneReady]);
+  }, [targetSystemToFrame, onSystemFramed, equipment, layers, isSceneReady]); // Added layers and isSceneReady
 
   return <div ref={mountRef} className="w-full h-full" />;
 };
 
 export default ThreeScene;
+
 
     
