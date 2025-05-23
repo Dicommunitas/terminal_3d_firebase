@@ -1,4 +1,3 @@
-
 /**
  * @fileoverview Componente principal da página da aplicação Terminal 3D.
  * Orquestra os diversos hooks de gerenciamento de estado (dados de equipamentos,
@@ -12,7 +11,7 @@ import type { Equipment, Layer, Command, CameraState, Annotation, ColorMode } fr
 import { useCommandHistory } from '@/hooks/use-command-history';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft } from 'lucide-react';
 
 // Hooks de gerenciamento de estado
 import { useAnnotationManager } from '@/hooks/use-annotation-manager';
@@ -26,7 +25,7 @@ import { useLayerManager } from '@/hooks/use-layer-manager';
 import { MainSceneArea } from '@/components/main-scene-area';
 import { SidebarContentLayout } from '@/components/sidebar-content-layout';
 import { AnnotationDialog } from '@/components/annotation-dialog';
-
+import ThreeScene from '@/components/three-scene'; // Ensure this is the default import
 
 /**
  * Componente principal da página Terminal 3D.
@@ -47,7 +46,7 @@ export default function Terminal3DPage(): JSX.Element {
   const {
     currentCameraState,
     targetSystemToFrame,
-    handleSetCameraViewForSystem, // Necessário para handleFocusAndSelectSystem
+    handleSetCameraViewForSystem,
     handleCameraChangeFromScene,
     onSystemFramed,
   } = useCameraManager({ executeCommand });
@@ -81,7 +80,7 @@ export default function Terminal3DPage(): JSX.Element {
     hoveredEquipmentTag,
     handleEquipmentClick,
     handleSetHoveredEquipmentTag,
-    selectTagsBatch, // Necessário para handleFocusAndSelectSystem
+    selectTagsBatch,
   } = useEquipmentSelectionManager({ equipmentData, executeCommand });
 
   const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
@@ -165,7 +164,7 @@ export default function Terminal3DPage(): JSX.Element {
 
 
   return (
-    <SidebarProvider defaultOpen={false}> {/* Sidebar começa fechada por padrão */}
+    <SidebarProvider defaultOpen={false}>
       <div className="h-screen w-full flex flex-col relative">
         {/* Botão de trigger da Sidebar (visível em todas as telas, posicionado sobre a cena) */}
         <div className="absolute top-4 left-4 z-30">
@@ -200,7 +199,7 @@ export default function Terminal3DPage(): JSX.Element {
         />
       </div>
 
-      <Sidebar collapsible="offcanvas" className="border-r z-40"> {/* Sidebar offcanvas sobrepõe a cena */}
+      <Sidebar collapsible="offcanvas" className="border-r z-40">
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-1">
@@ -221,9 +220,7 @@ export default function Terminal3DPage(): JSX.Element {
                 <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
-             <SidebarTrigger asChild variant="ghost" size="icon" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <PanelLeftClose />
-            </SidebarTrigger>
+            {/* Botão de fechar removido daqui */}
           </SidebarHeader>
           <SidebarContentLayout
             searchTerm={searchTerm}
