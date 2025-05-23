@@ -1,12 +1,11 @@
 /**
  * @fileoverview Componente principal da página da aplicação Terminal 3D.
- * Orquestra os diversos hooks de gerenciamento de estado (dados de equipamentos,
- * seleção, filtros, câmera, camadas, anotações, histórico de comandos, modo de cor)
- * e renderiza a interface do usuário, incluindo a cena 3D e a sidebar de controles.
+ * Orquestra os diversos hooks de gerenciamento de estado e renderiza a interface do usuário,
+ * incluindo a cena 3D e a sidebar de controles.
  */
 "use client";
 
-import { useMemo, useState, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import type { Equipment, Layer, Command, CameraState, Annotation, ColorMode } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
@@ -25,16 +24,34 @@ import { useLayerManager } from '@/hooks/use-layer-manager';
 import { MainSceneArea } from '@/components/main-scene-area';
 import { SidebarContentLayout } from '@/components/sidebar-content-layout';
 import { AnnotationDialog } from '@/components/annotation-dialog';
-import ThreeScene from '@/components/three-scene'; // Ensure this is the default import
+import ThreeScene from '@/components/three-scene'; // Default import
 
 /**
- * Componente principal da página Terminal 3D.
- * Este componente integra todos os hooks de gerenciamento de estado e renderiza
- * a UI principal da aplicação, gerenciando a comunicação entre a sidebar e a cena 3D.
+ * Componente principal da página Terminal 3D (Terminal3DPage).
+ *
+ * Orquestra os diversos hooks de gerenciamento de estado da aplicação:
+ * - `useCommandHistory`: Para funcionalidades de Undo/Redo.
+ * - `useEquipmentDataManager`: Gerencia a "fonte da verdade" dos dados dos equipamentos e suas modificações diretas (estado operacional, produto).
+ * - `useCameraManager`: Controla o estado da câmera 3D, incluindo presets e foco em sistemas.
+ * - `useFilterManager`: Gerencia os estados e a lógica de filtragem dos equipamentos (busca por texto, sistema, área).
+ * - `useAnnotationManager`: Lida com o estado e as operações CRUD para anotações dos equipamentos.
+ * - `useEquipmentSelectionManager`: Gerencia a seleção de equipamentos (single, multi) e o estado de hover.
+ * - `useLayerManager`: Controla o estado de visibilidade das diferentes camadas de objetos na cena.
+ *
+ * Também gerencia estados locais como `colorMode` para a colorização da cena.
+ *
+ * Responsável por:
+ * - Renderizar a estrutura principal da UI, incluindo a `Sidebar` e a `MainSceneArea`.
+ * - Passar os estados e callbacks apropriados dos hooks para os componentes filhos.
+ * - Definir lógicas de alto nível que coordenam múltiplos hooks (e.g., `handleFocusAndSelectSystem`).
+ * - Calcular dados derivados (e.g., `selectedEquipmentDetails`, listas de opções para filtros) usando `useMemo`.
+ *
  * @returns {JSX.Element} O componente da página Terminal 3D.
  */
 export default function Terminal3DPage(): JSX.Element {
   // console.log("[Page] Terminal3DPage rendering");
+
+  // Hooks de gerenciamento de estado
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
   const {
@@ -84,10 +101,11 @@ export default function Terminal3DPage(): JSX.Element {
   } = useEquipmentSelectionManager({ equipmentData, executeCommand });
 
   const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
-  const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
+
+  const [colorMode, setColorMode] = useState<ColorMode>('Estado Operacional');
 
   /**
-   * Lista de sistemas únicos disponíveis para o painel de controle da câmera.
+   * Lista de sistemas únicos disponíveis para o painel de controle da câmera ("Focus on System").
    * Exclui "All" se estiver presente em `availableSistemas`.
    */
   const cameraViewSystems = useMemo(() => {
@@ -99,12 +117,14 @@ export default function Terminal3DPage(): JSX.Element {
    * @param {string} systemName - O nome do sistema para focar e selecionar.
    */
   const handleFocusAndSelectSystem = useCallback((systemName: string) => {
-    handleSetCameraViewForSystem(systemName);
+    // console.log(`[Page] Focusing and selecting system: ${systemName}`);
+    handleSetCameraViewForSystem(systemName); // Do useCameraManager
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`); // Do useEquipmentSelectionManager
   }, [equipmentData, handleSetCameraViewForSystem, selectTagsBatch]);
+
 
   /**
    * Deriva os detalhes do equipamento selecionado.
@@ -137,6 +157,7 @@ export default function Terminal3DPage(): JSX.Element {
     equipmentData.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
+    // Garante que "Não aplicável" fique no início se existir, depois ordena o resto.
     const sortedStates = Array.from(states).sort((a, b) => {
       if (a === "Não aplicável") return -1;
       if (b === "Não aplicável") return 1;
@@ -154,7 +175,8 @@ export default function Terminal3DPage(): JSX.Element {
     equipmentData.forEach(equip => {
       if (equip.product) products.add(equip.product);
     });
-    const sortedProducts = Array.from(products).sort((a,b) => {
+    // Garante que "Não aplicável" fique no início se existir, depois ordena o resto.
+     const sortedProducts = Array.from(products).sort((a,b) => {
       if (a === "Não aplicável") return -1;
       if (b === "Não aplicável") return 1;
       return a.localeCompare(b);
@@ -164,15 +186,10 @@ export default function Terminal3DPage(): JSX.Element {
 
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <div className="h-screen w-full flex flex-col relative">
-        {/* Botão de trigger da Sidebar (visível em todas as telas, posicionado sobre a cena) */}
-        <div className="absolute top-4 left-4 z-30">
-          <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
-            <PanelLeft />
-          </SidebarTrigger>
-        </div>
+    <SidebarProvider defaultOpen={false}> {/* Sidebar começa fechada por padrão */}
+      <div className="h-screen w-full flex flex-col relative"> {/* Div principal que ocupa toda a tela */}
 
+        {/* Área da Cena 3D e InfoPanel sobreposto */}
         <MainSceneArea
           equipment={filteredEquipment}
           layers={layers}
@@ -197,9 +214,18 @@ export default function Terminal3DPage(): JSX.Element {
           onProductChange={handleProductChange}
           availableProductsList={availableProductsList}
         />
+
+        {/* Botão de trigger da Sidebar (sempre visível, posicionado sobre a cena) */}
+        {/* Este botão controla a abertura/fechamento da sidebar off-canvas */}
+        <div className="absolute top-4 left-4 z-30"> {/* z-index maior que o ThreeScene, menor que a Sidebar */}
+          <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
+            <PanelLeft />
+          </SidebarTrigger>
+        </div>
       </div>
 
-      <Sidebar collapsible="offcanvas" className="border-r z-40">
+      {/* Sidebar Off-Canvas */}
+      <Sidebar collapsible="offcanvas" className="border-r z-40"> {/* z-index maior que o trigger */}
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-1">
@@ -220,7 +246,7 @@ export default function Terminal3DPage(): JSX.Element {
                 <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
-            {/* Botão de fechar removido daqui */}
+            {/* O botão de fechar (X) é gerenciado pelo componente Sidebar/Sheet */}
           </SidebarHeader>
           <SidebarContentLayout
             searchTerm={searchTerm}
