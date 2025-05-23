@@ -1,6 +1,7 @@
 
 /**
  * @fileoverview Component React para renderizar a cena 3D usando Three.js.
+ *
  * Responsabilidades:
  * - Orquestrar a configuração da cena 3D (câmera, luzes, renderizadores, controles) utilizando módulos utilitários.
  * - Gerenciar o ciclo de vida dos meshes de equipamentos e pins de anotação com base nas props.
@@ -12,7 +13,7 @@
 
 import React, { useRef, useEffect, useCallback, useState } from 'react';
 import * as THREE from 'three';
-import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js';
+import type { OrbitControls as OrbitControlsType } from 'three/examples/jsm/controls/OrbitControls.js'; // Corrected import path for type
 import type { CSS2DRenderer, CSS2DObject } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import type { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import type { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
@@ -26,6 +27,7 @@ import { updateOutlineEffect } from '@/core/three/postprocessing-utils';
 import { updateAnnotationPins } from '@/core/three/label-renderer-utils';
 import { calculateViewForMeshes } from '@/core/three/camera-utils';
 import { useAnimationLoop } from '@/hooks/use-animation-loop';
+
 
 /**
  * Props para o componente ThreeScene.
@@ -77,10 +79,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   onSelectEquipment,
   hoveredEquipmentTag,
   setHoveredEquipmentTag,
-  cameraState: programmaticCameraState,
+  cameraState: programmaticCameraState, // Renomeado para clareza, é o estado da câmera vindo das props
   onCameraChange,
   initialCameraPosition,
-  initialCameraLookAt,
+  initialCameraLookAt, // Recebendo a prop
   colorMode,
   targetSystemToFrame,
   onSystemFramed,
@@ -103,7 +105,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   // Refs para callbacks para evitar que sejam dependências de useEffects que só rodam uma vez
   const onSelectEquipmentRef = useRef(onSelectEquipment);
   const onCameraChangeRef = useRef(onCameraChange);
-  const setHoveredEquipmentTagCallbackRef = useRef(setHoveredEquipmentTag);
+  const setHoveredEquipmentTagCallbackRef = useRef(setHoveredEquipmentTag); // Renomeado para clareza
   const hoveredEquipmentTagRef = useRef(hoveredEquipmentTag); // Para ler o valor atual dentro de callbacks estáveis
 
   const [isSceneReady, setIsSceneReady] = useState(false);
@@ -133,8 +135,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       }
       if(composerRef.current && outlinePassRef.current) {
         composerRef.current.setSize(width, height);
-        // OutlinePass resolution is usually set via composer.setSize, but can be explicit if needed
-        // outlinePassRef.current.resolution.set(width, height); 
       }
       rendererRef.current.setSize(width, height);
     } else {
@@ -163,6 +163,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     cameraRef.current.position.set(initialCameraPosition.x, initialCameraPosition.y, initialCameraPosition.z);
     // console.log('[ThreeScene] Camera created at:', cameraRef.current.position.clone());
 
+    // Utiliza a função do utilitário para configurar o pipeline de renderização
     const {
       renderer,
       labelRenderer,
@@ -179,22 +180,22 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     outlinePassRef.current = outlinePass;
     // console.log('[ThreeScene] Render pipeline (WebGL, CSS2D, Composer, OutlinePass) configured via util.');
 
+    // Utiliza as funções do utilitário para configurar luzes e plano de chão
     setupLighting(sceneRef.current);
     // console.log('[ThreeScene] Lights added');
     groundMeshRef.current = setupGroundPlane(sceneRef.current);
     // console.log('[ThreeScene] Ground plane added');
 
     // Dinamicamente importar OrbitControls
-    let OrbitControls: typeof OrbitControlsType | null = null;
     import('three/examples/jsm/controls/OrbitControls.js')
       .then(module => {
-        OrbitControls = module.OrbitControls;
+        const OrbitControls = module.OrbitControls; // Shadowing a type, so rename
         if (!cameraRef.current || !rendererRef.current || !OrbitControls || !currentMount) return;
 
         controlsRef.current = new OrbitControls(cameraRef.current, rendererRef.current.domElement);
         controlsRef.current.enableDamping = true;
-
-        if (initialCameraLookAt) { // Use the correct prop name here
+        
+        if (initialCameraLookAt) { // Usar a prop correta
           controlsRef.current.target.set(initialCameraLookAt.x, initialCameraLookAt.y, initialCameraLookAt.z);
         } else {
           console.error("[ThreeScene] initialCameraLookAt is undefined during OrbitControls setup. Using default target (0,0,0).");
@@ -203,7 +204,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         
         controlsRef.current.mouseButtons = {
           LEFT: THREE.MOUSE.ROTATE,
-          MIDDLE: THREE.MOUSE.DOLLY,
+          MIDDLE: THREE.MOUSE.DOLLY, 
           RIGHT: THREE.MOUSE.PAN
         };
         controlsRef.current.update();
@@ -213,7 +214,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
           if (cameraRef.current && controlsRef.current && onCameraChangeRef.current) {
             const newCameraState: CameraState = {
               position: cameraRef.current.position.clone(),
-              lookAt: controlsRef.current.target.clone(), // Use lookAt, not target, for consistency
+              lookAt: controlsRef.current.target.clone(),
             };
             // console.log('[ThreeScene] OrbitControls "end" event. New camera state:', newCameraState);
             onCameraChangeRef.current(newCameraState);
@@ -222,9 +223,9 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         controlsRef.current.addEventListener('end', handleControlsChangeEnd);
 
         // Store cleanup function for OrbitControls event listener
-        if (controlsRef.current) { // Necessário para o cleanup
+        if (controlsRef.current) { 
             const currentControls = controlsRef.current;
-            if (!currentControls.userData) { // Ensure userData exists
+            if (!currentControls.userData) { 
                 currentControls.userData = {};
             }
             currentControls.userData.cleanup = () => {
@@ -300,10 +301,9 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         groundMeshRef.current = null;
       }
 
-      // Dispose composer passes
       composerRef.current?.passes.forEach(pass => { if ((pass as any).dispose) (pass as any).dispose(); });
       composerRef.current = null;
-      outlinePassRef.current = null; // OutlinePass is disposed as part of composer
+      outlinePassRef.current = null; 
 
       if (rendererRef.current?.domElement && rendererRef.current.domElement.parentNode === currentMount) {
         currentMount.removeChild(rendererRef.current.domElement);
@@ -314,7 +314,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (labelRendererRef.current?.domElement && labelRendererRef.current.domElement.parentNode === currentMount) {
         currentMount.removeChild(labelRendererRef.current.domElement);
       }
-      // labelRendererRef.current?.dispose(); // CSS2DRenderer does not have a dispose method
       labelRendererRef.current = null;
 
       sceneRef.current = null;
@@ -322,7 +321,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       // console.log('[ThreeScene] Main setup useEffect CLEANUP FINISHED.');
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, []); // Array de dependências vazio para executar apenas uma vez na montagem
 
 
   /**
@@ -352,9 +351,8 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     });
 
     if (item.operationalState === 'Não aplicável') {
-        // console.log(`[ThreeScene createEquipmentMesh] ${item.tag} is 'Não aplicável', setting transparency.`);
         material.transparent = true;
-        material.opacity = 0.5;
+        material.opacity = 0.5; 
     } else {
         material.transparent = false;
         material.opacity = 1.0;
@@ -367,11 +365,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (item.rotation) {
         mesh.rotation.set(item.rotation.x, item.rotation.y, item.rotation.z);
     }
-    mesh.userData = { tag: item.tag, type: item.type, sistema: item.sistema }; // Inclui sistema para targetSystemToFrame
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
+    mesh.userData = { tag: item.tag, type: item.type, sistema: item.sistema }; 
+    mesh.castShadow = false; // Shadows disabled
+    mesh.receiveShadow = false; // Shadows disabled
     return mesh;
-  }, [colorMode]); // Dependência de colorMode para que os meshes sejam recriados quando ele muda
+  }, [colorMode]); 
 
 
   /**
@@ -387,12 +385,13 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     updateEquipmentMeshesInScene(
       sceneRef.current,
-      equipmentMeshesRef, // Passa o ref
-      equipment,          // Passa os dados dos equipamentos (já filtrados)
+      equipmentMeshesRef, 
+      equipment,          
       layers,
-      createEquipmentMesh // Passa a função de criação de mesh
+      createEquipmentMesh,
+      groundMeshRef // Passando groundMeshRef aqui
     );
-  }, [equipment, layers, colorMode, isSceneReady, createEquipmentMesh]); // createEquipmentMesh é useCallback, sua dependência é colorMode
+  }, [equipment, layers, colorMode, isSceneReady, createEquipmentMesh]); 
 
 
   /**
@@ -412,26 +411,24 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       setHoveredEquipmentTagCallbackRef.current(null);
       return;
     }
-
+    
     processSceneMouseMove(
         event,
         mountRef.current,
         cameraRef.current,
         equipmentMeshesRef.current,
-        (foundHoverTag) => { // This is the direct setter
-            // console.log(`[ThreeScene] MouseMove found (internal callback):`, foundHoverTag, `Currently hovered (ref):`, hoveredEquipmentTagRef.current);
+        (foundHoverTag) => { 
             if (hoveredEquipmentTagRef.current !== foundHoverTag) {
               if (typeof setHoveredEquipmentTagCallbackRef.current === 'function') {
-                // console.log(`[ThreeScene] Calling setHoveredEquipmentTagCallbackRef.current with:`, foundHoverTag);
                 setHoveredEquipmentTagCallbackRef.current(foundHoverTag);
               } else {
-                // console.error('[ThreeScene] setHoveredEquipmentTagCallbackRef.current is not a function during mouse move update.');
+                console.error('[ThreeScene] setHoveredEquipmentTagCallbackRef.current is not a function during mouse move update.');
               }
             }
         }
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSceneReady]);
+  }, [isSceneReady]); // Depende de isSceneReady para não executar antes da hora
 
 
   /**
@@ -440,7 +437,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
    */
   const handleClick = useCallback((event: MouseEvent) => {
     // console.log(`[ThreeScene] handleClick triggered, button: ${event.button}`);
-    if (event.button !== 0) { // Apenas processa cliques esquerdos para seleção
+    if (event.button !== 0) { 
       // console.log('[ThreeScene] handleClick: Non-left click, ignoring for selection.');
       return;
     }
@@ -460,7 +457,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     }
 
     if (typeof onSelectEquipmentRef.current !== 'function') {
-      // console.error("[ThreeScene] handleClick: onSelectEquipmentRef.current is not a function.");
+      console.error("[ThreeScene] handleClick: onSelectEquipmentRef.current is not a function.");
       return;
     }
 
@@ -469,10 +466,10 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         mountRef.current,
         cameraRef.current,
         equipmentMeshesRef.current,
-        onSelectEquipmentRef.current // Passa a função de callback do ref
+        onSelectEquipmentRef.current 
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSceneReady]);
+  }, [isSceneReady]); // Depende de isSceneReady
 
 
   /**
@@ -488,14 +485,14 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
 
     updateAnnotationPins({
       scene: sceneRef.current,
-      labelRenderer: labelRendererRef.current, // Passando a instância do labelRenderer
+      labelRenderer: labelRendererRef.current, 
       annotations: annotations,
-      equipmentData: equipment, // Passando a lista completa de equipamentos
+      equipmentData: equipment, 
       layers: layers,
       existingPinsRef: annotationPinObjectsRef,
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [annotations, layers, equipment, isSceneReady]); // Depende de labelRendererRef.current também
+  }, [annotations, layers, equipment, isSceneReady]); 
 
   /**
    * useEffect para atualizar a câmera programaticamente com base na prop `programmaticCameraState`.
@@ -506,7 +503,6 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       const camera = cameraRef.current;
       const controls = controlsRef.current;
 
-      // Ensure Vector3 for comparison/copying
       const targetPosition = new THREE.Vector3(
         programmaticCameraState.position.x,
         programmaticCameraState.position.y,
@@ -516,7 +512,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
         programmaticCameraState.lookAt.x,
         programmaticCameraState.lookAt.y,
         programmaticCameraState.lookAt.z
-      ) : controls.target.clone(); // Fallback if lookAt is missing
+      ) : controls.target.clone(); 
 
       const positionChanged = !camera.position.equals(targetPosition);
       const lookAtChanged = !controls.target.equals(targetLookAt);
@@ -524,11 +520,11 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
       if (positionChanged || lookAtChanged) {
         // console.log(`[ThreeScene] Applying programmatic camera change. Pos changed: ${positionChanged}, LookAt changed: ${lookAtChanged}`);
         const oldControlsEnabled = controls.enabled;
-        controls.enabled = false; // Disable controls during programmatic update
+        controls.enabled = false; 
         if (positionChanged) camera.position.copy(targetPosition);
         if (lookAtChanged) controls.target.copy(targetLookAt);
         controls.update();
-        controls.enabled = oldControlsEnabled; // Re-enable controls
+        controls.enabled = oldControlsEnabled; 
       } else {
         // console.log('[ThreeScene] Programmatic camera state is the same as current, no update needed.');
       }
@@ -544,7 +540,7 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
     if (!targetSystemToFrame || !sceneRef.current || !cameraRef.current || !controlsRef.current || !isSceneReady || equipmentMeshesRef.current.length === 0) {
       // console.log('[ThreeScene system focus useEffect] SKIPPING: Prerequisites not met.');
       if (targetSystemToFrame && typeof onSystemFramed === 'function') {
-        onSystemFramed(); // Reset the trigger even if we can't frame
+        onSystemFramed(); 
       }
       return;
     }
@@ -577,38 +573,38 @@ const ThreeScene: React.FC<ThreeSceneProps> = ({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetSystemToFrame, isSceneReady, equipment, layers]); // equipment & layers affect equipmentMeshesRef
 
+
   /**
    * useEffect para gerenciar o OutlinePass (efeito de aura) para seleção e hover.
-   * Utiliza `postprocessing-utils` para aplicar os estilos.
+   * Delega a lógica para `postprocessing-utils`.
    */
   useEffect(() => {
     // console.log('[ThreeScene OutlinePass] useEffect triggered.');
     if (!isSceneReady || !outlinePassRef.current || !equipmentMeshesRef.current) {
-        // console.log('[ThreeScene OutlinePass] SKIPPING: Core refs not ready or scene not ready yet.');
-        if(outlinePassRef.current) {
-            updateOutlineEffect(outlinePassRef.current, [], [], null); // Clear outline if not ready
-        }
+      // console.log('[ThreeScene OutlinePass] SKIPPING: Core refs not ready or scene not ready yet.');
+      if(outlinePassRef.current) {
+        updateOutlineEffect(outlinePassRef.current, [], [], null); // Clear outline if not ready
+      }
       return;
     }
-
-    // Garantir que selectedEquipmentTags seja um array e hoveredEquipmentTag seja null se undefined
+    
+    // Default props if they are undefined on first run
     const effectiveSelectedTags = Array.isArray(selectedEquipmentTags) ? selectedEquipmentTags : [];
     const effectiveHoveredTag = hoveredEquipmentTag === undefined ? null : hoveredEquipmentTag;
     
     // console.log(`[ThreeScene OutlinePass] Received Props: selectedTags=${JSON.stringify(effectiveSelectedTags)}, hoveredTag=${effectiveHoveredTag}`);
-    // console.log(`[ThreeScene OutlinePass] equipmentMeshesRef.current tags: ${equipmentMeshesRef.current.map(m => m.userData.tag).join(', ')}`);
+    // console.log(`[ThreeScene OutlinePass] Meshes to consider for outline: ${equipmentMeshesRef.current.map(m => m.userData.tag).join(', ')}`);
 
     updateOutlineEffect(
       outlinePassRef.current,
-      equipmentMeshesRef.current, // Passar a lista completa de meshes visíveis
+      equipmentMeshesRef.current, 
       effectiveSelectedTags,
       effectiveHoveredTag
     );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isSceneReady, selectedEquipmentTags, hoveredEquipmentTag, equipment, layers]);
+  }, [isSceneReady, selectedEquipmentTags, hoveredEquipmentTag, equipment, layers]); // equipment and layers affect equipmentMeshesRef
 
 
   return <div ref={mountRef} className="w-full h-full" />;
-};
+}; 
 
 export default ThreeScene;
