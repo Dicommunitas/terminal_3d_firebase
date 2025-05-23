@@ -47,7 +47,8 @@ export interface UseEquipmentSelectionManagerReturn {
 /**
  * Hook customizado para gerenciar a seleção e o estado de hover dos equipamentos.
  * Encapsula a lógica de seleção única/múltipla, hover, seleção em lote e integração com o histórico.
- * @param {UseEquipmentSelectionManagerProps} props As props do hook, incluindo `equipmentData` e `executeCommand`.
+ *
+ * @param {UseEquipmentSelectionManagerProps} props As props do hook.
  * @returns {UseEquipmentSelectionManagerReturn} O estado da seleção e as funções para manipulá-la.
  */
 export function useEquipmentSelectionManager({
@@ -66,6 +67,7 @@ export function useEquipmentSelectionManager({
    * @param {boolean} isMultiSelectModifierPressed - True se Ctrl/Cmd foi pressionado durante o clique.
    */
   const handleEquipmentClick = useCallback((tag: string | null, isMultiSelectModifierPressed: boolean) => {
+    console.log(`[useEquipmentSelectionManager] handleEquipmentClick called with tag: ${tag}, multiSelect: ${isMultiSelectModifierPressed}`);
     const oldSelection = [...selectedEquipmentTags];
     let newSelection: string[];
     let toastMessage = "";
@@ -81,62 +83,93 @@ export function useEquipmentSelectionManager({
           toastMessage = `Equipamento ${equipmentName} adicionado à seleção. ${newSelection.length} itens selecionados.`;
         }
       } else {
+        // Ctrl/Cmd + click em espaço vazio não faz nada na seleção
         newSelection = oldSelection;
+        // console.log("[useEquipmentSelectionManager] Ctrl/Cmd + click on empty space, no change to selection.");
+        // return; // Poderia retornar aqui para evitar a criação de comando desnecessário
       }
-    } else {
-      if (tag) {
-        if (oldSelection.length === 1 && oldSelection[0] === tag) {
-          newSelection = [];
-          toastMessage = "Seleção limpa.";
+    } else { // Clique simples
+      if (tag) { // Clique em um equipamento
+        if (oldSelection.length === 1 && oldSelection[0] === tag && !isMultiSelectModifierPressed) {
+          // Clicar no mesmo item já selecionado (sem Ctrl/Cmd) não deseleciona.
+          // Para deselecionar, o usuário precisa clicar em espaço vazio.
+          // Ou, se quisermos que deselecione, a lógica seria: newSelection = []; toastMessage = "Seleção limpa.";
+          newSelection = oldSelection; // Mantém a seleção
+          // console.log("[useEquipmentSelectionManager] Clicked same selected item, no change.");
+          // return; // Se não houver mudança, podemos retornar
         } else {
           newSelection = [tag];
           toastMessage = `${equipmentName} selecionado.`;
         }
-      } else {
+      } else { // Clique em espaço vazio
         newSelection = [];
-        if (oldSelection.length > 0) {
+        if (oldSelection.length > 0) { // Só mostra toast se havia algo selecionado
           toastMessage = "Seleção limpa.";
         }
       }
     }
+    
+    console.log("[useEquipmentSelectionManager] Old selection:", oldSelection, "New selection:", newSelection);
 
-    const oldSelectionSorted = [...oldSelection].sort();
-    const newSelectionSorted = [...newSelection].sort();
+    // Verifica se houve de fato uma mudança na seleção
+    const oldSelectionSortedJSON = JSON.stringify([...oldSelection].sort());
+    const newSelectionSortedJSON = JSON.stringify([...newSelection].sort());
 
-    if (JSON.stringify(oldSelectionSorted) === JSON.stringify(newSelectionSorted)) {
-      if (toastMessage && newSelection.length === 1 && oldSelection.length === 1 && oldSelection[0] === newSelection[0]) {
-         // No change, but might have clicked the same item
-      } else if (toastMessage) {
-        setSelectedEquipmentTags(newSelection); // Reflect state even if command isn't strictly needed for history
+    if (oldSelectionSortedJSON === newSelectionSortedJSON) {
+      console.log("[useEquipmentSelectionManager] No actual change in selection, skipping command.");
+      // Mesmo que não haja mudança "lógica", o estado pode precisar ser refletido se houve um clique
+      // que resultou no mesmo estado (ex: clicar em item já selecionado).
+      // Se o toastMessage foi definido, ainda pode ser útil, mas o comando de histórico não é necessário.
+      if (toastMessage && !(newSelection.length === 0 && oldSelection.length === 0)) {
+         //  toast({ title: "Seleção", description: toastMessage }); // Considerar se o toast é necessário sem comando
+      }
+      // Importante: se a newSelection for diferente de selectedEquipmentTags,
+      // mesmo que o JSON ordenado seja igual (caso raro, mas possível se a ordem mudar mas os itens não),
+      // precisamos chamar setSelectedEquipmentTags.
+      // No entanto, a lógica atual já garante que isso não aconteça se os arrays são idênticos.
+      // A principal razão para pular o comando é se a seleção é verdadeiramente idêntica.
+      if(selectedEquipmentTags !== newSelection && JSON.stringify(selectedEquipmentTags.sort()) !== newSelectionSortedJSON){
+         // Isso é um caso de borda, mas para garantir que a UI reflita, mesmo sem comando:
+         // setSelectedEquipmentTags(newSelection); // Isso seria sem histórico.
+         // É melhor deixar o comando lidar com isso se houver uma mudança real.
       }
       return;
     }
 
+
     const commandDescription = toastMessage ||
-                               (newSelection.length > 0 ? `Selecionados ${newSelection.length} equipamento(s).` : "Seleção limpa.");
+                               (newSelection.length > 0 ? `Selecionados ${newSelection.length} equipamento(s).` : (oldSelection.length > 0 ? "Seleção limpa." : "Nenhuma seleção."));
+    
+    console.log("[useEquipmentSelectionManager] Creating command with description:", commandDescription);
 
     const command: Command = {
       id: `select-equipment-${Date.now()}`,
       type: 'EQUIPMENT_SELECT',
       description: commandDescription,
       execute: () => {
+        console.log("[useEquipmentSelectionManager Command] Executing selection change to:", newSelection);
         setSelectedEquipmentTags(newSelection);
-        toast({ title: "Seleção", description: commandDescription });
+        if(commandDescription !== "Nenhuma seleção.") { // Evita toast se nada foi selecionado e nada estava selecionado
+            toast({ title: "Seleção", description: commandDescription });
+        }
       },
       undo: () => {
+        console.log("[useEquipmentSelectionManager Command] Undoing selection change to:", oldSelection);
         setSelectedEquipmentTags(oldSelection);
-        toast({ title: "Seleção Desfeita", description: `Seleção anterior com ${oldSelection.length} itens restaurada.`});
+        const undoDescription = oldSelection.length > 0 ? `Seleção anterior com ${oldSelection.length} itens restaurada.` : "Histórico de seleção limpo.";
+        toast({ title: "Seleção Desfeita", description: undoDescription });
       },
     };
     executeCommand(command);
 
-  }, [selectedEquipmentTags, executeCommand, toast, equipmentData]);
+  }, [selectedEquipmentTags, equipmentData, executeCommand, toast]);
 
   /**
    * Define diretamente a tag do equipamento sob o cursor.
    * @param {string | null} tag A tag do equipamento, ou null se nenhum estiver sob o cursor.
    */
   const handleSetHoveredEquipmentTag = useCallback((tag: string | null) => {
+    // console.log(`[useEquipmentSelectionManager] handleSetHoveredEquipmentTag called with tag: ${tag}`);
     setHoveredEquipmentTag(tag);
   }, []);
 
@@ -148,25 +181,33 @@ export function useEquipmentSelectionManager({
    * @param {string} [operationDescription] - Descrição opcional para o comando no histórico.
    */
   const selectTagsBatch = useCallback((tagsToSelect: string[], operationDescription?: string) => {
+    console.log(`[useEquipmentSelectionManager] selectTagsBatch called with tags:`, tagsToSelect);
     const oldSelection = [...selectedEquipmentTags];
-    const newSelection = [...tagsToSelect].sort();
+    // Garantir que não haja duplicatas e ordenar para comparação consistente
+    const newSelection = [...new Set(tagsToSelect)].sort();
 
     if (JSON.stringify(oldSelection.sort()) === JSON.stringify(newSelection)) {
+      console.log("[useEquipmentSelectionManager] selectTagsBatch: No actual change in selection, skipping command.");
       return;
     }
 
     const desc = operationDescription || `Selecionados ${newSelection.length} equipamentos em lote.`;
+    console.log("[useEquipmentSelectionManager] selectTagsBatch: Creating command with description:", desc);
+
     const command: Command = {
       id: `batch-select-equipment-${Date.now()}`,
       type: 'EQUIPMENT_SELECT',
       description: desc,
       execute: () => {
+        console.log("[useEquipmentSelectionManager Command] Executing batch selection change to:", newSelection);
         setSelectedEquipmentTags(newSelection);
         toast({ title: "Seleção em Lote", description: desc });
       },
       undo: () => {
+        console.log("[useEquipmentSelectionManager Command] Undoing batch selection change to:", oldSelection);
         setSelectedEquipmentTags(oldSelection);
-        toast({ title: "Seleção em Lote Desfeita", description: `Seleção anterior com ${oldSelection.length} itens restaurada.` });
+        const undoDescription = `Seleção em lote anterior com ${oldSelection.length} itens restaurada.`;
+        toast({ title: "Seleção em Lote Desfeita", description: undoDescription });
       },
     };
     executeCommand(command);
@@ -181,5 +222,3 @@ export function useEquipmentSelectionManager({
     selectTagsBatch,
   };
 }
-
-    

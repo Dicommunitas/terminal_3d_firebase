@@ -1,3 +1,4 @@
+
 /**
  * @fileoverview Componente principal da página da aplicação Terminal 3D.
  * Orquestra os diversos hooks de gerenciamento de estado e renderiza a interface do usuário,
@@ -6,7 +7,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from 'react';
-import type { Equipment, Layer, Command, CameraState, Annotation, ColorMode } from '@/lib/types';
+import type { Equipment, Layer, Command, CameraState, Annotation, ColorMode } from '@/lib/types'; // ColorMode precisa ser importado
 import { useCommandHistory } from '@/hooks/use-command-history';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
@@ -24,7 +25,7 @@ import { useLayerManager } from '@/hooks/use-layer-manager';
 import { MainSceneArea } from '@/components/main-scene-area';
 import { SidebarContentLayout } from '@/components/sidebar-content-layout';
 import { AnnotationDialog } from '@/components/annotation-dialog';
-import ThreeScene from '@/components/three-scene'; // Default import
+// ThreeScene é importado por MainSceneArea
 
 /**
  * Componente principal da página Terminal 3D (Terminal3DPage).
@@ -63,7 +64,7 @@ export default function Terminal3DPage(): JSX.Element {
   const {
     currentCameraState,
     targetSystemToFrame,
-    handleSetCameraViewForSystem,
+    handleSetCameraViewForSystem, // Renomeado no hook
     handleCameraChangeFromScene,
     onSystemFramed,
   } = useCameraManager({ executeCommand });
@@ -95,9 +96,9 @@ export default function Terminal3DPage(): JSX.Element {
   const {
     selectedEquipmentTags,
     hoveredEquipmentTag,
-    handleEquipmentClick,
-    handleSetHoveredEquipmentTag,
-    selectTagsBatch,
+    handleEquipmentClick, // Renomeado no hook
+    handleSetHoveredEquipmentTag, // Renomeado no hook
+    selectTagsBatch, // Renomeado no hook
   } = useEquipmentSelectionManager({ equipmentData, executeCommand });
 
   const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
@@ -117,7 +118,7 @@ export default function Terminal3DPage(): JSX.Element {
    * @param {string} systemName - O nome do sistema para focar e selecionar.
    */
   const handleFocusAndSelectSystem = useCallback((systemName: string) => {
-    // console.log(`[Page] Focusing and selecting system: ${systemName}`);
+    console.log(`[Page] Focusing and selecting system: ${systemName}`);
     handleSetCameraViewForSystem(systemName); // Do useCameraManager
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
@@ -186,10 +187,8 @@ export default function Terminal3DPage(): JSX.Element {
 
 
   return (
-    <SidebarProvider defaultOpen={false}> {/* Sidebar começa fechada por padrão */}
-      <div className="h-screen w-full flex flex-col relative"> {/* Div principal que ocupa toda a tela */}
-
-        {/* Área da Cena 3D e InfoPanel sobreposto */}
+    <SidebarProvider defaultOpen={false}>
+      <div className="h-screen w-full flex flex-col relative">
         <MainSceneArea
           equipment={filteredEquipment}
           layers={layers}
@@ -215,17 +214,14 @@ export default function Terminal3DPage(): JSX.Element {
           availableProductsList={availableProductsList}
         />
 
-        {/* Botão de trigger da Sidebar (sempre visível, posicionado sobre a cena) */}
-        {/* Este botão controla a abertura/fechamento da sidebar off-canvas */}
-        <div className="absolute top-4 left-4 z-30"> {/* z-index maior que o ThreeScene, menor que a Sidebar */}
+        <div className="absolute top-4 left-4 z-30">
           <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
             <PanelLeft />
           </SidebarTrigger>
         </div>
       </div>
 
-      {/* Sidebar Off-Canvas */}
-      <Sidebar collapsible="offcanvas" className="border-r z-40"> {/* z-index maior que o trigger */}
+      <Sidebar collapsible="offcanvas" className="border-r z-40">
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-1">
@@ -246,7 +242,6 @@ export default function Terminal3DPage(): JSX.Element {
                 <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
-            {/* O botão de fechar (X) é gerenciado pelo componente Sidebar/Sheet */}
           </SidebarHeader>
           <SidebarContentLayout
             searchTerm={searchTerm}
