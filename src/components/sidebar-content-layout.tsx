@@ -2,21 +2,21 @@
 /**
  * @fileoverview Componente para renderizar o conteúdo principal da sidebar.
  * Inclui os controles de filtro (busca por texto, sistema, área), o seletor de modo de coloração,
- * e o gerenciador de camadas de visibilidade.
+ * o gerenciador de camadas de visibilidade e os controles de câmera ("Focus on System").
  */
 "use client";
 
 import type { ColorMode, Layer } from '@/lib/types';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LayerManager } from "@/components/layer-manager";
 import { ColorModeSelector } from "@/components/color-mode-selector";
-// CameraControlsPanel não é mais usado aqui
-import { XIcon } from "lucide-react";
+import { CameraControlsPanel } from "@/components/camera-controls-panel"; // Restaurado
+import { XIcon, SearchIcon } from "lucide-react"; // SearchIcon adicionado para o Card de busca
 
 /**
  * Props para o componente SidebarContentLayout.
@@ -33,6 +33,8 @@ import { XIcon } from "lucide-react";
  * @property {(mode: ColorMode) => void} onColorModeChange - Função para atualizar o modo de colorização.
  * @property {Layer[]} layers - Lista de camadas para o LayerManager.
  * @property {(layerId: string) => void} onToggleLayer - Função para alternar a visibilidade de uma camada.
+ * @property {string[]} cameraViewSystems - Lista de nomes de sistemas para o CameraControlsPanel.
+ * @property {(systemName: string) => void} onFocusAndSelectSystem - Callback para focar e selecionar um sistema.
  */
 interface SidebarContentLayoutProps {
   searchTerm: string;
@@ -47,6 +49,8 @@ interface SidebarContentLayoutProps {
   onColorModeChange: (mode: ColorMode) => void;
   layers: Layer[];
   onToggleLayer: (layerId: string) => void;
+  cameraViewSystems: string[];
+  onFocusAndSelectSystem: (systemName: string) => void;
 }
 
 /**
@@ -68,12 +72,20 @@ export function SidebarContentLayout({
   onColorModeChange,
   layers,
   onToggleLayer,
+  cameraViewSystems,
+  onFocusAndSelectSystem,
 }: SidebarContentLayoutProps): JSX.Element {
   return (
     <ScrollArea className="h-full flex-1">
       <div className="p-4 space-y-6 pb-6">
         <Card className="shadow-md">
-          <CardContent className="pt-4 p-3 space-y-3"> {/* pt-4 para compensar ausência de CardHeader explícito */}
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <SearchIcon className="mr-2 h-5 w-5" />
+              Filtrar e Buscar
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
             <div>
               <Label htmlFor="search-equipment" className="text-xs text-muted-foreground">
                 Busca (Nome, Tipo, TAG)
@@ -144,8 +156,9 @@ export function SidebarContentLayout({
           onColorModeChange={onColorModeChange}
         />
         <LayerManager layers={layers} onToggleLayer={onToggleLayer} />
-        {/* CameraControlsPanel foi removido daqui */}
+        <CameraControlsPanel systems={cameraViewSystems} onSetView={onFocusAndSelectSystem} /> {/* Restaurado */}
       </div>
     </ScrollArea>
   );
 }
+

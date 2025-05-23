@@ -7,7 +7,7 @@
  */
 "use client";
 
-import { useMemo, useState, useCallback } from 'react'; // Ensured useState, useMemo, useCallback are imported
+import { useMemo, useState, useCallback } from 'react';
 import type { Equipment, Layer, Command, CameraState, Annotation, ColorMode } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
@@ -47,7 +47,7 @@ export default function Terminal3DPage(): JSX.Element {
   const {
     currentCameraState,
     targetSystemToFrame,
-    handleSetCameraViewForSystem,
+    handleSetCameraViewForSystem, // Necessário para handleFocusAndSelectSystem
     handleCameraChangeFromScene,
     onSystemFramed,
   } = useCameraManager({ executeCommand });
@@ -81,11 +81,19 @@ export default function Terminal3DPage(): JSX.Element {
     hoveredEquipmentTag,
     handleEquipmentClick,
     handleSetHoveredEquipmentTag,
-    selectTagsBatch,
+    selectTagsBatch, // Necessário para handleFocusAndSelectSystem
   } = useEquipmentSelectionManager({ equipmentData, executeCommand });
 
   const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
+
+  /**
+   * Lista de sistemas únicos disponíveis para o painel de controle da câmera.
+   * Exclui "All" se estiver presente em `availableSistemas`.
+   */
+  const cameraViewSystems = useMemo(() => {
+    return availableSistemas.filter(s => s !== 'All');
+  }, [availableSistemas]);
 
   /**
    * Manipula a ação de focar a câmera em um sistema e selecionar todos os equipamentos desse sistema.
@@ -199,7 +207,6 @@ export default function Terminal3DPage(): JSX.Element {
               <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Desfazer" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Undo2Icon className="h-5 w-5" />
               </Button>
-              {/* Texto "Terminal 3D" agora é o trigger para fechar/abrir a sidebar de dentro dela */}
               <SidebarTrigger
                 asChild
                 variant="ghost"
@@ -214,7 +221,6 @@ export default function Terminal3DPage(): JSX.Element {
                 <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
-            {/* Botão para fechar a sidebar de dentro dela */}
              <SidebarTrigger asChild variant="ghost" size="icon" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <PanelLeftClose />
             </SidebarTrigger>
@@ -232,6 +238,8 @@ export default function Terminal3DPage(): JSX.Element {
             onColorModeChange={setColorMode}
             layers={layers}
             onToggleLayer={handleToggleLayer}
+            cameraViewSystems={cameraViewSystems}
+            onFocusAndSelectSystem={handleFocusAndSelectSystem}
           />
         </div>
       </Sidebar>
