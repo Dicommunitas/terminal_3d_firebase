@@ -15,8 +15,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LayerManager } from "@/components/layer-manager";
 import { ColorModeSelector } from "@/components/color-mode-selector";
-import { CameraControlsPanel } from "@/components/camera-controls-panel"; // Restaurado
-import { XIcon, SearchIcon } from "lucide-react"; // SearchIcon adicionado para o Card de busca
+import { CameraControlsPanel } from "@/components/camera-controls-panel";
+import { XIcon, SearchIcon, FilterIcon } from "lucide-react";
 
 /**
  * Props para o componente SidebarContentLayout.
@@ -78,10 +78,12 @@ export function SidebarContentLayout({
   return (
     <ScrollArea className="h-full flex-1">
       <div className="p-4 space-y-6 pb-6">
+        <CameraControlsPanel systems={cameraViewSystems} onSetView={onFocusAndSelectSystem} />
+
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center text-lg">
-              <SearchIcon className="mr-2 h-5 w-5" />
+              <FilterIcon className="mr-2 h-5 w-5" />
               Filtrar e Buscar
             </CardTitle>
           </CardHeader>
@@ -97,7 +99,7 @@ export function SidebarContentLayout({
                   placeholder="Buscar equipamentos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-8" // Espaço para o botão de limpar
+                  className="pr-8"
                 />
                 {searchTerm && (
                   <Button
@@ -156,9 +158,7 @@ export function SidebarContentLayout({
           onColorModeChange={onColorModeChange}
         />
         <LayerManager layers={layers} onToggleLayer={onToggleLayer} />
-        <CameraControlsPanel systems={cameraViewSystems} onSetView={onFocusAndSelectSystem} /> {/* Restaurado */}
       </div>
     </ScrollArea>
   );
 }
-
