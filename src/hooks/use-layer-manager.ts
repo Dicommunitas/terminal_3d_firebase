@@ -12,7 +12,7 @@
 
 import { useState, useCallback } from 'react';
 import type { Layer, Command } from '@/lib/types';
-import { initialLayers } from '@/core/data/initial-data'; // Importa as camadas iniciais
+import { initialLayers } from '@/core/data/initial-data';
 
 /**
  * Props para o hook useLayerManager.
@@ -35,7 +35,9 @@ export interface UseLayerManagerReturn {
 }
 
 /**
- * Hook customizado para gerenciar o estado das camadas e sua visibilidade.
+ * Hook customizado para gerenciar o estado das camadas de visibilidade e sua manipulação.
+ * Inicializa as camadas com `initialLayers` e permite alternar sua visibilidade,
+ * registrando a ação no histórico de comandos.
  * @param {UseLayerManagerProps} props As props do hook, incluindo `executeCommand`.
  * @returns {UseLayerManagerReturn} Um objeto contendo o estado das camadas e a função para alternar sua visibilidade.
  */
@@ -50,27 +52,24 @@ export function useLayerManager({ executeCommand }: UseLayerManagerProps): UseLa
   const handleToggleLayer = useCallback((layerId: string) => {
     const layerIndex = layers.findIndex(l => l.id === layerId);
     if (layerIndex === -1) {
-      // console.warn(`[useLayerManager] Layer with id "${layerId}" not found.`);
       return;
     }
 
-    const oldLayersState = layers.map(l => ({ ...l })); // Clona para o estado de undo
+    const oldLayersState = layers.map(l => ({ ...l }));
     const newLayersState = layers.map(l =>
       l.id === layerId ? { ...l, isVisible: !l.isVisible } : { ...l }
     );
 
     const commandDescription = `Visibilidade da camada "${oldLayersState[layerIndex].name}" ${newLayersState[layerIndex].isVisible ? 'ativada' : 'desativada'}`;
-    
+
     const command: Command = {
       id: `toggle-layer-${layerId}-${Date.now()}`,
       type: 'LAYER_VISIBILITY',
       description: commandDescription,
       execute: () => {
-        // console.log(`[useLayerManager Command] Execute: ${commandDescription}`);
         setLayers(newLayersState);
       },
       undo: () => {
-        // console.log(`[useLayerManager Command] Undo: ${commandDescription}`);
         setLayers(oldLayersState);
       },
     };
@@ -79,3 +78,5 @@ export function useLayerManager({ executeCommand }: UseLayerManagerProps): UseLa
 
   return { layers, handleToggleLayer };
 }
+
+    

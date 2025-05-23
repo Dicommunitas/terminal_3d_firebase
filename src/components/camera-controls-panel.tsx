@@ -23,10 +23,11 @@ interface CameraControlsPanelProps {
 
 /**
  * Renderiza um painel com botões para focar a câmera em sistemas específicos.
+ * Cada botão representa um sistema; ao clicar, a câmera enquadra os equipamentos desse sistema.
  * @param {CameraControlsPanelProps} props As props do componente.
  * @returns {JSX.Element} O componente CameraControlsPanel.
  */
-export function CameraControlsPanel({ systems, onSetView }: CameraControlsPanelProps) {
+export function CameraControlsPanel({ systems, onSetView }: CameraControlsPanelProps): JSX.Element {
   return (
     <Card className="shadow-md">
       <CardHeader>
@@ -56,3 +57,5 @@ export function CameraControlsPanel({ systems, onSetView }: CameraControlsPanelP
     </Card>
   );
 }
+
+    

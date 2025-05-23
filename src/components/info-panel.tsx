@@ -2,6 +2,7 @@
 /**
  * @fileoverview Componente para exibir o painel de informações detalhadas de um equipamento selecionado.
  * Permite visualizar atributos, alterar estado operacional, produto e gerenciar anotações.
+ * Renderiza apenas se um único equipamento estiver selecionado.
  */
 "use client";
 
@@ -43,19 +44,19 @@ interface InfoPanelProps {
  * Renderiza um painel flutuante com informações detalhadas sobre o equipamento selecionado.
  * Mostra detalhes apenas se um único equipamento estiver selecionado.
  * @param {InfoPanelProps} props As props do componente.
- * @returns {JSX.Element | null} O componente InfoPanel ou null se nenhum equipamento estiver selecionado.
+ * @returns {JSX.Element | null} O componente InfoPanel ou null se nenhum equipamento único estiver selecionado.
  */
-export function InfoPanel({ 
-  equipment, 
-  annotation, 
-  onClose, 
-  onOpenAnnotationDialog, 
+export function InfoPanel({
+  equipment,
+  annotation,
+  onClose,
+  onOpenAnnotationDialog,
   onDeleteAnnotation,
   onOperationalStateChange,
   availableOperationalStatesList,
   onProductChange,
-  availableProductsList 
-}: InfoPanelProps) {
+  availableProductsList
+}: InfoPanelProps): JSX.Element | null {
   if (!equipment) return null;
 
   /**
@@ -66,7 +67,7 @@ export function InfoPanel({
       onDeleteAnnotation(equipment.tag);
     }
   };
-  
+
   /**
    * Formata a data de criação/modificação da anotação.
    * @type {string | null}
@@ -90,7 +91,7 @@ export function InfoPanel({
           TAG: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{equipment.tag}</span>
         </p>
         <p className="text-sm">Tipo: {equipment.type}</p>
-        
+
         {equipment.sistema && (
           <p className="text-sm flex items-center">
             <Settings2Icon className="mr-1.5 h-3.5 w-3.5 text-muted-foreground" />
@@ -103,7 +104,7 @@ export function InfoPanel({
             Área: {equipment.area}
           </p>
         )}
-        
+
         {equipment.product && (
           <div className="space-y-1 text-sm">
             <Label htmlFor={`product-select-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground">
@@ -155,11 +156,11 @@ export function InfoPanel({
 
         {equipment.details && (
           <div className="text-sm pt-2">
-            <div className="flex items-center text-muted-foreground">
+            <Label htmlFor={`details-text-${equipment.tag}`} className="flex items-center text-xs font-normal text-muted-foreground">
               <FileTextIcon className="mr-1.5 h-3.5 w-3.5" />
-              <span>Detalhes:</span>
-            </div>
-            <p className="italic pl-5 text-xs">{equipment.details}</p>
+              Detalhes:
+            </Label>
+            <p id={`details-text-${equipment.tag}`} className="italic pl-5 text-xs">{equipment.details}</p>
           </div>
         )}
         <Separator className="my-3"/>
@@ -192,3 +193,5 @@ export function InfoPanel({
     </Card>
   );
 }
+
+    

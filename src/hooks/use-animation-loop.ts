@@ -4,7 +4,9 @@
  *
  * Responsabilidades:
  * - Encapsular a lógica de `requestAnimationFrame` para renderizar a cena continuamente.
- * - Atualizar controles de órbita e renderizar o composer principal e o renderizador de rótulos 2D.
+ * - Atualizar controles de órbita (se habilitados e presentes).
+ * - Renderizar o composer principal (para pós-processamento) e o renderizador de rótulos 2D (se presentes).
+ * - Iniciar o loop apenas quando a cena estiver pronta e os refs necessários estiverem disponíveis.
  */
 import type * as THREE from 'three';
 import { useEffect, type RefObject } from 'react';
@@ -35,6 +37,7 @@ interface UseAnimationLoopProps {
  * Hook customizado para gerenciar o loop de animação de uma cena Three.js.
  * Ele configura e executa o `requestAnimationFrame` para renderizar a cena
  * e atualizar os controles, o composer e o renderizador de rótulos.
+ * O loop só é iniciado quando `isSceneReady` é verdadeiro e todos os refs necessários estão populados.
  *
  * @param {UseAnimationLoopProps} props - As props necessárias para o loop de animação.
  */
@@ -61,13 +64,17 @@ export function useAnimationLoop({
 
     let animationFrameId: number;
 
+    /**
+     * Função de animação chamada recursivamente via requestAnimationFrame.
+     * Atualiza controles e renderiza a cena.
+     */
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      controls.update(); 
-      composer.render(); 
-      labelRenderer.render(scene, camera); 
+      if (controls.enabled) controls.update(); // Atualiza apenas se habilitado
+      composer.render();
+      labelRenderer.render(scene, camera);
     };
-    
+
     // console.log('[AnimationLoop] Starting animation loop.');
     animate();
 

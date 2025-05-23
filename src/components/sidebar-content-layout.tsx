@@ -1,7 +1,8 @@
 
 /**
  * @fileoverview Componente para renderizar o conteúdo principal da sidebar.
- * Inclui os controles de filtro, gerenciamento de camadas, modo de colorização e visualizações de câmera.
+ * Inclui os controles de filtro (busca por texto, sistema, área), o seletor de modo de coloração,
+ * o gerenciador de camadas de visibilidade e os controles de câmera para focar em sistemas.
  */
 "use client";
 
@@ -15,12 +16,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { LayerManager } from "@/components/layer-manager";
 import { ColorModeSelector } from "@/components/color-mode-selector";
 import { CameraControlsPanel } from "@/components/camera-controls-panel";
-import { XIcon, SearchIcon } from "lucide-react";
+import { XIcon } from "lucide-react"; // SearchIcon não é mais usado aqui
 
 /**
  * Props para o componente SidebarContentLayout.
  * @interface SidebarContentLayoutProps
- * @property {string} searchTerm - O termo de busca atual.
+ * @property {string} searchTerm - O termo de busca textual atual.
  * @property {(value: string) => void} setSearchTerm - Função para atualizar o termo de busca.
  * @property {string} selectedSistema - O sistema selecionado para filtro.
  * @property {(value: string) => void} setSelectedSistema - Função para atualizar o sistema selecionado.
@@ -54,6 +55,7 @@ interface SidebarContentLayoutProps {
 
 /**
  * Renderiza o layout do conteúdo da sidebar, incluindo filtros e painéis de controle.
+ * Utiliza uma ScrollArea para permitir a rolagem do conteúdo se ele exceder a altura da sidebar.
  * @param {SidebarContentLayoutProps} props As props do componente.
  * @returns {JSX.Element} O componente SidebarContentLayout.
  */
@@ -76,8 +78,8 @@ export function SidebarContentLayout({
   return (
     <ScrollArea className="h-full flex-1">
       <div className="p-4 space-y-6 pb-6">
-        <Card>
-          <CardContent className="pt-4 p-3 space-y-3">
+        <Card className="shadow-md">
+          <CardContent className="pt-4 p-3 space-y-3"> {/* pt-4 para compensar ausência de CardHeader explícito */}
             <div>
               <Label htmlFor="search-equipment" className="text-xs text-muted-foreground">
                 Busca (Nome, Tipo, TAG)
@@ -89,7 +91,7 @@ export function SidebarContentLayout({
                   placeholder="Buscar equipamentos..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pr-8"
+                  className="pr-8" // Espaço para o botão de limpar
                 />
                 {searchTerm && (
                   <Button
@@ -156,3 +158,5 @@ export function SidebarContentLayout({
     </ScrollArea>
   );
 }
+
+    

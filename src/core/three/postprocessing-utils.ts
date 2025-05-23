@@ -4,17 +4,62 @@
  * para a cena Three.js, especificamente o EffectComposer e o OutlinePass.
  *
  * Responsabilidades:
- * - Inicializar o EffectComposer com o renderizador principal.
- * - Configurar o RenderPass (passo de renderização base da cena).
- * - Configurar o OutlinePass (para efeitos de contorno/aura), incluindo seus parâmetros iniciais.
- * - Fornecer uma função para atualizar o tamanho do composer e do outline pass quando a janela é redimensionada.
- * - Fornecer funções para definir os objetos que devem ser contornados pelo OutlinePass e aplicar estilos visuais.
- * - Encapsular a lógica de atualização do efeito de contorno com base nos equipamentos selecionados ou em hover.
+ * - Configurar o `EffectComposer` com o `RenderPass` base.
+ * - Configurar o `OutlinePass` para efeitos de contorno/aura.
+ * - Fornecer funções para atualizar o tamanho do composer e do outline pass.
+ * - Fornecer uma função (`updateOutlineEffect`) para dinamicamente definir os objetos a serem
+ *   contornados e aplicar estilos visuais (seleção, hover) ao OutlinePass.
+ *
+ * Exporta:
+ * - `setupPostProcessing`: Para configurar o pipeline inicial.
+ * - `updatePostProcessingSize`: Para atualizar o tamanho em redimensionamentos.
+ * - `updateOutlineEffect`: Para aplicar dinamicamente o efeito de contorno.
+ * - (Funções auxiliares internas: `setOutlinePassObjects`, `applyOutlinePassStyle`)
  */
 import * as THREE from 'three';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { OutlinePass } from 'three/examples/jsm/postprocessing/OutlinePass.js';
+
+/**
+ * Define os objetos que devem ser contornados pelo OutlinePass.
+ * @param {OutlinePass} outlinePass A instância do OutlinePass.
+ * @param {THREE.Object3D[]} objectsToOutline Um array de objetos 3D a serem contornados.
+ */
+function setOutlinePassObjects(outlinePass: OutlinePass, objectsToOutline: THREE.Object3D[]): void {
+  outlinePass.selectedObjects = objectsToOutline;
+}
+
+/**
+ * Aplica um estilo visual específico ao OutlinePass.
+ * Modifica parâmetros como cor da borda visível, força, espessura e brilho.
+ * @param {OutlinePass} outlinePass A instância do OutlinePass.
+ * @param {'selected' | 'hover' | 'none'} styleType O tipo de estilo a ser aplicado.
+ */
+function applyOutlinePassStyle(outlinePass: OutlinePass, styleType: 'selected' | 'hover' | 'none'): void {
+  outlinePass.pulsePeriod = 0; // Garante que não haja pulsação indesejada
+
+  switch (styleType) {
+    case 'selected':
+      outlinePass.visibleEdgeColor.set('#0000FF'); // Azul forte
+      outlinePass.edgeStrength = 6.0; // Aumentado para mais visibilidade
+      outlinePass.edgeThickness = 1.5;
+      outlinePass.edgeGlow = 0.5;
+      break;
+    case 'hover':
+      outlinePass.visibleEdgeColor.set('#87CEFA'); // LightSkyBlue
+      outlinePass.edgeStrength = 4.0; // Aumentado para mais visibilidade
+      outlinePass.edgeThickness = 1.2;
+      outlinePass.edgeGlow = 0.3;
+      break;
+    case 'none':
+    default:
+      outlinePass.edgeStrength = 0;
+      outlinePass.edgeGlow = 0;
+      outlinePass.edgeThickness = 0;
+      break;
+  }
+}
 
 /**
  * Configura o pipeline de pós-processamento, incluindo o EffectComposer e o OutlinePass.
@@ -37,13 +82,12 @@ export function setupPostProcessing(
   composer.addPass(renderPass);
 
   const outlinePass = new OutlinePass(new THREE.Vector2(initialWidth, initialHeight), scene, camera);
-  // Parâmetros iniciais do OutlinePass
-  outlinePass.edgeStrength = 0; // Começa desabilitado
+  outlinePass.edgeStrength = 0;
   outlinePass.edgeGlow = 0.0;
   outlinePass.edgeThickness = 1.0;
-  outlinePass.visibleEdgeColor.set('#ffffff'); // Cor padrão, será sobrescrita
+  outlinePass.visibleEdgeColor.set('#ffffff');
   outlinePass.hiddenEdgeColor.set('#190a05');
-  outlinePass.pulsePeriod = 0; // Desabilita a pulsação padrão
+  outlinePass.pulsePeriod = 0;
   composer.addPass(outlinePass);
 
   return { composer, outlinePass };
@@ -68,46 +112,6 @@ export function updatePostProcessingSize(
 }
 
 /**
- * Define os objetos que devem ser contornados pelo OutlinePass.
- * @param {OutlinePass} outlinePass A instância do OutlinePass.
- * @param {THREE.Object3D[]} objectsToOutline Um array de objetos 3D a serem contornados.
- */
-function setOutlinePassObjects(outlinePass: OutlinePass, objectsToOutline: THREE.Object3D[]): void {
-  outlinePass.selectedObjects = objectsToOutline;
-}
-
-/**
- * Aplica um estilo visual específico ao OutlinePass.
- * Modifica parâmetros como cor da borda visível, força, espessura e brilho.
- * @param {OutlinePass} outlinePass A instância do OutlinePass.
- * @param {'selected' | 'hover' | 'none'} styleType O tipo de estilo a ser aplicado.
- */
-function applyOutlinePassStyle(outlinePass: OutlinePass, styleType: 'selected' | 'hover' | 'none'): void {
-  outlinePass.pulsePeriod = 0; // Garante que não haja pulsação indesejada
-
-  switch (styleType) {
-    case 'selected':
-      outlinePass.visibleEdgeColor.set('#0000FF'); // Azul forte
-      outlinePass.edgeStrength = 10.0;
-      outlinePass.edgeThickness = 2.0;
-      outlinePass.edgeGlow = 0.7;
-      break;
-    case 'hover':
-      outlinePass.visibleEdgeColor.set('#87CEFA'); // LightSkyBlue
-      outlinePass.edgeStrength = 7.0;
-      outlinePass.edgeThickness = 1.5;
-      outlinePass.edgeGlow = 0.5;
-      break;
-    case 'none':
-    default:
-      outlinePass.edgeStrength = 0;
-      outlinePass.edgeGlow = 0;
-      outlinePass.edgeThickness = 0;
-      break;
-  }
-}
-
-/**
  * Atualiza o efeito de contorno (OutlinePass) com base nos equipamentos selecionados e em hover.
  * Determina quais objetos contornar e qual estilo aplicar.
  * @param {OutlinePass | null} outlinePass A instância do OutlinePass.
@@ -122,7 +126,6 @@ export function updateOutlineEffect(
   hoveredTag: string | null
 ): void {
   if (!outlinePass) {
-    // console.log('[PostProcessingUtils updateOutlineEffect] SKIPPING: OutlinePass not ready.');
     return;
   }
 
@@ -130,14 +133,13 @@ export function updateOutlineEffect(
   const meshesToConsider = allMeshes.filter(mesh => mesh.visible);
   let styleType: 'selected' | 'hover' | 'none' = 'none';
 
-  // console.log(`[PostProcessingUtils updateOutlineEffect] Input: selectedTags=${JSON.stringify(selectedTags)}, hoveredTag=${hoveredTag}, meshesToConsider=${meshesToConsider.length}`);
+  // console.log(`[PostProcessingUtils updateOutlineEffect] Input: selectedTags=${JSON.stringify(selectedTags)}, hoveredTag=${hoveredTag}`);
 
   if (Array.isArray(selectedTags) && selectedTags.length > 0) {
     selectedTags.forEach(tag => {
       const selectedMesh = meshesToConsider.find(mesh => mesh.userData.tag === tag);
       if (selectedMesh) {
         objectsToOutline.push(selectedMesh);
-        // console.log(`[PostProcessingUtils updateOutlineEffect] Adding SELECTED mesh to outline: ${tag}`);
       }
     });
     if (objectsToOutline.length > 0) {
@@ -146,19 +148,18 @@ export function updateOutlineEffect(
   }
 
   if (hoveredTag) {
-    const isAlreadySelected = Array.isArray(selectedTags) && selectedTags.includes(hoveredTag);
-    if (!isAlreadySelected) {
+    const isAlreadySelectedForOutline = objectsToOutline.some(obj => obj.userData.tag === hoveredTag);
+    if (!isAlreadySelectedForOutline) {
       const hoveredMesh = meshesToConsider.find(mesh => mesh.userData.tag === hoveredTag);
       if (hoveredMesh) {
         objectsToOutline.push(hoveredMesh);
-        // console.log(`[PostProcessingUtils updateOutlineEffect] Adding HOVERED mesh to outline: ${hoveredTag}`);
-        if (styleType !== 'selected') { 
+        if (styleType !== 'selected') { // Hover style only if not already styled as selected
           styleType = 'hover';
         }
       }
     }
   }
-  
+
   if (objectsToOutline.length === 0) {
     styleType = 'none';
   }
@@ -167,3 +168,5 @@ export function updateOutlineEffect(
   applyOutlinePassStyle(outlinePass, styleType);
   // console.log(`[PostProcessingUtils updateOutlineEffect] Style: ${styleType}. Outlining: ${objectsToOutline.map(o => o.userData.tag).join(', ') || 'None'}`);
 }
+
+    

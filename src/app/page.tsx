@@ -1,19 +1,18 @@
+
 /**
  * @fileoverview Componente principal da página da aplicação Terminal 3D.
  * Orquestra os diversos hooks de gerenciamento de estado (dados de equipamentos,
- * seleção, filtros, câmera, camadas, anotações, histórico de comandos) e renderiza
- * a interface do usuário, incluindo a cena 3D e a sidebar de controles.
+ * seleção, filtros, câmera, camadas, anotações, histórico de comandos, modo de cor)
+ * e renderiza a interface do usuário, incluindo a cena 3D e a sidebar de controles.
  */
 "use client";
 
 import { useMemo, useState, useCallback } from 'react'; // Ensured useState, useMemo, useCallback are imported
-import type { Annotation, ColorMode, Equipment } from '@/lib/types';
+import type { Equipment, Layer, Command, CameraState, Annotation, ColorMode } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
-import ThreeScene from '@/components/three-scene';
-import { AnnotationDialog } from '@/components/annotation-dialog';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Undo2Icon, Redo2Icon, PanelLeft } from 'lucide-react';
+import { Undo2Icon, Redo2Icon, PanelLeft, PanelLeftClose } from 'lucide-react';
 
 // Hooks de gerenciamento de estado
 import { useAnnotationManager } from '@/hooks/use-annotation-manager';
@@ -23,18 +22,19 @@ import { useEquipmentDataManager } from '@/hooks/use-equipment-data-manager';
 import { useCameraManager, defaultInitialCameraPosition, defaultInitialCameraLookAt } from '@/hooks/use-camera-manager';
 import { useLayerManager } from '@/hooks/use-layer-manager';
 
-// Layout Components
+// Componentes de Layout
 import { MainSceneArea } from '@/components/main-scene-area';
 import { SidebarContentLayout } from '@/components/sidebar-content-layout';
+import { AnnotationDialog } from '@/components/annotation-dialog';
 
 
 /**
  * Componente principal da página Terminal 3D.
  * Este componente integra todos os hooks de gerenciamento de estado e renderiza
- * a UI principal da aplicação.
+ * a UI principal da aplicação, gerenciando a comunicação entre a sidebar e a cena 3D.
  * @returns {JSX.Element} O componente da página Terminal 3D.
  */
-export default function Terminal3DPage() {
+export default function Terminal3DPage(): JSX.Element {
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
   const {
@@ -86,14 +86,22 @@ export default function Terminal3DPage() {
   const { layers, handleToggleLayer } = useLayerManager({ executeCommand });
   const [colorMode, setColorMode] = useState<ColorMode>('Equipamento');
 
+  /**
+   * Manipula a ação de focar a câmera em um sistema e selecionar todos os equipamentos desse sistema.
+   * @param {string} systemName - O nome do sistema para focar e selecionar.
+   */
   const handleFocusAndSelectSystem = useCallback((systemName: string) => {
-    handleSetCameraViewForSystem(systemName);
+    handleSetCameraViewForSystem(systemName); // Do useCameraManager
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`); // Do useEquipmentSelectionManager
   }, [equipmentData, handleSetCameraViewForSystem, selectTagsBatch]);
 
+  /**
+   * Deriva os detalhes do equipamento selecionado.
+   * Mostra detalhes apenas se um único equipamento estiver selecionado.
+   */
   const selectedEquipmentDetails = useMemo(() => {
     if (selectedEquipmentTags.length === 1) {
       const tag = selectedEquipmentTags[0];
@@ -102,6 +110,9 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentTags, equipmentData]);
 
+  /**
+   * Obtém a anotação para o equipamento atualmente selecionado (se houver um único selecionado).
+   */
   const equipmentAnnotation = useMemo(() => {
     if (selectedEquipmentDetails) {
       return getAnnotationForEquipment(selectedEquipmentDetails.tag);
@@ -109,6 +120,10 @@ export default function Terminal3DPage() {
     return null;
   }, [selectedEquipmentDetails, getAnnotationForEquipment]);
 
+  /**
+   * Lista de estados operacionais únicos disponíveis, derivada dos dados dos equipamentos.
+   * Usada para popular o dropdown de alteração de estado no InfoPanel.
+   */
   const availableOperationalStatesList = useMemo(() => {
     const states = new Set<string>();
     equipmentData.forEach(equip => {
@@ -122,6 +137,10 @@ export default function Terminal3DPage() {
     return sortedStates;
   }, [equipmentData]);
 
+  /**
+   * Lista de produtos únicos disponíveis, derivada dos dados dos equipamentos.
+   * Usada para popular o dropdown de alteração de produto no InfoPanel.
+   */
   const availableProductsList = useMemo(() => {
     const products = new Set<string>();
     equipmentData.forEach(equip => {
@@ -135,6 +154,9 @@ export default function Terminal3DPage() {
     return sortedProducts;
   }, [equipmentData]);
 
+  /**
+   * Lista de sistemas únicos disponíveis para os quais a câmera pode focar.
+   */
   const cameraViewSystems = useMemo(() => {
     const sistemas = new Set<string>();
     equipmentData.forEach(equip => {
@@ -144,8 +166,9 @@ export default function Terminal3DPage() {
   }, [equipmentData]);
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={false}> {/* Sidebar começa fechada por padrão */}
       <div className="h-screen w-full flex flex-col relative">
+        {/* Botão de trigger da Sidebar (visível em todas as telas, posicionado sobre a cena) */}
         <div className="absolute top-4 left-4 z-30">
           <SidebarTrigger asChild className="h-10 w-10 bg-card text-card-foreground hover:bg-accent hover:text-accent-foreground rounded-md shadow-lg p-2">
             <PanelLeft />
@@ -178,13 +201,14 @@ export default function Terminal3DPage() {
         />
       </div>
 
-      <Sidebar collapsible="offcanvas" className="border-r z-40">
+      <Sidebar collapsible="offcanvas" className="border-r z-40"> {/* Sidebar offcanvas sobrepõe a cena */}
         <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
           <SidebarHeader className="p-3 flex justify-between items-center border-b">
             <div className="flex items-center space-x-1">
               <Button variant="ghost" size="icon" onClick={undo} disabled={!canUndo} aria-label="Desfazer" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                 <Undo2Icon className="h-5 w-5" />
               </Button>
+              {/* Texto "Terminal 3D" agora é o trigger para fechar/abrir a sidebar de dentro dela */}
               <SidebarTrigger
                 asChild
                 variant="ghost"
@@ -199,6 +223,10 @@ export default function Terminal3DPage() {
                 <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
+            {/* Botão para fechar a sidebar de dentro dela */}
+             <SidebarTrigger asChild variant="ghost" size="icon" className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
+                <PanelLeftClose />
+            </SidebarTrigger>
           </SidebarHeader>
           <SidebarContentLayout
             searchTerm={searchTerm}
@@ -229,3 +257,5 @@ export default function Terminal3DPage() {
     </SidebarProvider>
   );
 }
+
+    

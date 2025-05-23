@@ -1,7 +1,8 @@
 
 /**
  * @fileOverview Componente para gerenciar a visibilidade das camadas de equipamentos e anotações.
- * Permite ao usuário ativar ou desativar a visualização de diferentes tipos de camadas na cena 3D.
+ * Renderiza um card com checkboxes para cada camada, permitindo ao usuário controlar
+ * o que é exibido na cena 3D.
  */
 "use client";
 
@@ -24,10 +25,11 @@ interface LayerManagerProps {
 
 /**
  * Renderiza um Card com checkboxes para controlar a visibilidade de cada camada.
+ * Cada checkbox corresponde a uma camada (e.g., Prédios, Tanques, Anotações).
  * @param {LayerManagerProps} props As props do componente.
  * @returns {JSX.Element} O componente gerenciador de camadas.
  */
-export function LayerManager({ layers, onToggleLayer }: LayerManagerProps) {
+export function LayerManager({ layers, onToggleLayer }: LayerManagerProps): JSX.Element {
   return (
     <Card className="shadow-md">
       <CardHeader>
@@ -54,3 +56,5 @@ export function LayerManager({ layers, onToggleLayer }: LayerManagerProps) {
     </Card>
   );
 }
+
+    

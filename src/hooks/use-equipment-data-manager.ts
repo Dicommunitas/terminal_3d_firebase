@@ -30,7 +30,9 @@ export interface UseEquipmentDataManagerReturn {
 }
 
 /**
- * Hook customizado para gerenciar os dados dos equipamentos.
+ * Hook customizado para gerenciar os dados dos equipamentos (a "fonte da verdade" dos equipamentos).
+ * Inicializa os dados com `initialEquipment` e fornece funções para modificar
+ * propriedades como estado operacional e produto.
  * @returns {UseEquipmentDataManagerReturn} Um objeto contendo os dados dos equipamentos e funções para modificá-los.
  */
 export function useEquipmentDataManager(): UseEquipmentDataManagerReturn {
@@ -49,9 +51,9 @@ export function useEquipmentDataManager(): UseEquipmentDataManagerReturn {
         equip.tag === equipmentTag ? { ...equip, operationalState: newState } : equip
       )
     );
-    const equip = equipmentData.find(e => e.tag === equipmentTag); // Encontra na lista antes da atualização para pegar o nome
+    const equip = equipmentData.find(e => e.tag === equipmentTag);
     toast({ title: "Estado Atualizado", description: `Estado de ${equip?.name || 'Equipamento'} alterado para ${newState}.` });
-  }, [equipmentData, toast]); // equipmentData como dependência para buscar o nome corretamente para o toast
+  }, [equipmentData, toast]);
 
   /**
    * Manipula a alteração do produto de um equipamento.
@@ -65,9 +67,9 @@ export function useEquipmentDataManager(): UseEquipmentDataManagerReturn {
         equip.tag === equipmentTag ? { ...equip, product: newProduct } : equip
       )
     );
-    const equip = equipmentData.find(e => e.tag === equipmentTag); // Encontra na lista antes da atualização
+    const equip = equipmentData.find(e => e.tag === equipmentTag);
     toast({ title: "Produto Atualizado", description: `Produto de ${equip?.name || 'Equipamento'} alterado para ${newProduct}.` });
-  }, [equipmentData, toast]); // equipmentData como dependência para buscar o nome corretamente para o toast
+  }, [equipmentData, toast]);
 
   return {
     equipmentData,
@@ -75,3 +77,5 @@ export function useEquipmentDataManager(): UseEquipmentDataManagerReturn {
     handleProductChange,
   };
 }
+
+    

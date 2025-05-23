@@ -4,8 +4,12 @@
  *
  * Responsabilidades:
  * - Definir a interface `EquipmentFilterCriteria` para os critérios de filtro.
- * - Exportar a função `getFilteredEquipment` que aplica os filtros de Sistema, Área e
+ * - Exportar a função `getFilteredEquipment` que aplica os filtros de Sistema, Área, e
  *   um termo de busca textual (verificando nome, tipo e tag do equipamento) de forma combinada.
+ *
+ * Exporta:
+ * - `EquipmentFilterCriteria`: Interface para os critérios de filtro.
+ * - `getFilteredEquipment`: Função para filtrar equipamentos.
  */
 import type { Equipment } from '@/lib/types';
 
@@ -37,7 +41,7 @@ export function getFilteredEquipment(
   criteria: EquipmentFilterCriteria
 ): Equipment[] {
   const { searchTerm, selectedSistema, selectedArea } = criteria;
-  let itemsToFilter = allEquipment;
+  let itemsToFilter = Array.isArray(allEquipment) ? allEquipment : [];
 
   // Filtra por Sistema
   if (selectedSistema !== 'All' && selectedSistema) {
@@ -55,9 +59,8 @@ export function getFilteredEquipment(
     itemsToFilter = itemsToFilter.filter(equip => {
       const name = equip.name.toLowerCase();
       const type = equip.type.toLowerCase();
-      const tag = equip.tag.toLowerCase(); // Anteriormente id, agora tag
+      const tag = equip.tag.toLowerCase(); // Usando 'tag' conforme atualizado
 
-      // Verifica se todos os termos de busca estão presentes em pelo menos um dos campos
       return searchTermsArray.every(term =>
         name.includes(term) ||
         type.includes(term) ||
@@ -67,3 +70,5 @@ export function getFilteredEquipment(
   }
   return itemsToFilter;
 }
+
+    

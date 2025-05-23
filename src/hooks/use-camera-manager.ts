@@ -7,8 +7,7 @@
  * - Manter o estado do sistema alvo para enquadramento (`targetSystemToFrame`).
  * - Fornecer funções para definir a visão da câmera para um sistema específico e lidar com mudanças de câmera
  *   iniciadas pelo usuário na cena 3D.
- * - Integrar mudanças de câmera (exceto foco em sistema, que é uma ação intencional diferente) com o
- *   histórico de comandos (`useCommandHistory`) para permitir undo/redo.
+ * - Integrar mudanças de câmera (exceto foco em sistema) com o histórico de comandos (`useCommandHistory`).
  * - Fornecer posições e alvos iniciais padrão para a câmera.
  */
 "use client";
@@ -36,7 +35,7 @@ interface UseCameraManagerProps {
  * @property {CameraState | undefined} currentCameraState - O estado atual da câmera (posição e ponto de observação).
  * @property {string | null} targetSystemToFrame - O nome do sistema alvo para a câmera enquadrar. Null se nenhum sistema estiver sendo focado.
  * @property {(systemName: string) => void} handleSetCameraViewForSystem - Define o sistema alvo para a câmera enquadrar.
- * @property {(newSceneCameraState: CameraState) => void} handleCameraChangeFromScene - Manipula mudanças de câmera provenientes da cena 3D (e.g., órbita do usuário) e as registra no histórico.
+ * @property {(newSceneCameraState: CameraState) => void} handleCameraChangeFromScene - Manipula mudanças de câmera provenientes da cena 3D e as registra no histórico.
  * @property {() => void} onSystemFramed - Callback para ser chamado pela ThreeScene após o enquadramento do sistema ser concluído, resetando o `targetSystemToFrame`.
  * @property {{ x: number; y: number; z: number }} defaultInitialCameraPosition - Posição inicial padrão da câmera.
  * @property {{ x: number; y: number; z: number }} defaultInitialCameraLookAt - Ponto de observação inicial padrão da câmera.
@@ -52,7 +51,8 @@ export interface UseCameraManagerReturn {
 }
 
 /**
- * Hook customizado para gerenciar o estado e as interações da câmera.
+ * Hook customizado para gerenciar o estado e as interações da câmera 3D.
+ * Responsável pelo estado da câmera, foco em sistemas e integração com o histórico de comandos.
  * @param {UseCameraManagerProps} props As props do hook, incluindo `executeCommand` para integração com o histórico.
  * @returns {UseCameraManagerReturn} Um objeto contendo o estado da câmera e funções para interagir com ela.
  */
@@ -65,24 +65,21 @@ export function useCameraManager({ executeCommand }: UseCameraManagerProps): Use
 
   /**
    * Define o sistema alvo para a câmera enquadrar.
-   * A lógica de animação da câmera para o sistema é tratada externamente (em ThreeScene).
-   * Esta função apenas define o alvo.
    * @param {string} systemName O nome do sistema para focar.
    */
   const handleSetCameraViewForSystem = useCallback((systemName: string) => {
-    // console.log(`[useCameraManager] Setting target system to frame: ${systemName}`);
     setTargetSystemToFrame(systemName);
   }, []);
 
   /**
    * Manipula as mudanças de câmera provenientes da cena 3D (e.g., órbita do usuário).
-   * Registra a mudança no histórico de comandos, permitindo undo/redo.
+   * Registra a mudança no histórico de comandos.
    * @param {CameraState} newSceneCameraState O novo estado da câmera da cena.
    */
   const handleCameraChangeFromScene = useCallback((newSceneCameraState: CameraState) => {
-    const oldCameraStateSnapshot = currentCameraState ? { 
-      position: { ...currentCameraState.position }, 
-      lookAt: { ...currentCameraState.lookAt } 
+    const oldCameraStateSnapshot = currentCameraState ? {
+      position: { ...currentCameraState.position },
+      lookAt: { ...currentCameraState.lookAt }
     } : undefined;
 
     // Evita disparos repetitivos para o mesmo estado (com uma pequena tolerância)
@@ -93,11 +90,9 @@ export function useCameraManager({ executeCommand }: UseCameraManagerProps): Use
         Math.abs(oldCameraStateSnapshot.lookAt.x - newSceneCameraState.lookAt.x) < 0.01 &&
         Math.abs(oldCameraStateSnapshot.lookAt.y - newSceneCameraState.lookAt.y) < 0.01 &&
         Math.abs(oldCameraStateSnapshot.lookAt.z - newSceneCameraState.lookAt.z) < 0.01) {
-      // console.log("[useCameraManager] Camera state unchanged, skipping command.");
       return;
     }
-    
-    // console.log("[useCameraManager] Camera changed from scene, creating command.", newSceneCameraState);
+
     const command: Command = {
       id: `orbit-camera-${Date.now()}`,
       type: 'CAMERA_MOVE',
@@ -110,10 +105,9 @@ export function useCameraManager({ executeCommand }: UseCameraManagerProps): Use
 
   /**
    * Callback para ser chamado pela ThreeScene após o enquadramento do sistema ser concluído.
-   * Reseta o `targetSystemToFrame` para `null`, indicando que a ação de focar foi concluída.
+   * Reseta o `targetSystemToFrame` para `null`.
    */
   const onSystemFramed = useCallback(() => {
-    // console.log("[useCameraManager] System framing completed.");
     setTargetSystemToFrame(null);
   }, []);
 
@@ -127,3 +121,5 @@ export function useCameraManager({ executeCommand }: UseCameraManagerProps): Use
     defaultInitialCameraLookAt,
   };
 }
+
+    

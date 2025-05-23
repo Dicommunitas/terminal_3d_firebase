@@ -2,31 +2,28 @@
 /**
  * @fileOverview Fornece os dados iniciais para equipamentos e camadas da aplicação.
  * Estes dados são usados para popular o estado inicial da aplicação quando ela é carregada.
+ * Define a estrutura de cada equipamento e as camadas de visibilidade padrão.
  *
- * Responsabilidades:
- * - Definir a lista `initialEquipment`: um array de objetos `Equipment` que representam
- *   os itens 3D na cena, com todos os seus atributos (tag, nome, tipo, sistema, área,
- *   estado operacional, produto, posição, dimensões, cor, detalhes).
- * - Definir a lista `initialLayers`: um array de objetos `Layer` que especificam as camadas
- *   de visibilidade disponíveis na interface do usuário, seus nomes, os tipos de equipamento
- *   que controlam e seu estado de visibilidade inicial.
+ * Exporta:
+ * - `initialEquipment`: Array de objetos `Equipment` representando os itens 3D na cena.
+ * - `initialLayers`: Array de objetos `Layer` especificando as camadas de visibilidade.
  */
 import type { Equipment, Layer } from '@/lib/types';
 
 /**
  * Lista inicial de equipamentos para a cena 3D.
  * Cada equipamento possui propriedades como tag, nome, tipo, sistema, área, estado operacional,
- * produto, posição, dimensões (ou raio/altura) e cor.
+ * produto, posição, dimensões (ou raio/altura), cor, detalhes e categoria.
  */
 export const initialEquipment: Equipment[] = [
   // Buildings
   { tag: 'bldg-01', name: 'Main Office', type: 'Building', sistema: 'NDD', area: 'Área 20', operationalState: 'Não aplicável', product: 'Não aplicável', position: { x: -15, y: 3, z: -10 }, size: { width: 8, height: 6, depth: 10 }, color: '#78909C', details: 'Primary administrative building.' },
   { tag: 'bldg-02', name: 'Warehouse A', type: 'Building', sistema: 'GA', area: 'Área 31', operationalState: 'Não aplicável', product: 'Não aplicável', position: { x: 15, y: 4, z: -12 }, size: { width: 15, height: 8, depth: 12 }, color: '#78909C', details: 'Storage for dry goods.' },
   { tag: 'bldg-03', name: 'Control Room', type: 'Building', sistema: 'MTBE', area: 'Área 32', operationalState: 'Não aplicável', product: 'Não aplicável', position: { x: 0, y: 2, z: -15 }, size: { width: 6, height: 4, depth: 6 }, color: '#78909C', details: 'Central operations control.' },
-  
+
   // Cranes
-  { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: 'Não aplicável', position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
-  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: 'Não aplicável', position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
+  { tag: 'crane-01', name: 'Gantry Crane 1', type: 'Crane', sistema: 'QAV', area: 'Área 40', operationalState: 'operando', product: "Não aplicável", position: { x: 0, y: 5, z: 8 }, size: { width: 12, height: 10, depth: 2 }, color: '#FF8A65', details: 'Heavy lift gantry crane.' },
+  { tag: 'crane-02', name: 'Jib Crane', type: 'Crane', sistema: 'LASTRO', area: 'Área 50', operationalState: 'manutenção', product: "Não aplicável", position: { x: -10, y: 3.5, z: 5 }, size: { width: 1.5, height: 7, depth: 1.5 }, color: '#FFB74D', details: 'Small jib crane for workshop.' },
 
   // Tanks
   { tag: 'tank-01', name: 'Storage Tank Alpha', type: 'Tank', sistema: 'ODB', area: 'Área 33', operationalState: 'operando', product: '70H', position: { x: -8, y: 2.5, z: 12 }, radius: 3, height: 5, color: '#4FC3F7', details: 'Liquid storage tank for product 70H.' },
@@ -58,3 +55,5 @@ export const initialLayers: Layer[] = [
   { id: 'layer-valves', name: 'Válvulas', equipmentType: 'Valve', isVisible: true },
   { id: 'layer-annotations', name: 'Anotações', equipmentType: 'Annotations', isVisible: true },
 ];
+
+    
