@@ -3,9 +3,11 @@
  * @fileOverview Custom hook para gerenciar os estados de filtragem e a lógica de filtragem de equipamentos.
  *
  * Responsabilidades:
- * - Manter os estados para o termo de busca (`searchTerm`), sistema selecionado (`selectedSistema`) e área selecionada (`selectedArea`).
- * - Derivar as listas de opções disponíveis para os filtros de sistema e área.
- * - Calcular a lista de equipamentos filtrados (`filteredEquipment`) com base nos critérios atuais.
+ * - Manter os estados para o termo de busca textual (`searchTerm`).
+ * - Manter os estados para os filtros de propriedades selecionadas (`selectedSistema`, `selectedArea`).
+ * - Derivar as listas de opções únicas disponíveis para os filtros de Sistema e Área.
+ * - Calcular a lista de equipamentos filtrados (`filteredEquipment`) com base nos critérios atuais,
+ *   utilizando a função `getFilteredEquipment` do `equipment-filter.ts`.
  */
 'use client';
 
@@ -27,15 +29,15 @@ interface UseFilterManagerProps {
  * @interface UseFilterManagerReturn
  * @property {string} searchTerm - O termo de busca textual atual.
  * @property {Dispatch<SetStateAction<string>>} setSearchTerm - Função para definir o termo de busca.
- * @property {string} selectedSistema - O sistema selecionado para filtro.
+ * @property {string} selectedSistema - O sistema selecionado para filtro (ou "All").
  * @property {Dispatch<SetStateAction<string>>} setSelectedSistema - Função para definir o sistema selecionado.
- * @property {string} selectedArea - A área selecionada para filtro.
+ * @property {string} selectedArea - A área selecionada para filtro (ou "All").
  * @property {Dispatch<SetStateAction<string>>} setSelectedArea - Função para definir a área selecionada.
- * @property {string[]} availableSistemas - Lista de sistemas únicos disponíveis para seleção.
- * @property {string[]} availableAreas - Lista de áreas únicas disponíveis para seleção.
+ * @property {string[]} availableSistemas - Lista de sistemas únicos disponíveis para seleção, incluindo "All".
+ * @property {string[]} availableAreas - Lista de áreas únicas disponíveis para seleção, incluindo "All".
  * @property {Equipment[]} filteredEquipment - A lista de equipamentos após a aplicação dos filtros.
  */
-interface UseFilterManagerReturn {
+export interface UseFilterManagerReturn {
   searchTerm: string;
   setSearchTerm: Dispatch<SetStateAction<string>>;
   selectedSistema: string;
@@ -48,18 +50,18 @@ interface UseFilterManagerReturn {
 }
 
 /**
- * Custom hook para gerenciar a lógica de filtragem de equipamentos.
- * @param {UseFilterManagerProps} props - As propriedades para o hook.
- * @returns {UseFilterManagerReturn} O estado dos filtros, setters, opções disponíveis e a lista filtrada.
+ * Hook customizado para gerenciar a lógica de filtragem de equipamentos.
+ * @param {UseFilterManagerProps} props As propriedades para o hook, incluindo `allEquipment`.
+ * @returns {UseFilterManagerReturn} O estado dos filtros, setters, opções de filtro disponíveis e a lista filtrada de equipamentos.
  */
 export function useFilterManager({ allEquipment }: UseFilterManagerProps): UseFilterManagerReturn {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSistema, setSelectedSistema] = useState('All');
-  const [selectedArea, setSelectedArea] = useState('All');
+  const [selectedSistema, setSelectedSistema] = useState('All'); // "All" é o valor padrão para não filtrar
+  const [selectedArea, setSelectedArea] = useState('All');     // "All" é o valor padrão para não filtrar
 
   /** Lista de sistemas únicos disponíveis, ordenada e com "All" no início. */
   const availableSistemas = useMemo(() => {
-    const sistemas = new Set<string>(['All']);
+    const sistemas = new Set<string>(['All']); // Garante que "All" esteja sempre presente
     allEquipment.forEach(equip => {
       if (equip.sistema) sistemas.add(equip.sistema);
     });
@@ -68,20 +70,24 @@ export function useFilterManager({ allEquipment }: UseFilterManagerProps): UseFi
 
   /** Lista de áreas únicas disponíveis, ordenada e com "All" no início. */
   const availableAreas = useMemo(() => {
-    const areas = new Set<string>(['All']);
+    const areas = new Set<string>(['All']); // Garante que "All" esteja sempre presente
     allEquipment.forEach(equip => {
       if (equip.area) areas.add(equip.area);
     });
     return Array.from(areas).sort((a, b) => (a === 'All' ? -1 : b === 'All' ? 1 : a.localeCompare(b)));
   }, [allEquipment]);
 
-  /** Lista de equipamentos filtrada com base nos critérios atuais. */
+  /**
+   * Lista de equipamentos filtrada com base nos critérios atuais (termo de busca, sistema e área).
+   * Utiliza a função `getFilteredEquipment` para aplicar a lógica de filtragem.
+   */
   const filteredEquipment = useMemo(() => {
     const criteria: EquipmentFilterCriteria = {
       searchTerm,
       selectedSistema,
       selectedArea,
     };
+    // Garante que allEquipment seja um array antes de filtrar
     return getFilteredEquipment(Array.isArray(allEquipment) ? allEquipment : [], criteria);
   }, [allEquipment, searchTerm, selectedSistema, selectedArea]);
 

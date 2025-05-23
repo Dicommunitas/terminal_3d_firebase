@@ -41,6 +41,7 @@ interface InfoPanelProps {
 
 /**
  * Renderiza um painel flutuante com informações detalhadas sobre o equipamento selecionado.
+ * Mostra detalhes apenas se um único equipamento estiver selecionado.
  * @param {InfoPanelProps} props As props do componente.
  * @returns {JSX.Element | null} O componente InfoPanel ou null se nenhum equipamento estiver selecionado.
  */
@@ -57,12 +58,19 @@ export function InfoPanel({
 }: InfoPanelProps) {
   if (!equipment) return null;
 
+  /**
+   * Manipula o clique no botão de excluir anotação.
+   */
   const handleDeleteClick = () => {
     if (equipment) {
       onDeleteAnnotation(equipment.tag);
     }
   };
   
+  /**
+   * Formata a data de criação/modificação da anotação.
+   * @type {string | null}
+   */
   const formattedDate = annotation?.createdAt ? format(parseISO(annotation.createdAt), "dd/MM/yyyy HH:mm") : null;
 
   return (

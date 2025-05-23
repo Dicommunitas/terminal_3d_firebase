@@ -1,6 +1,8 @@
 
 /**
  * @fileOverview Componente para selecionar o modo de colorização dos equipamentos na cena 3D.
+ * Permite ao usuário escolher como os equipamentos serão coloridos: pela cor base,
+ * pelo estado operacional ou pelo produto.
  */
 "use client";
 
@@ -29,7 +31,7 @@ interface ColorModeSelectorProps {
 export function ColorModeSelector({ colorMode, onColorModeChange }: ColorModeSelectorProps) {
   return (
     <Card className="shadow-md">
-      <CardContent className="space-y-3 pt-4 p-3">
+      <CardContent className="space-y-3 pt-4 p-3"> {/* Adicionado pt-4 para compensar remoção do CardHeader */}
         <div className="space-y-1">
           <Label htmlFor="color-mode-select" className="text-xs text-muted-foreground flex items-center">
             <PaletteIcon className="mr-1.5 h-3.5 w-3.5" />

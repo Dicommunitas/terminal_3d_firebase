@@ -1,6 +1,7 @@
 
 /**
  * @fileoverview Componente de diálogo para adicionar ou editar anotações textuais para equipamentos.
+ * Permite ao usuário inserir ou modificar o texto de uma anotação através de um Textarea.
  */
 "use client";
 
@@ -24,9 +25,9 @@ import type { Annotation } from '@/lib/types';
  * @interface AnnotationDialogProps
  * @property {boolean} isOpen - Controla se o diálogo está aberto ou fechado.
  * @property {(isOpen: boolean) => void} onOpenChange - Callback para quando o estado de abertura do diálogo muda.
- * @property {(text: string) => void} onConfirm - Callback para confirmar e salvar a anotação.
+ * @property {(text: string) => void} onConfirm - Callback para confirmar e salvar a anotação, passando o texto inserido.
  * @property {Annotation | null} currentAnnotation - A anotação atual sendo editada, ou null se for uma nova anotação.
- * @property {string} equipmentName - O nome do equipamento ao qual a anotação se refere.
+ * @property {string} equipmentName - O nome do equipamento ao qual a anotação se refere, para exibição no diálogo.
  */
 interface AnnotationDialogProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ interface AnnotationDialogProps {
 
 /**
  * Renderiza um diálogo modal para o usuário inserir ou editar o texto de uma anotação.
+ * Utiliza um Textarea para permitir anotações de texto longo.
  * @param {AnnotationDialogProps} props As props do componente.
  * @returns {JSX.Element} O componente AnnotationDialog.
  */
@@ -50,6 +52,10 @@ export function AnnotationDialog({ isOpen, onOpenChange, onConfirm, currentAnnot
     }
   }, [isOpen, currentAnnotation]);
 
+  /**
+   * Manipula a confirmação do diálogo, chamando o callback `onConfirm` com o texto atual
+   * e fechando o diálogo.
+   */
   const handleConfirm = () => {
     onConfirm(annotationText); 
     onOpenChange(false);

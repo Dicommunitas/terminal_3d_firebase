@@ -8,7 +8,7 @@
 "use client";
 
 import { useMemo, useState } from 'react';
-import type { Annotation, ColorMode } from '@/lib/types'; // ColorMode é usado aqui
+import type { Annotation, ColorMode, Equipment } from '@/lib/types';
 import { useCommandHistory } from '@/hooks/use-command-history';
 import ThreeScene from '@/components/three-scene';
 import { CameraControlsPanel } from '@/components/camera-controls-panel';
@@ -19,7 +19,7 @@ import { ColorModeSelector } from '@/components/color-mode-selector';
 import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -97,15 +97,16 @@ export default function Terminal3DPage() {
    * @param {string} systemName - O nome do sistema para focar e selecionar.
    */
   const handleFocusAndSelectSystem = (systemName: string) => {
-    handleSetCameraViewForSystem(systemName); // Do useCameraManager
+    handleSetCameraViewForSystem(systemName);
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`); // Do useEquipmentSelectionManager
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
   };
 
   /**
-   * Detalhes do equipamento selecionado. Mostra detalhes apenas se um único equipamento estiver selecionado.
+   * Detalhes do equipamento selecionado para exibição no InfoPanel.
+   * Mostra detalhes apenas se um único equipamento estiver selecionado.
    * @type {Equipment | null}
    */
   const selectedEquipmentDetails = useMemo(() => {
@@ -117,7 +118,7 @@ export default function Terminal3DPage() {
   }, [selectedEquipmentTags, equipmentData]);
 
   /**
-   * Anotação para o equipamento atualmente selecionado.
+   * Anotação para o equipamento atualmente selecionado (se houver um único selecionado).
    * @type {Annotation | null}
    */
   const equipmentAnnotation = useMemo(() => {
@@ -128,7 +129,7 @@ export default function Terminal3DPage() {
   }, [selectedEquipmentDetails, getAnnotationForEquipment]);
 
   /**
-   * Lista de estados operacionais únicos disponíveis, incluindo "All".
+   * Lista de estados operacionais únicos disponíveis, excluindo "All".
    * Usado para popular o dropdown de alteração de estado no InfoPanel.
    * @type {string[]}
    */
@@ -137,11 +138,9 @@ export default function Terminal3DPage() {
     equipmentData.forEach(equip => {
       if (equip.operationalState) states.add(equip.operationalState);
     });
-    if (!states.has("All")) states.add("All"); // Usado internamente pelo filtro, InfoPanel remove 'All'
+    // Não adiciona "All" aqui, pois o InfoPanel não precisa dele.
     const sortedStates = Array.from(states).sort((a, b) => {
-      if (a === "All") return -1;
-      if (b === "All") return 1;
-      if (a === "Não aplicável") return -1;
+      if (a === "Não aplicável") return -1; // "Não aplicável" primeiro
       if (b === "Não aplicável") return 1;
       return a.localeCompare(b);
     });
@@ -149,7 +148,7 @@ export default function Terminal3DPage() {
   }, [equipmentData]);
 
   /**
-   * Lista de produtos únicos disponíveis, incluindo "All".
+   * Lista de produtos únicos disponíveis, excluindo "All".
    * Usado para popular o dropdown de alteração de produto no InfoPanel.
    * @type {string[]}
    */
@@ -158,19 +157,17 @@ export default function Terminal3DPage() {
     equipmentData.forEach(equip => {
       if (equip.product) products.add(equip.product);
     });
-    const sortedProducts = Array.from(products).sort();
-    const finalProducts = new Set(['All', ...sortedProducts]); // Usado internamente pelo filtro, InfoPanel remove 'All'
-     return Array.from(finalProducts).sort((a,b) => {
-      if (a === "All") return -1;
-      if (b === "All") return 1;
+    // Não adiciona "All" aqui.
+    const sortedProducts = Array.from(products).sort((a,b) => {
       if (a === "Não aplicável") return -1;
       if (b === "Não aplicável") return 1;
       return a.localeCompare(b);
     });
+    return sortedProducts;
   }, [equipmentData]);
 
   /**
-   * Lista de sistemas únicos para os quais existem vistas de câmera.
+   * Lista de sistemas únicos para os quais existem vistas de câmera (usado no CameraControlsPanel).
    * @type {string[]}
    */
   const cameraViewSystems = useMemo(() => {
@@ -192,7 +189,7 @@ export default function Terminal3DPage() {
         </div>
 
         {/* Contêiner principal para a cena 3D e o InfoPanel */}
-        <div className="flex-1 relative min-h-0">
+        <div className="flex-1 relative min-h-0"> {/* Adicionado min-h-0 */}
           <ThreeScene
             equipment={filteredEquipment}
             layers={layers}
@@ -217,9 +214,9 @@ export default function Terminal3DPage() {
               onOpenAnnotationDialog={() => handleOpenAnnotationDialog(selectedEquipmentDetails)}
               onDeleteAnnotation={handleDeleteAnnotation}
               onOperationalStateChange={handleOperationalStateChange}
-              availableOperationalStatesList={availableOperationalStatesList.filter(s => s !== 'All')}
+              availableOperationalStatesList={availableOperationalStatesList}
               onProductChange={handleProductChange}
-              availableProductsList={availableProductsList.filter(p => p !== 'All')}
+              availableProductsList={availableProductsList}
             />
           )}
         </div>
@@ -247,9 +244,7 @@ export default function Terminal3DPage() {
                 <Redo2Icon className="h-5 w-5" />
               </Button>
             </div>
-             <SidebarTrigger asChild variant="ghost" size="icon" className="hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
-                <PanelLeftClose />
-            </SidebarTrigger>
+            {/* O botão de fechar a sidebar foi movido para ser o próprio texto "Terminal 3D" */}
           </SidebarHeader>
           <SidebarContent className="p-0">
             <ScrollArea className="h-full">

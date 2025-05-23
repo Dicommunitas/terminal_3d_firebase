@@ -1,6 +1,6 @@
 
 /**
- * @fileOverview Componente para gerenciar a visibilidade das camadas de equipamentos.
+ * @fileOverview Componente para gerenciar a visibilidade das camadas de equipamentos e anotações.
  * Permite ao usuário ativar ou desativar a visualização de diferentes tipos de camadas na cena 3D.
  */
 "use client";
@@ -14,7 +14,7 @@ import type { Layer } from '@/lib/types';
 /**
  * Props para o componente LayerManager.
  * @interface LayerManagerProps
- * @property {Layer[]} layers - A lista de camadas disponíveis.
+ * @property {Layer[]} layers - A lista de camadas disponíveis e seus estados de visibilidade.
  * @property {(layerId: string) => void} onToggleLayer - Callback para quando a visibilidade de uma camada é alternada.
  */
 interface LayerManagerProps {

@@ -1,13 +1,18 @@
 
 /**
  * @fileOverview Custom hook para gerenciar o estado das camadas (layers) e a lógica para alternar sua visibilidade.
- * Integra-se com o sistema de histórico de comandos para permitir undo/redo das alterações de visibilidade.
+ *
+ * Responsabilidades:
+ * - Manter o estado da lista de camadas (`layers`), incluindo o nome, tipo de equipamento que controla e visibilidade.
+ * - Fornecer uma função (`handleToggleLayer`) para alternar a visibilidade de uma camada específica.
+ * - Integrar a alternância de visibilidade com o sistema de histórico de comandos (`useCommandHistory`)
+ *   para permitir undo/redo.
  */
 "use client";
 
 import { useState, useCallback } from 'react';
 import type { Layer, Command } from '@/lib/types';
-import { initialLayers } from '@/core/data/initial-data';
+import { initialLayers } from '@/core/data/initial-data'; // Importa as camadas iniciais
 
 /**
  * Props para o hook useLayerManager.
@@ -22,16 +27,16 @@ interface UseLayerManagerProps {
  * Retorno do hook useLayerManager.
  * @interface UseLayerManagerReturn
  * @property {Layer[]} layers - A lista atual de camadas e seus estados de visibilidade.
- * @property {(layerId: string) => void} handleToggleLayer - Alterna a visibilidade de uma camada específica.
+ * @property {(layerId: string) => void} handleToggleLayer - Alterna a visibilidade de uma camada específica, registrando a ação no histórico.
  */
-interface UseLayerManagerReturn {
+export interface UseLayerManagerReturn {
   layers: Layer[];
   handleToggleLayer: (layerId: string) => void;
 }
 
 /**
- * Hook para gerenciar o estado das camadas e sua visibilidade.
- * @param {UseLayerManagerProps} props - Props para o hook.
+ * Hook customizado para gerenciar o estado das camadas e sua visibilidade.
+ * @param {UseLayerManagerProps} props As props do hook, incluindo `executeCommand`.
  * @returns {UseLayerManagerReturn} Um objeto contendo o estado das camadas e a função para alternar sua visibilidade.
  */
 export function useLayerManager({ executeCommand }: UseLayerManagerProps): UseLayerManagerReturn {
@@ -39,24 +44,35 @@ export function useLayerManager({ executeCommand }: UseLayerManagerProps): UseLa
 
   /**
    * Manipula a alternância de visibilidade de uma camada.
-   * Esta operação é registrada no histórico de comandos.
+   * Cria um comando para o histórico de Undo/Redo e o executa.
    * @param {string} layerId O ID da camada a ser alternada.
    */
   const handleToggleLayer = useCallback((layerId: string) => {
     const layerIndex = layers.findIndex(l => l.id === layerId);
-    if (layerIndex === -1) return;
+    if (layerIndex === -1) {
+      // console.warn(`[useLayerManager] Layer with id "${layerId}" not found.`);
+      return;
+    }
 
-    const oldLayersState = layers.map(l => ({ ...l })); 
+    const oldLayersState = layers.map(l => ({ ...l })); // Clona para o estado de undo
     const newLayersState = layers.map(l =>
       l.id === layerId ? { ...l, isVisible: !l.isVisible } : { ...l }
     );
 
+    const commandDescription = `Visibilidade da camada "${oldLayersState[layerIndex].name}" ${newLayersState[layerIndex].isVisible ? 'ativada' : 'desativada'}`;
+    
     const command: Command = {
       id: `toggle-layer-${layerId}-${Date.now()}`,
       type: 'LAYER_VISIBILITY',
-      description: `Visibilidade da camada ${oldLayersState[layerIndex].name} ${newLayersState[layerIndex].isVisible ? 'ativada' : 'desativada'}`,
-      execute: () => setLayers(newLayersState),
-      undo: () => setLayers(oldLayersState),
+      description: commandDescription,
+      execute: () => {
+        // console.log(`[useLayerManager Command] Execute: ${commandDescription}`);
+        setLayers(newLayersState);
+      },
+      undo: () => {
+        // console.log(`[useLayerManager Command] Undo: ${commandDescription}`);
+        setLayers(oldLayersState);
+      },
     };
     executeCommand(command);
   }, [layers, executeCommand]);
