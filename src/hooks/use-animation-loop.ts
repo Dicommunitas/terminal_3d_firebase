@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Custom hook para gerenciar o loop de animação de uma cena Three.js.
  *
@@ -46,7 +47,9 @@ export function useAnimationLoop({
   labelRendererRef,
 }: UseAnimationLoopProps): void {
   useEffect(() => {
+    // console.log(`[AnimationLoop] useEffect triggered. isSceneReady: ${isSceneReady}`);
     if (!isSceneReady || !sceneRef.current || !cameraRef.current || !controlsRef.current || !composerRef.current || !labelRendererRef.current) {
+      // console.log('[AnimationLoop] Skipping animation frame: Not all refs are ready or scene is not ready.');
       return;
     }
 
@@ -60,15 +63,19 @@ export function useAnimationLoop({
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      controls.update(); // Atualiza os controles de órbita (importante para damping)
-      composer.render(); // Renderiza a cena principal através do composer (inclui pós-processamento)
-      labelRenderer.render(scene, camera); // Renderiza os rótulos 2D
+      controls.update(); 
+      composer.render(); 
+      labelRenderer.render(scene, camera); 
     };
-
+    
+    // console.log('[AnimationLoop] Starting animation loop.');
     animate();
 
     return () => {
+      // console.log('[AnimationLoop] Cancelling animation frame.');
       cancelAnimationFrame(animationFrameId);
     };
   }, [isSceneReady, sceneRef, cameraRef, controlsRef, composerRef, labelRendererRef]);
 }
+
+    
