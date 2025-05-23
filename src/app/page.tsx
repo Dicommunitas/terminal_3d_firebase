@@ -35,6 +35,7 @@ import { AnnotationDialog } from '@/components/annotation-dialog';
  * @returns {JSX.Element} O componente da página Terminal 3D.
  */
 export default function Terminal3DPage(): JSX.Element {
+  // console.log("[Page] Terminal3DPage rendering");
   const { executeCommand, undo, redo, canUndo, canRedo } = useCommandHistory();
 
   const {
@@ -91,11 +92,11 @@ export default function Terminal3DPage(): JSX.Element {
    * @param {string} systemName - O nome do sistema para focar e selecionar.
    */
   const handleFocusAndSelectSystem = useCallback((systemName: string) => {
-    handleSetCameraViewForSystem(systemName); // Do useCameraManager
+    handleSetCameraViewForSystem(systemName);
     const equipmentInSystem = equipmentData
       .filter(equip => equip.sistema === systemName)
       .map(equip => equip.tag);
-    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`); // Do useEquipmentSelectionManager
+    selectTagsBatch(equipmentInSystem, `Focado e selecionado sistema ${systemName}.`);
   }, [equipmentData, handleSetCameraViewForSystem, selectTagsBatch]);
 
   /**
@@ -154,16 +155,6 @@ export default function Terminal3DPage(): JSX.Element {
     return sortedProducts;
   }, [equipmentData]);
 
-  /**
-   * Lista de sistemas únicos disponíveis para os quais a câmera pode focar.
-   */
-  const cameraViewSystems = useMemo(() => {
-    const sistemas = new Set<string>();
-    equipmentData.forEach(equip => {
-      if (equip.sistema) sistemas.add(equip.sistema);
-    });
-    return Array.from(sistemas).sort();
-  }, [equipmentData]);
 
   return (
     <SidebarProvider defaultOpen={false}> {/* Sidebar começa fechada por padrão */}
@@ -241,8 +232,6 @@ export default function Terminal3DPage(): JSX.Element {
             onColorModeChange={setColorMode}
             layers={layers}
             onToggleLayer={handleToggleLayer}
-            cameraViewSystems={cameraViewSystems}
-            onFocusAndSelectSystem={handleFocusAndSelectSystem}
           />
         </div>
       </Sidebar>
@@ -257,5 +246,3 @@ export default function Terminal3DPage(): JSX.Element {
     </SidebarProvider>
   );
 }
-
-    

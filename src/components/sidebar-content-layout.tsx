@@ -2,7 +2,7 @@
 /**
  * @fileoverview Componente para renderizar o conteúdo principal da sidebar.
  * Inclui os controles de filtro (busca por texto, sistema, área), o seletor de modo de coloração,
- * o gerenciador de camadas de visibilidade e os controles de câmera para focar em sistemas.
+ * e o gerenciador de camadas de visibilidade.
  */
 "use client";
 
@@ -15,8 +15,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { LayerManager } from "@/components/layer-manager";
 import { ColorModeSelector } from "@/components/color-mode-selector";
-import { CameraControlsPanel } from "@/components/camera-controls-panel";
-import { XIcon } from "lucide-react"; // SearchIcon não é mais usado aqui
+// CameraControlsPanel não é mais usado aqui
+import { XIcon } from "lucide-react";
 
 /**
  * Props para o componente SidebarContentLayout.
@@ -33,8 +33,6 @@ import { XIcon } from "lucide-react"; // SearchIcon não é mais usado aqui
  * @property {(mode: ColorMode) => void} onColorModeChange - Função para atualizar o modo de colorização.
  * @property {Layer[]} layers - Lista de camadas para o LayerManager.
  * @property {(layerId: string) => void} onToggleLayer - Função para alternar a visibilidade de uma camada.
- * @property {string[]} cameraViewSystems - Lista de sistemas para o CameraControlsPanel.
- * @property {(systemName: string) => void} onFocusAndSelectSystem - Função para focar e selecionar um sistema.
  */
 interface SidebarContentLayoutProps {
   searchTerm: string;
@@ -49,8 +47,6 @@ interface SidebarContentLayoutProps {
   onColorModeChange: (mode: ColorMode) => void;
   layers: Layer[];
   onToggleLayer: (layerId: string) => void;
-  cameraViewSystems: string[];
-  onFocusAndSelectSystem: (systemName: string) => void;
 }
 
 /**
@@ -72,8 +68,6 @@ export function SidebarContentLayout({
   onColorModeChange,
   layers,
   onToggleLayer,
-  cameraViewSystems,
-  onFocusAndSelectSystem,
 }: SidebarContentLayoutProps): JSX.Element {
   return (
     <ScrollArea className="h-full flex-1">
@@ -150,13 +144,8 @@ export function SidebarContentLayout({
           onColorModeChange={onColorModeChange}
         />
         <LayerManager layers={layers} onToggleLayer={onToggleLayer} />
-        <CameraControlsPanel
-          systems={cameraViewSystems}
-          onSetView={onFocusAndSelectSystem}
-        />
+        {/* CameraControlsPanel foi removido daqui */}
       </div>
     </ScrollArea>
   );
 }
-
-    
