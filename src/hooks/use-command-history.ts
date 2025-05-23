@@ -1,16 +1,8 @@
 
 /**
- * @fileOverview Custom hook para gerenciar o histórico de comandos (Undo/Redo).
+ * Custom hook that provides functionality for managing a history of commands, allowing for undo and redo operations.
  *
- * Responsabilidades:
- * - Manter um histórico dos comandos executados que modificam o estado da aplicação.
- * - Fornecer funcionalidades para desfazer (undo) e refazer (redo) esses comandos.
- * - Cada comando deve implementar métodos `execute` e `undo` e ter uma descrição.
- * - Atualmente gerencia comandos para movimentação de câmera, visibilidade de camadas e seleção de equipamentos.
- * - Conforme especificado, não gerencia o histórico de operações de anotação ou mudanças diretas
- *   nos dados dos equipamentos (estado operacional, produto).
  */
-"use client";
 
 import type { Command } from '@/lib/types';
 import { useState, useCallback } from 'react';

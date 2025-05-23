@@ -1,15 +1,8 @@
 
 /**
- * @fileOverview Custom hook para gerenciar os dados dos equipamentos e suas modificações diretas.
- *
- * Responsabilidades:
- * - Manter o estado da lista de equipamentos (`equipmentData`), inicializada com dados padrão.
- * - Fornecer funções para modificar o estado operacional e o produto de um equipamento específico.
- * - Utilizar toasts para fornecer feedback ao usuário sobre as modificações realizadas.
- * - As modificações diretas nos dados dos equipamentos feitas através deste hook
- *   NÃO são gerenciadas pelo histórico de comandos (undo/redo), conforme RF008.
+ * @fileOverview Custom hook responsible for fetching, storing, and managing the equipment data used in the application.
+ * This includes maintaining the state of the equipment list and providing functions to modify equipment properties.
  */
-"use client";
 
 import { useState, useCallback } from 'react';
 import type { Equipment } from '@/lib/types';

@@ -1,14 +1,6 @@
 
 /**
- * @fileOverview Custom hook para gerenciar a seleção e o estado de hover dos equipamentos.
- *
- * Responsabilidades:
- * - Manter a lista de tags dos equipamentos selecionados (`selectedEquipmentTags`).
- * - Manter a tag do equipamento atualmente sob o cursor (`hoveredEquipmentTag`).
- * - Manipular cliques nos equipamentos para seleção única ou múltipla (com Ctrl/Cmd).
- * - Lidar com a definição programática de múltiplos equipamentos selecionados (e.g., ao focar em um sistema).
- * - Exibir notificações (toasts) relacionadas às ações de seleção.
- * - Integrar as ações de seleção com o sistema de histórico de comandos (`useCommandHistory`) para undo/redo.
+ * This hook manages the state and logic for selecting equipment within the 3D scene.
  */
 "use client";
 

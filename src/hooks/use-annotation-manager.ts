@@ -1,5 +1,11 @@
 
 /**
+ * @fileOverview Custom hook to manage the state and logic for text annotations within the 3D scene.
+ * Includes functionality for adding, removing, and updating annotations associated with equipment.
+ */
+
+
+/**
  * @fileOverview Custom hook para gerenciar o estado e a lógica das anotações dos equipamentos.
  *
  * Responsabilidades:
